@@ -1,0 +1,24 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite",
+        "test:e2e": "php scripts/export-phase2-snapshots.php && playwright test"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.62.1",
+        "@tailwindcss/vite": "^4.0.0",
+        "concurrently": "^9.0.1",
+        "laravel-vite-plugin": "^3.1",
+        "nigerian-states-and-lgas": "^1.0.8",
+        "tailwindcss": "^4.0.0",
+        "vite": "^8.0.0",
+        "world-countries": "^5.1.0"
+    },
+    "dependencies": {
+        "laravel-echo": "^2.4.0",
+        "pusher-js": "^8.6.0"
+    }
+}

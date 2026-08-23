@@ -1,0 +1,461 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+    --color-brand-50: #effcf5;
+    --color-brand-100: #d9f7e7;
+    --color-brand-200: #b7edd2;
+    --color-brand-300: #7edcad;
+    --color-brand-400: #3fc27c;
+    --color-brand-500: #139b5c;
+    --color-brand-600: #005136;
+    --color-brand-700: #00452e;
+    --color-brand-800: #003a27;
+    --color-brand-900: #002f20;
+    --color-graphite-50: #f7f8f8;
+    --color-graphite-100: #ecefed;
+    --color-graphite-200: #d7deda;
+    --color-graphite-300: #b6c2bc;
+    --color-graphite-400: #8fa199;
+    --color-graphite-500: #70837a;
+    --color-graphite-600: #596a62;
+    --color-graphite-700: #49564f;
+    --color-graphite-800: #28312d;
+    --color-graphite-900: #151d1a;
+    --color-cyber-cyan: #22d3ee;
+    --color-cyber-amber: #f6c445;
+    --shadow-glow: 0 0 0 1px rgb(34 211 238 / 0.18), 0 0 34px rgb(0 81 54 / 0.24);
+}
+
+@source './views/**/*.blade.php';
+
+@layer base {
+    :root {
+        color-scheme: light;
+        --surface: #f4f8f6;
+        --surface-raised: #ffffff;
+        --surface-muted: #edf5f1;
+        --text-strong: #111816;
+        --text-soft: #596a62;
+        --line: #dbe5df;
+        --brand: #005136;
+        --brand-strong: #00452e;
+        --accent: #22d3ee;
+        --field-bg: #ffffff;
+        --field-ring: rgb(0 81 54 / 0.14);
+    }
+
+    .dark {
+        color-scheme: dark;
+        --surface: #07110d;
+        --surface-raised: #0d1a15;
+        --surface-muted: #13251e;
+        --text-strong: #edf8f1;
+        --text-soft: #a9bbb2;
+        --line: #244035;
+        --brand: #7edcad;
+        --brand-strong: #d9f7e7;
+        --accent: #22d3ee;
+        --field-bg: #0f2019;
+        --field-ring: rgb(126 220 173 / 0.18);
+    }
+
+    html {
+        background: var(--surface);
+        color: var(--text-strong);
+        scroll-behavior: smooth;
+        overflow-x: clip;
+    }
+
+    body {
+        min-height: 100vh;
+        overflow-x: clip;
+        background:
+            radial-gradient(circle at 18% 0%, rgb(0 81 54 / 0.08), transparent 24rem),
+            radial-gradient(circle at 86% 8%, rgb(126 220 173 / 0.12), transparent 24rem),
+            linear-gradient(180deg, rgb(255 255 255 / 0.58), transparent 18rem),
+            var(--surface);
+        letter-spacing: 0;
+    }
+
+    main {
+        animation: page-enter 260ms ease-out both;
+    }
+
+    *:focus-visible {
+        outline: 3px solid rgb(34 211 238 / 0.55);
+        outline-offset: 2px;
+    }
+
+    input:not([type='checkbox']):not([type='radio']):not([type='file']),
+    select,
+    textarea {
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 0.9rem;
+        background: var(--field-bg);
+        color: var(--text-strong);
+        box-shadow: 0 10px 24px rgb(8 15 12 / 0.045);
+        transition:
+            background-color 180ms ease,
+            border-color 180ms ease,
+            color 180ms ease,
+            box-shadow 180ms ease,
+            transform 180ms ease;
+    }
+
+    input:not([type='checkbox']):not([type='radio']):not([type='file']):focus,
+    select:focus,
+    textarea:focus {
+        border-color: rgb(0 81 54 / 0.45);
+        box-shadow: 0 0 0 4px var(--field-ring), 0 12px 28px rgb(0 81 54 / 0.08);
+        outline: none;
+    }
+
+    select {
+        cursor: pointer;
+    }
+
+    textarea {
+        resize: vertical;
+    }
+}
+
+@layer components {
+    .siwes-surface {
+        position: relative;
+        overflow: visible;
+        background:
+            linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 98%, transparent), color-mix(in srgb, var(--surface-raised) 92%, var(--surface-muted))),
+            var(--surface-raised);
+        border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+        box-shadow: 0 22px 60px rgb(8 15 12 / 0.085);
+    }
+
+    .dark .siwes-surface {
+        background:
+            linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 92%, #005136 8%), var(--surface-raised)),
+            var(--surface-raised);
+        box-shadow: 0 22px 64px rgb(0 0 0 / 0.34);
+    }
+
+    .siwes-panel-accent::before {
+        content: '';
+        position: absolute;
+        inset: 0 0 auto;
+        height: 0.22rem;
+        background: linear-gradient(90deg, #005136, #139b5c, #d99b00);
+        opacity: 0.88;
+    }
+
+    .siwes-form-control {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        border-radius: 0.9rem;
+        border: 1px solid var(--line);
+        background: var(--field-bg);
+        padding: 0.8rem 0.9rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        color: var(--text-strong);
+        box-shadow: 0 10px 24px rgb(8 15 12 / 0.045);
+    }
+
+    .siwes-form-label {
+        font-size: 0.875rem;
+        font-weight: 650;
+        color: var(--text-strong);
+    }
+
+    .siwes-form-help {
+        font-size: 0.75rem;
+        color: var(--text-soft);
+    }
+
+    .siwes-glass {
+        background: color-mix(in srgb, var(--surface-raised) 78%, transparent);
+        border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+    }
+
+    .particle-field {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .particle-field::before,
+    .particle-field::after {
+        content: '';
+        position: absolute;
+        inset: -20%;
+        background-image:
+            radial-gradient(circle, rgb(34 211 238 / 0.28) 0 1px, transparent 1px),
+            radial-gradient(circle, rgb(0 81 54 / 0.22) 0 1px, transparent 1px);
+        background-position: 0 0, 18px 26px;
+        background-size: 42px 42px, 58px 58px;
+        animation: particle-drift 28s linear infinite;
+        mask-image: linear-gradient(to bottom, black, transparent 78%);
+    }
+
+    .particle-field::after {
+        animation-duration: 42s;
+        animation-direction: reverse;
+        opacity: 0.48;
+    }
+
+    .theme-transition {
+        transition:
+            background-color 180ms ease,
+            border-color 180ms ease,
+            color 180ms ease,
+            box-shadow 180ms ease,
+            transform 180ms ease;
+    }
+
+    .upload-active {
+        border-color: rgb(34 211 238 / 0.55) !important;
+        box-shadow: var(--shadow-glow);
+        transform: translateY(-1px);
+    }
+
+    .academic-tab,
+    .settings-tab {
+        color: var(--text-soft);
+        white-space: nowrap;
+    }
+
+    .academic-tab:hover,
+    .academic-tab.is-active,
+    .settings-tab:hover,
+    .settings-tab.is-active {
+        background: var(--surface-raised);
+        color: var(--brand);
+        box-shadow: 0 10px 26px rgb(8 15 12 / 0.08);
+    }
+
+    .skeleton {
+        position: relative;
+        overflow: hidden;
+        background: color-mix(in srgb, var(--surface-muted) 78%, transparent);
+    }
+
+    .skeleton::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        transform: translateX(-100%);
+        background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.28), transparent);
+        animation: skeleton-shimmer 1.4s ease-in-out infinite;
+    }
+
+    .siwes-alert-title {
+        color: var(--alert-title) !important;
+    }
+
+    .siwes-alert-body {
+        color: var(--alert-body) !important;
+    }
+
+    .dark .siwes-alert-title {
+        color: var(--alert-dark-title) !important;
+    }
+
+    .dark .siwes-alert-body {
+        color: var(--alert-dark-body) !important;
+    }
+
+    .siwes-hero {
+        border-bottom: 0.38rem solid #005136;
+    }
+
+    .siwes-hero::before {
+        content: '';
+        position: absolute;
+        pointer-events: none;
+    }
+
+    .siwes-hero::before {
+        right: -7rem;
+        bottom: -8rem;
+        width: 44rem;
+        height: 12rem;
+        border-radius: 999px 0 0;
+        background: #005136;
+        transform: rotate(-2deg);
+        z-index: 1;
+    }
+
+    .siwes-hero-watermark {
+        position: absolute;
+        inset: 4rem auto auto 24rem;
+        width: 16rem;
+        height: 15rem;
+        opacity: 0.045;
+        background:
+            linear-gradient(to top, #005136 0 42%, transparent 42%),
+            linear-gradient(72deg, transparent 0 46%, #005136 46% 48%, transparent 48% 100%),
+            linear-gradient(-72deg, transparent 0 46%, #005136 46% 48%, transparent 48% 100%);
+        clip-path: polygon(7% 100%, 16% 58%, 42% 58%, 47% 32%, 54% 58%, 82% 58%, 93% 100%);
+    }
+
+    .siwes-hero-image-shell {
+        position: absolute;
+        inset: -2.75rem -6rem 0.75rem 0;
+        overflow: hidden;
+        border-left: 0.62rem solid #d99b00;
+        border-bottom: 0.52rem solid #d99b00;
+        border-radius: 54% 0 0 56% / 50% 0 0 50%;
+        box-shadow: -18px 28px 60px rgb(8 15 12 / 0.18);
+        z-index: 2;
+    }
+
+    .siwes-hero-image-shell::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, rgb(255 255 255 / 0.18), transparent 32%);
+        pointer-events: none;
+    }
+
+    .siwes-hero-badge {
+        position: absolute;
+        right: 2.5rem;
+        bottom: 0.55rem;
+        z-index: 4;
+        min-width: 18rem;
+        padding: 0.35rem 0.75rem;
+        text-align: center;
+        text-shadow: 0 2px 10px rgb(0 0 0 / 0.28);
+    }
+
+    .notice-card {
+        animation: notice-rise 520ms ease-out both;
+    }
+
+    .notice-board-grid .notice-card:nth-child(2) {
+        animation-delay: 80ms;
+    }
+
+    .notice-board-grid .notice-card:nth-child(3) {
+        animation-delay: 160ms;
+    }
+
+    [data-reveal] {
+        opacity: 0;
+        transform: translateY(18px);
+        transition:
+            opacity 640ms ease,
+            transform 640ms ease,
+            filter 640ms ease;
+        transition-delay: var(--reveal-delay, 0ms);
+        filter: blur(8px);
+        will-change: opacity, transform, filter;
+    }
+
+    [data-reveal='fade-down'] {
+        transform: translateY(-14px);
+    }
+
+    [data-reveal='scale'] {
+        transform: translateY(14px) scale(0.985);
+    }
+
+    [data-reveal].is-visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes page-enter {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes particle-drift {
+    from {
+        transform: translate3d(0, 0, 0);
+    }
+
+    to {
+        transform: translate3d(-72px, 48px, 0);
+    }
+}
+
+@keyframes skeleton-shimmer {
+    to {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes notice-rise {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 1ms !important;
+    }
+
+    [data-reveal] {
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+    }
+}
+
+@media (max-width: 1023px) {
+    .siwes-hero::before,
+    .siwes-hero-watermark {
+        display: none;
+    }
+
+    .siwes-hero-image-shell {
+        position: relative;
+        inset: auto;
+        height: min(22rem, 64vw);
+        border: 0.45rem solid #d99b00;
+        border-radius: 1rem;
+    }
+
+    .siwes-hero-badge {
+        position: absolute;
+        right: 1rem;
+        bottom: -1.65rem;
+        min-width: auto;
+        max-width: none;
+        padding: 0.25rem 0.5rem;
+        text-align: right;
+        text-shadow: none;
+    }
+
+    .siwes-hero-badge span {
+        color: #005136;
+    }
+}
