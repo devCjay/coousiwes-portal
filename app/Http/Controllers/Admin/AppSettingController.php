@@ -10,8 +10,10 @@ use App\Support\AjaxResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\View\View;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class AppSettingController extends Controller
 {
@@ -113,6 +115,40 @@ class AppSettingController extends Controller
         fclose($connection);
 
         return AjaxResponse::success($request, "SMTP connection to {$host}:{$port} succeeded.");
+    }
+
+    public function clearCache(Request $request): JsonResponse|RedirectResponse
+    {
+        abort_unless($request->user()?->can('settings.update'), 403);
+
+        $commands = ['optimize:clear'];
+
+        if (array_key_exists('permission:cache-reset', Artisan::all())) {
+            $commands[] = 'permission:cache-reset';
+        }
+
+        $results = [];
+
+        try {
+            foreach ($commands as $command) {
+                Artisan::call($command);
+                $results[$command] = trim(Artisan::output());
+            }
+        } catch (Throwable $exception) {
+            $this->auditLogger->record('settings.cache_clear_failed', $request->user(), $request, metadata: [
+                'commands' => $commands,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return AjaxResponse::error($request, 'Cache clear failed: '.$exception->getMessage(), 500, 'cache');
+        }
+
+        $this->auditLogger->record('settings.cache_cleared', $request->user(), $request, metadata: [
+            'commands' => $commands,
+            'results' => $results,
+        ]);
+
+        return AjaxResponse::success($request, 'System cache cleared successfully.', reload: true);
     }
 
     /**

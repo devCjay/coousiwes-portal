@@ -369,6 +369,20 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonPath('message', 'SMTP host and port are required before testing email connection.');
     }
+
+    public function test_permitted_admin_can_clear_system_cache_from_settings(): void
+    {
+        $superAdmin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+
+        $this->actingAs($superAdmin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.settings.cache.clear'))
+            ->assertOk()
+            ->assertJsonPath('message', 'System cache cleared successfully.')
+            ->assertJsonPath('reload', true);
+
+        $this->assertTrue(AuditLog::where('event', 'settings.cache_cleared')->exists());
+    }
 }
 
 

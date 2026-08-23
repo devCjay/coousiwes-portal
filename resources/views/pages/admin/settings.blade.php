@@ -54,6 +54,7 @@
                 <button type="button" class="settings-tab is-active rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#welcome-settings-panel" aria-selected="true">Welcome Message</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#payment-settings-panel" aria-selected="false">Payment Settings</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#email-settings-panel" aria-selected="false">Email Settings</button>
+                <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#system-settings-panel" aria-selected="false">System Settings</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#create-settings-panel" aria-selected="false">Create Setting</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#settings-records-panel" aria-selected="false">Settings Records</button>
             </div>
@@ -142,6 +143,38 @@
                     <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">From</p>
                     <p class="mt-2 truncate text-sm font-semibold text-[var(--text-strong)]">{{ $settingValue('mail.from_address', config('mail.from.address')) }}</p>
                 </div>
+            </div>
+        </section>
+
+        <section id="system-settings-panel" class="settings-panel mt-5 hidden" data-settings-panel>
+            <div class="grid gap-4 lg:grid-cols-[1fr_22rem]">
+                <div class="rounded-xl border border-[var(--line)] bg-[var(--surface-raised)] p-5 shadow-[0_18px_44px_rgb(8_15_12_/_0.06)]">
+                    <div class="flex items-start gap-3">
+                        <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-[0_12px_28px_rgb(0_81_54_/_0.2)]">
+                            <x-ui.icon name="refresh-cw" class="size-5" />
+                        </span>
+                        <div>
+                            <h2 class="text-base font-semibold text-[var(--text-strong)]">System Cache</h2>
+                            <p class="mt-1 text-sm leading-6 text-[var(--text-soft)]">Clear Laravel cache directly from the admin panel when cPanel terminal access is unavailable.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 grid gap-3 sm:grid-cols-2">
+                        @foreach (['Application cache', 'Configuration cache', 'Route cache', 'Compiled views', 'Permission cache'] as $cacheItem)
+                            <div class="flex items-center gap-2 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] px-3 py-2 text-sm font-semibold text-[var(--text-strong)]">
+                                <x-ui.icon name="check" class="size-4 shrink-0 text-brand-600" />
+                                {{ $cacheItem }}
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ route('admin.settings.cache.clear') }}" class="rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-5">
+                    @csrf
+                    <p class="text-sm font-semibold text-[var(--text-strong)]">Clear cached files</p>
+                    <p class="mt-2 text-sm leading-6 text-[var(--text-soft)]">Use after deployment, environment changes, route updates, permission fixes, or Blade/Vite view changes.</p>
+                    <x-ui.button type="submit" class="mt-5 w-full" icon="refresh-cw">Clear System Cache</x-ui.button>
+                </form>
             </div>
         </section>
 
