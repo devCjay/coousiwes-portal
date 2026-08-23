@@ -24,9 +24,9 @@ class UpdateAdminUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'current_password' => ['required', 'current_password:web'],
+            'current_password' => ['required', 'current_password:admin'],
             'name' => ['required', 'string', 'max:160'],
-            'email' => ['required', 'email', 'max:190', Rule::unique('users', 'email')->ignore($this->route('user'))],
+            'email' => ['required', 'email', 'max:190', Rule::unique('admins', 'email')->ignore($this->route('admin'))],
             'phone' => ['nullable', 'string', 'max:40'],
             'status' => ['required', 'string', Rule::in(['active', 'inactive', 'suspended'])],
             'otp_enabled' => ['sometimes', 'boolean'],

@@ -39,7 +39,7 @@ Route::get('/', HomeController::class)->name('home');
 
 Route::post('/webhooks/korapay', KorapayWebhookController::class)->middleware('throttle:webhooks')->name('webhooks.korapay');
 
-Route::middleware('guest')->group(function () {
+Route::middleware('guest:web,admin')->group(function () {
     Route::redirect('/login', '/login/student')->name('login');
     Route::get('/login/admin', [AuthenticatedSessionController::class, 'create'])
         ->defaults('role', 'admin')
@@ -57,7 +57,7 @@ Route::middleware('guest')->group(function () {
         ->name('login.store');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware('auth:web,admin')->group(function () {
     Route::get('/otp/verify', [OtpChallengeController::class, 'show'])
         ->middleware('otp.unverified')
         ->name('otp.show');
@@ -185,7 +185,7 @@ Route::middleware('auth')->group(function () {
             Route::post('/admins', [AdminUserController::class, 'store'])
                 ->middleware('permission:admins.manage')
                 ->name('admins.store');
-            Route::put('/admins/{user}', [AdminUserController::class, 'update'])
+            Route::put('/admins/{admin}', [AdminUserController::class, 'update'])
                 ->middleware('permission:admins.manage')
                 ->name('admins.update');
             Route::post('/roles', [RoleManagementController::class, 'store'])

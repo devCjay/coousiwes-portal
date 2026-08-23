@@ -7,6 +7,7 @@ use App\Models\AcademicSession;
 use App\Models\Assessment;
 use App\Models\AssessmentRubricItem;
 use App\Models\AuditLog;
+use App\Models\Admin;
 use App\Models\Course;
 use App\Models\Department;
 use App\Models\Faculty;
@@ -39,7 +40,7 @@ class PhaseNineAssessmentReportingTest extends TestCase
     {
         $admin = $this->superAdmin();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.assessments.rubric.store'), [
                 'name' => 'Industry Innovation',
@@ -126,14 +127,14 @@ class PhaseNineAssessmentReportingTest extends TestCase
         $student = $this->student('report-feedback@example.test', '2026/ASM/005');
         $this->createAssessment($supervisor, $student, 'Reportable feedback sample.');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.reports.index'))
             ->assertOk()
             ->assertSee('Reports')
             ->assertSee('Reportable feedback sample.', false);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.reports.export'))
             ->assertOk()
@@ -170,14 +171,14 @@ class PhaseNineAssessmentReportingTest extends TestCase
         return $assessment;
     }
 
-    private function admin(): User
+    private function admin(): Admin
     {
-        return User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        return Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
     }
 
-    private function superAdmin(): User
+    private function superAdmin(): Admin
     {
-        return User::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        return Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
     }
 
     private function supervisor(string $staffNo): Supervisor
@@ -226,3 +227,5 @@ class PhaseNineAssessmentReportingTest extends TestCase
         return $student;
     }
 }
+
+

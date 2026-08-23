@@ -7,6 +7,7 @@ use App\Models\StudentPlacement;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\Admin;
 use Tests\TestCase;
 
 class AdminDashboardTest extends TestCase
@@ -22,9 +23,9 @@ class AdminDashboardTest extends TestCase
 
     public function test_admin_dashboard_uses_database_synced_student_totals(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.dashboard'))
             ->assertOk()
@@ -34,7 +35,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_admin_dashboard_quick_reports_use_placement_records(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $student = Student::query()->firstOrFail();
 
         $student->placement()->create([
@@ -45,7 +46,7 @@ class AdminDashboardTest extends TestCase
             'company_name' => 'Future Works Ltd',
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.dashboard'))
             ->assertOk()
@@ -55,3 +56,5 @@ class AdminDashboardTest extends TestCase
             ->assertSee('Placement forms submitted');
     }
 }
+
+

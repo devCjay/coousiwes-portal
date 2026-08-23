@@ -2,11 +2,11 @@
 
 namespace App\Support;
 
-use App\Models\User;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 class RoleRedirector
 {
-    public static function dashboardFor(User $user): string
+    public static function dashboardFor(Authenticatable $user): string
     {
         return match (true) {
             $user->hasAnyRole(['super-admin', 'admin']) => route('admin.dashboard', absolute: false),
@@ -15,7 +15,7 @@ class RoleRedirector
         };
     }
 
-    public static function roleSlugFor(User $user): string
+    public static function roleSlugFor(Authenticatable $user): string
     {
         return match (true) {
             $user->hasAnyRole(['super-admin', 'admin']) => 'admin',

@@ -24,9 +24,9 @@ class StoreAdminUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'current_password' => ['required', 'current_password:web'],
+            'current_password' => ['required', 'current_password:admin'],
             'name' => ['required', 'string', 'max:160'],
-            'email' => ['required', 'email', 'max:190', Rule::unique('users', 'email')],
+            'email' => ['required', 'email', 'max:190', Rule::unique('admins', 'email')],
             'phone' => ['nullable', 'string', 'max:40'],
             'password' => ['required', 'string', 'min:8', 'max:120'],
             'status' => ['required', 'string', Rule::in(['active', 'inactive', 'suspended'])],

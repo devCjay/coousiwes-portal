@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('student_imports', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('uploaded_by')->constrained('users')->restrictOnDelete();
+            $table->foreignId('uploaded_by')->nullable()->constrained('users')->nullOnDelete();
             $table->string('original_filename');
             $table->string('stored_path')->nullable();
             $table->string('status', 30)->default('previewed');

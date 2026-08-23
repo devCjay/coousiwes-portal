@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PreviewStudentImportRequest;
 use App\Jobs\ProcessStudentImportJob;
 use App\Models\StudentImport;
+use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\StudentImportService;
 use App\Support\AjaxResponse;
@@ -23,7 +24,7 @@ class StudentImportController extends Controller
     public function preview(PreviewStudentImportRequest $request): JsonResponse
     {
         $file = $request->file('students_file');
-        $import = $this->studentImportService->createImport($file, (int) $request->user()->id);
+        $import = $this->studentImportService->createImport($file, $request->user() instanceof User ? (int) $request->user()->id : null);
 
         $this->auditLogger->record('students.import_previewed', $request->user(), $request, $import, [
             'filename' => $import->original_filename,
@@ -44,7 +45,7 @@ class StudentImportController extends Controller
     public function store(PreviewStudentImportRequest $request): JsonResponse|RedirectResponse
     {
         $file = $request->file('students_file');
-        $import = $this->studentImportService->createImport($file, (int) $request->user()->id);
+        $import = $this->studentImportService->createImport($file, $request->user() instanceof User ? (int) $request->user()->id : null);
 
         $this->auditLogger->record('students.import_previewed', $request->user(), $request, $import, [
             'filename' => $import->original_filename,

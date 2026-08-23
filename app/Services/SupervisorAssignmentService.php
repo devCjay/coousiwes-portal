@@ -7,11 +7,12 @@ use App\Models\Supervisor;
 use App\Models\SupervisorStudentAssignment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\DB;
 
 class SupervisorAssignmentService
 {
-    public function assign(Supervisor $supervisor, Student $student, ?User $assignedBy = null): SupervisorStudentAssignment
+    public function assign(Supervisor $supervisor, Student $student, ?Authenticatable $assignedBy = null): SupervisorStudentAssignment
     {
         return DB::transaction(function () use ($supervisor, $student, $assignedBy): SupervisorStudentAssignment {
             if ($supervisor->status !== Supervisor::STATUS_ACTIVE) {
@@ -25,16 +26,16 @@ class SupervisorAssignmentService
             return SupervisorStudentAssignment::query()->create([
                 'supervisor_id' => $supervisor->id,
                 'student_id' => $student->id,
-                'assigned_by' => $assignedBy?->id,
+                'assigned_by' => $assignedBy instanceof User ? $assignedBy->id : null,
                 'assigned_at' => now(),
             ]);
         });
     }
 
-    public function revoke(SupervisorStudentAssignment $assignment, ?User $revokedBy = null, ?string $reason = null): SupervisorStudentAssignment
+    public function revoke(SupervisorStudentAssignment $assignment, ?Authenticatable $revokedBy = null, ?string $reason = null): SupervisorStudentAssignment
     {
         $assignment->update([
-            'revoked_by' => $revokedBy?->id,
+            'revoked_by' => $revokedBy instanceof User ? $revokedBy->id : null,
             'revoked_at' => now(),
             'revocation_reason' => $reason,
         ]);
@@ -46,7 +47,7 @@ class SupervisorAssignmentService
      * @param  array<string, mixed>  $filters
      * @return array{assigned: int, skipped: int}
      */
-    public function bulkAssign(Supervisor $supervisor, array $filters, ?User $assignedBy = null): array
+    public function bulkAssign(Supervisor $supervisor, array $filters, ?Authenticatable $assignedBy = null): array
     {
         $assigned = 0;
         $skipped = 0;

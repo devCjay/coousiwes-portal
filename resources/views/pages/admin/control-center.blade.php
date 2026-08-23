@@ -76,6 +76,7 @@
                             <div class="min-w-0">
                                 <p class="font-semibold text-[var(--text-strong)]">{{ $admin->name }}</p>
                                 <p class="mt-1 break-all text-xs text-[var(--text-soft)]">{{ $admin->email }}</p>
+                                <p class="mt-1 text-[11px] font-semibold uppercase text-[var(--text-soft)]">{{ $admin->admin_code }}</p>
                             </div>
                             <div class="min-w-0">
                                 <p class="mb-1 text-xs font-semibold uppercase text-[var(--text-soft)] lg:hidden">Roles</p>

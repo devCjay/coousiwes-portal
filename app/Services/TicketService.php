@@ -5,15 +5,16 @@ namespace App\Services;
 use App\Models\Student;
 use App\Models\Ticket;
 use App\Models\User;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class TicketService
 {
-    public function generate(?User $generatedBy = null): Ticket
+    public function generate(?Authenticatable $generatedBy = null): Ticket
     {
         return Ticket::query()->create([
-            'generated_by' => $generatedBy?->id,
+            'generated_by' => $generatedBy instanceof User ? $generatedBy->id : null,
             'serial_number' => $this->serialNumber(),
             'pin' => $pin = $this->pin(),
             'code_hash' => Hash::make($pin),
@@ -24,7 +25,7 @@ class TicketService
         ]);
     }
 
-    public function generateFor(Student $student, ?User $generatedBy = null): Ticket
+    public function generateFor(Student $student, ?Authenticatable $generatedBy = null): Ticket
     {
         return DB::transaction(function () use ($student, $generatedBy): Ticket {
             $student->tickets()
@@ -33,7 +34,7 @@ class TicketService
                 ->update(['status' => Ticket::STATUS_UNUSED]);
 
             $ticket = new Ticket([
-                'generated_by' => $generatedBy?->id,
+                'generated_by' => $generatedBy instanceof User ? $generatedBy->id : null,
                 'serial_number' => $this->serialNumber(),
                 'pin' => $pin = $this->pin(),
                 'code_hash' => Hash::make($pin),
@@ -74,7 +75,7 @@ class TicketService
         });
     }
 
-    public function generateMany(int $quantity, ?User $generatedBy = null): int
+    public function generateMany(int $quantity, ?Authenticatable $generatedBy = null): int
     {
         for ($count = 0; $count < $quantity; $count++) {
             $this->generate($generatedBy);

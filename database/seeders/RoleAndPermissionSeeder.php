@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\AcademicLevel;
 use App\Models\AcademicSession;
+use App\Models\Admin;
 use App\Models\Course;
 use App\Models\Department;
 use App\Models\Faculty;
@@ -121,6 +122,24 @@ class RoleAndPermissionSeeder extends Seeder
         ];
 
         foreach ($users as $userData) {
+            if (in_array($userData['role'], ['super-admin', 'admin'], true)) {
+                $admin = Admin::updateOrCreate(
+                    ['email' => $userData['email']],
+                    [
+                        'admin_code' => $userData['role'] === 'super-admin' ? 'ADM-00001' : 'ADM-00002',
+                        'name' => $userData['name'],
+                        'password' => Hash::make($userData['password'] ?? 'password'),
+                        'status' => 'active',
+                        'otp_enabled' => false,
+                        'email_verified_at' => now(),
+                    ],
+                );
+
+                $admin->assignRole($userData['role']);
+
+                continue;
+            }
+
             $user = User::updateOrCreate(
                 ['email' => $userData['email']],
                 [

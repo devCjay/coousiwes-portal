@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAdminUserRequest;
 use App\Http\Requests\Admin\UpdateAdminUserRequest;
-use App\Models\User;
+use App\Models\Admin;
 use App\Services\AuditLogger;
 use App\Support\AjaxResponse;
 use Illuminate\Http\JsonResponse;
@@ -20,7 +20,8 @@ class AdminUserController extends Controller
     public function store(StoreAdminUserRequest $request): JsonResponse|RedirectResponse
     {
         $validated = $request->validated();
-        $admin = User::query()->create([
+        $admin = Admin::query()->create([
+            'admin_code' => $this->nextAdminCode(),
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
@@ -42,41 +43,48 @@ class AdminUserController extends Controller
         return AjaxResponse::success($request, 'Admin created.', reload: true);
     }
 
-    public function update(UpdateAdminUserRequest $request, User $user): JsonResponse|RedirectResponse
+    public function update(UpdateAdminUserRequest $request, Admin $admin): JsonResponse|RedirectResponse
     {
-        abort_if($user->hasRole('super-admin'), 422, 'Super admin accounts cannot be edited here.');
+        abort_if($admin->hasRole('super-admin'), 422, 'Super admin accounts cannot be edited here.');
 
         $validated = $request->validated();
         $before = [
-            'name' => $user->name,
-            'email' => $user->email,
-            'status' => $user->status,
-            'roles' => $user->roles->pluck('name')->all(),
-            'permissions' => $user->permissions->pluck('name')->all(),
+            'name' => $admin->name,
+            'email' => $admin->email,
+            'status' => $admin->status,
+            'roles' => $admin->roles->pluck('name')->all(),
+            'permissions' => $admin->permissions->pluck('name')->all(),
         ];
 
-        $user->update([
+        $admin->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
             'status' => $validated['status'],
             'otp_enabled' => false,
         ]);
-        $user->syncRoles($validated['roles']);
-        $user->syncPermissions($validated['permissions'] ?? []);
+        $admin->syncRoles($validated['roles']);
+        $admin->syncPermissions($validated['permissions'] ?? []);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $this->auditLogger->record('admins.updated', $request->user(), $request, $user, [
+        $this->auditLogger->record('admins.updated', $request->user(), $request, $admin, [
             'before' => $before,
             'after' => [
-                'name' => $user->name,
-                'email' => $user->email,
-                'status' => $user->status,
+                'name' => $admin->name,
+                'email' => $admin->email,
+                'status' => $admin->status,
                 'roles' => $validated['roles'],
                 'permissions' => $validated['permissions'] ?? [],
             ],
         ]);
 
         return AjaxResponse::success($request, 'Admin updated.', reload: true);
+    }
+
+    private function nextAdminCode(): string
+    {
+        $nextId = (int) (Admin::query()->max('id') ?? 0) + 1;
+
+        return 'ADM-'.str_pad((string) $nextId, 5, '0', STR_PAD_LEFT);
     }
 }

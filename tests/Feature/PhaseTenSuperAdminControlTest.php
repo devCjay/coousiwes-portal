@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AuditLog;
-use App\Models\User;
+use App\Models\Admin;
 use Database\Seeders\AcademicStructureSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,7 +24,7 @@ class PhaseTenSuperAdminControlTest extends TestCase
 
     public function test_super_admin_can_open_control_center(): void
     {
-        $this->actingAs($this->superAdmin())
+        $this->actingAs($this->superAdmin(), 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.control.index'))
             ->assertOk()
@@ -35,7 +35,7 @@ class PhaseTenSuperAdminControlTest extends TestCase
 
     public function test_regular_admin_cannot_open_control_center(): void
     {
-        $this->actingAs($this->admin())
+        $this->actingAs($this->admin(), 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.control.index'))
             ->assertForbidden();
@@ -45,7 +45,7 @@ class PhaseTenSuperAdminControlTest extends TestCase
     {
         $superAdmin = $this->superAdmin();
 
-        $this->actingAs($superAdmin)
+        $this->actingAs($superAdmin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.control.admins.store'), [
                 'current_password' => 'password',
@@ -61,10 +61,14 @@ class PhaseTenSuperAdminControlTest extends TestCase
             ->assertOk()
             ->assertJsonPath('message', 'Admin created.');
 
-        $admin = User::where('email', 'finance.admin@example.test')->firstOrFail();
+        $admin = Admin::where('email', 'finance.admin@example.test')->firstOrFail();
 
         $this->assertTrue($admin->hasRole('admin'));
         $this->assertTrue($admin->hasPermissionTo('payments.export'));
+        $this->assertDatabaseHas('admins', [
+            'email' => 'finance.admin@example.test',
+            'status' => 'active',
+        ]);
         $this->assertTrue(AuditLog::where('event', 'admins.created')->where('auditable_id', $admin->id)->exists());
     }
 
@@ -73,7 +77,7 @@ class PhaseTenSuperAdminControlTest extends TestCase
         $superAdmin = $this->superAdmin();
         $admin = $this->admin();
 
-        $this->actingAs($superAdmin)
+        $this->actingAs($superAdmin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.control.roles.store'), [
                 'current_password' => 'password',
@@ -85,7 +89,7 @@ class PhaseTenSuperAdminControlTest extends TestCase
 
         $this->assertTrue(Role::where('name', 'ticket-auditor')->firstOrFail()->hasPermissionTo('audit.view'));
 
-        $this->actingAs($superAdmin)
+        $this->actingAs($superAdmin, 'admin')
             ->withSession(['otp.verified' => true])
             ->putJson(route('admin.control.admins.update', $admin), [
                 'current_password' => 'password',
@@ -102,6 +106,7 @@ class PhaseTenSuperAdminControlTest extends TestCase
 
         $this->assertTrue($admin->fresh()->hasRole('ticket-auditor'));
         $this->assertTrue($admin->fresh()->hasPermissionTo('audit.view'));
+        $this->assertSame('active', $admin->fresh()->status);
     }
 
     public function test_admin_status_changes_immediately_block_login(): void
@@ -109,7 +114,7 @@ class PhaseTenSuperAdminControlTest extends TestCase
         $superAdmin = $this->superAdmin();
         $admin = $this->admin();
 
-        $this->actingAs($superAdmin)
+        $this->actingAs($superAdmin, 'admin')
             ->withSession(['otp.verified' => true])
             ->putJson(route('admin.control.admins.update', $admin), [
                 'current_password' => 'password',
@@ -123,6 +128,8 @@ class PhaseTenSuperAdminControlTest extends TestCase
             ])
             ->assertOk();
 
+        $this->assertSame('suspended', $admin->fresh()->status);
+
         auth()->logout();
         $this->flushSession();
 
@@ -135,9 +142,9 @@ class PhaseTenSuperAdminControlTest extends TestCase
 
     public function test_audit_export_is_available_to_super_admin(): void
     {
-        AuditLog::query()->create(['user_id' => $this->superAdmin()->id, 'event' => 'phase.ten.test']);
+        AuditLog::query()->create(['event' => 'phase.ten.test']);
 
-        $this->actingAs($this->superAdmin())
+        $this->actingAs($this->superAdmin(), 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.control.audit.export'))
             ->assertOk()
@@ -145,13 +152,13 @@ class PhaseTenSuperAdminControlTest extends TestCase
             ->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
     }
 
-    private function superAdmin(): User
+    private function superAdmin(): Admin
     {
-        return User::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        return Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
     }
 
-    private function admin(): User
+    private function admin(): Admin
     {
-        return User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        return Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
     }
 }

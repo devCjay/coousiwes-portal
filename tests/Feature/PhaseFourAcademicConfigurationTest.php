@@ -12,6 +12,7 @@ use App\Models\Student;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\Admin;
 use Tests\TestCase;
 
 class PhaseFourAcademicConfigurationTest extends TestCase
@@ -27,9 +28,9 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
     public function test_permitted_admins_can_open_academic_and_settings_configuration_pages(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.generate-list.index'))
             ->assertOk()
@@ -41,12 +42,12 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             ->assertSee('Level')
             ->assertSee('All');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.academics.index'))
             ->assertOk();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.settings.index'))
             ->assertOk();
@@ -64,9 +65,9 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
     public function test_it_creates_faculties_and_audits_the_change(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->from(route('admin.academics.index'))
             ->post(route('admin.academics.faculties.store'), [
@@ -84,9 +85,9 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
     public function test_ajax_academic_forms_return_json_without_redirecting_the_page(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.academics.faculties.store'), [
                 'name' => 'Faculty of Education',
@@ -103,11 +104,11 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
     public function test_it_blocks_duplicate_department_codes_inside_the_same_faculty(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $faculty = Faculty::query()->create(['name' => 'Faculty of Environmental Sciences', 'code' => 'FES']);
         Department::query()->create(['faculty_id' => $faculty->id, 'name' => 'Architecture', 'code' => 'ARC']);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->from(route('admin.academics.index'))
             ->post(route('admin.academics.departments.store'), [
@@ -122,11 +123,11 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
     public function test_it_blocks_deleting_referenced_faculties(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $faculty = Faculty::query()->create(['name' => 'Faculty of Social Sciences', 'code' => 'FSS']);
         Department::query()->create(['faculty_id' => $faculty->id, 'name' => 'Economics', 'code' => 'ECO']);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->from(route('admin.academics.index'))
             ->delete(route('admin.academics.faculties.destroy', $faculty))
@@ -138,11 +139,11 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
     public function test_ajax_guarded_delete_returns_validation_json(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $faculty = Faculty::query()->create(['name' => 'Faculty of Law', 'code' => 'LAW']);
         Department::query()->create(['faculty_id' => $faculty->id, 'name' => 'Private Law', 'code' => 'PLW']);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->deleteJson(route('admin.academics.faculties.destroy', $faculty))
             ->assertUnprocessable()
@@ -151,7 +152,7 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
     public function test_active_session_switches_off_previous_sessions(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $current = AcademicSession::query()->create([
             'name' => '2025/2026',
             'starts_on' => '2025-09-01',
@@ -164,7 +165,7 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             'ends_on' => '2028-08-31',
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->from(route('admin.academics.index'))
             ->post(route('admin.academics.sessions.activate', $next))
@@ -177,9 +178,9 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
     public function test_super_admin_can_create_typed_settings_and_changes_are_audited(): void
     {
-        $superAdmin = User::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        $superAdmin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
 
-        $this->actingAs($superAdmin)
+        $this->actingAs($superAdmin, 'admin')
             ->withSession(['otp.verified' => true])
             ->from(route('admin.settings.index'))
             ->post(route('admin.settings.store'), [
@@ -199,9 +200,9 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
     public function test_ajax_settings_forms_return_toast_ready_json(): void
     {
-        $superAdmin = User::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        $superAdmin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
 
-        $this->actingAs($superAdmin)
+        $this->actingAs($superAdmin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.settings.store'), [
                 'group' => 'otp',
@@ -219,7 +220,7 @@ class PhaseFourAcademicConfigurationTest extends TestCase
     {
         $this->seed(\Database\Seeders\AcademicStructureSeeder::class);
 
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $faculty = Faculty::where('code', 'AGRIC')->firstOrFail();
         $department = Department::where('code', 'AGE')->firstOrFail();
         $level = AcademicLevel::where('level', 400)->firstOrFail();
@@ -293,7 +294,7 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             'company_supervisor_phone' => '08039990001',
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.generate-list.master', [
                 'faculty_id' => $faculty->id,
@@ -310,7 +311,7 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             ->assertSee('APRIL - OCTOBER 2026', false)
             ->assertDontSee('Filtered Out Student', false);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.generate-list.placement', [
                 'faculty_id' => $faculty->id,
@@ -330,9 +331,9 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
     public function test_bulk_settings_update_saves_grouped_payment_configuration(): void
     {
-        $superAdmin = User::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        $superAdmin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
 
-        $this->actingAs($superAdmin)
+        $this->actingAs($superAdmin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.settings.bulk'), [
                 'settings' => [
@@ -359,13 +360,15 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
     public function test_email_connection_test_requires_smtp_host_and_port(): void
     {
-        $superAdmin = User::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        $superAdmin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
         config(['mail.mailers.smtp.host' => '', 'mail.mailers.smtp.port' => null]);
 
-        $this->actingAs($superAdmin)
+        $this->actingAs($superAdmin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.settings.email.test'))
             ->assertUnprocessable()
             ->assertJsonPath('message', 'SMTP host and port are required before testing email connection.');
     }
 }
+
+

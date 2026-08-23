@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
 use App\Models\AppSetting;
 use App\Models\AuditLog;
 use App\Models\Payment;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -20,9 +20,9 @@ class ControlCenterController extends Controller
         abort_unless($request->user()?->hasRole('super-admin'), 403);
 
         return view('pages.admin.control-center', [
-            'admins' => User::query()
+            'admins' => Admin::query()
                 ->role(['super-admin', 'admin'])
-                ->with('roles', 'permissions')
+                ->with(['roles', 'permissions'])
                 ->orderBy('name')
                 ->get(),
             'roles' => Role::query()->with('permissions')->where('guard_name', 'web')->orderBy('name')->get(),

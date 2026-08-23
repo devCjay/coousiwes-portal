@@ -6,6 +6,7 @@ use App\Jobs\ProcessStudentImportJob;
 use App\Models\AcademicLevel;
 use App\Models\AcademicSession;
 use App\Models\AuditLog;
+use App\Models\Admin;
 use App\Models\Department;
 use App\Models\Faculty;
 use App\Models\Student;
@@ -34,9 +35,9 @@ class PhaseFiveStudentManagementTest extends TestCase
 
     public function test_admin_can_open_student_management_page(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.students.index'))
             ->assertOk()
@@ -54,7 +55,7 @@ class PhaseFiveStudentManagementTest extends TestCase
 
     public function test_student_list_uses_requested_columns_and_placement_based_status(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $inactive = $this->createStudent('inactive-list@example.test', '2026/CSC/020');
         $active = $this->createStudent('active-list@example.test', '2026/CSC/021');
 
@@ -70,7 +71,7 @@ class PhaseFiveStudentManagementTest extends TestCase
             'company_supervisor_phone' => '08039990000',
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.students.index', ['search' => '2026/CSC/02']))
             ->assertOk()
@@ -86,9 +87,9 @@ class PhaseFiveStudentManagementTest extends TestCase
 
     public function test_ajax_manual_student_creation_creates_user_profile_and_audit_log(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.students.store'), $this->studentPayload([
                 'name' => 'Ada Okoye',
@@ -107,9 +108,9 @@ class PhaseFiveStudentManagementTest extends TestCase
 
     public function test_admin_can_create_active_student_from_minimal_name_and_matric_fields(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.students.store'), [
                 'first_name' => 'Ada',
@@ -133,9 +134,9 @@ class PhaseFiveStudentManagementTest extends TestCase
 
     public function test_duplicate_matric_numbers_are_rejected(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.students.store'), $this->studentPayload([
                 'email' => 'first@example.test',
@@ -143,7 +144,7 @@ class PhaseFiveStudentManagementTest extends TestCase
             ]))
             ->assertOk();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->withHeaders(['Accept' => 'application/json', 'X-Requested-With' => 'XMLHttpRequest'])
             ->post(route('admin.students.store'), $this->studentPayload([
@@ -156,10 +157,10 @@ class PhaseFiveStudentManagementTest extends TestCase
 
     public function test_students_can_be_suspended_and_reactivated(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $student = $this->createStudent('status@example.test', '2026/CSC/003');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.students.suspend', $student))
             ->assertOk()
@@ -167,7 +168,7 @@ class PhaseFiveStudentManagementTest extends TestCase
 
         $this->assertSame(Student::STATUS_SUSPENDED, $student->fresh()->activation_status);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.students.reactivate', $student))
             ->assertOk()
@@ -178,7 +179,7 @@ class PhaseFiveStudentManagementTest extends TestCase
 
     public function test_admin_student_profile_has_tabs_actions_reset_password_and_delete(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $student = $this->createStudent('profile-actions@example.test', '2026/CSC/030');
         $student->user->forceFill(['password' => Hash::make('old-password')])->save();
 
@@ -194,7 +195,7 @@ class PhaseFiveStudentManagementTest extends TestCase
             'company_supervisor_phone' => '08030000008',
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.students.show', $student))
             ->assertOk()
@@ -205,7 +206,7 @@ class PhaseFiveStudentManagementTest extends TestCase
             ->assertSee('Activate')
             ->assertSee('Delete');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.students.reset-password', $student))
             ->assertOk()
@@ -213,7 +214,7 @@ class PhaseFiveStudentManagementTest extends TestCase
 
         $this->assertTrue(Hash::check('2026/CSC/030', $student->user->fresh()->password));
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->deleteJson(route('admin.students.destroy', $student))
             ->assertOk()
@@ -225,17 +226,17 @@ class PhaseFiveStudentManagementTest extends TestCase
 
     public function test_export_and_templates_are_available_to_permitted_admins(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $this->createStudent('export@example.test', '2026/CSC/004');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.students.export'))
             ->assertOk()
             ->assertHeader('Content-Type', 'text/csv; charset=UTF-8')
             ->assertSee('2026/CSC/004');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.students.template', 'xlsx'))
             ->assertOk()
@@ -244,7 +245,7 @@ class PhaseFiveStudentManagementTest extends TestCase
 
     public function test_student_posting_list_download_matches_reference_xls_structure_and_filters(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $included = $this->createStudent('posting@example.test', '2026/CSC/011');
         $excluded = $this->createStudent('posting-other@example.test', '2026/CSC/012');
         $includedLevel = AcademicLevel::where('level', 300)->firstOrFail();
@@ -273,7 +274,7 @@ class PhaseFiveStudentManagementTest extends TestCase
             'company_supervisor_phone' => '08030000001',
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.students.posting-list', ['academic_level_id' => $includedLevel->id, 'state' => 'Anambra']))
             ->assertOk()
@@ -290,13 +291,13 @@ class PhaseFiveStudentManagementTest extends TestCase
 
     public function test_import_preview_detects_duplicate_rows_and_persists_history(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
             ['Ada Okoye', 'dup@example.test', '08030000000', '2026/CSC/005', 'AGRIC', 'AGE', '300', '2026/2027', 'inactive'],
             ['Ada Duplicate', 'dup@example.test', '08030000001', '2026/CSC/005', 'AGRIC', 'AGE', '300', '2026/2027', 'inactive'],
         ]));
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.students.imports.preview'), ['students_file' => $file])
             ->assertOk()
@@ -311,14 +312,14 @@ class PhaseFiveStudentManagementTest extends TestCase
     {
         Queue::fake();
 
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $import = StudentImport::query()->create([
             'uploaded_by' => $admin->id,
             'original_filename' => 'students.csv',
             'status' => StudentImport::STATUS_PREVIEWED,
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.students.imports.process', $import))
             ->assertOk()
@@ -330,7 +331,7 @@ class PhaseFiveStudentManagementTest extends TestCase
 
     public function test_valid_import_rows_are_processed_into_students(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
             ['Ngozi Eze', 'ngozi@example.test', '08030000002', '2026/CSC/006', 'AGRIC', 'AGE', '300', '2026/2027', 'active'],
         ]));
@@ -365,7 +366,7 @@ class PhaseFiveStudentManagementTest extends TestCase
 
     private function createStudent(string $email, string $matricNo): Student
     {
-        $this->actingAs(User::where('email', 'admin@coousiwes.test')->firstOrFail())
+        $this->actingAs(Admin::where('email', 'admin@coousiwes.test')->firstOrFail(), 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.students.store'), $this->studentPayload([
                 'email' => $email,
@@ -394,3 +395,5 @@ class PhaseFiveStudentManagementTest extends TestCase
         return (string) stream_get_contents($handle);
     }
 }
+
+

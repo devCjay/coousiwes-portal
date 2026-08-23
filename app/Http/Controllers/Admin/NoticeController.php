@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notice;
+use App\Models\User;
 use App\Services\AuditLogger;
 use App\Support\AjaxResponse;
 use Illuminate\Http\JsonResponse;
@@ -26,7 +27,7 @@ class NoticeController extends Controller
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         $notice = Notice::query()->create($this->payload($request) + [
-            'created_by' => $request->user()?->id,
+            'created_by' => $request->user() instanceof User ? $request->user()->id : null,
         ]);
 
         $this->auditLogger->record('notices.created', $request->user(), $request, $notice, $notice->only(['title', 'audience', 'tone', 'published_at']));

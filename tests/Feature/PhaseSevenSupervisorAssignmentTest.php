@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\AcademicLevel;
 use App\Models\AcademicSession;
 use App\Models\AuditLog;
+use App\Models\Admin;
 use App\Models\Course;
 use App\Models\Department;
 use App\Models\Faculty;
@@ -38,7 +39,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         $admin = $this->admin();
         Notification::fake();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.supervisors.store'), [
                 'name' => 'Dr Ada Supervisor',
@@ -74,7 +75,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         $student = $this->student('assigned@example.test', '2026/SUP/001');
         $supervisor = $this->supervisor('SUP-2001');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.supervisor-assignments.store'), [
                 'supervisor_id' => $supervisor->id,
@@ -83,7 +84,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             ->assertOk()
             ->assertJsonPath('message', 'Student assigned to supervisor.');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.supervisor-assignments.store'), [
                 'supervisor_id' => $supervisor->id,
@@ -101,7 +102,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             'company_name' => 'Future Works Ltd',
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.supervisors.index'))
             ->assertOk()
@@ -114,7 +115,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             ->assertSee('Revoke Selected')
             ->assertSee('Revoke');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.supervisor-assignments.revoke', $assignment), ['reason' => 'Rebalanced'])
             ->assertOk()
@@ -131,7 +132,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         $first = $this->student('assignment-one@example.test', '2026/SUP/002');
         $second = $this->student('assignment-two@example.test', '2026/SUP/003');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.supervisor-assignments.store'), [
                 'supervisor_id' => $supervisor->id,
@@ -139,7 +140,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             ])
             ->assertOk();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.supervisor-assignments.store'), [
                 'supervisor_id' => $supervisor->id,
@@ -159,7 +160,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         $this->student('bulk-two@example.test', '2026/SUP/005');
         $this->student('bulk-three@example.test', '2026/SUP/006');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.supervisor-assignments.bulk'), [
                 'supervisor_id' => $supervisor->id,
@@ -200,16 +201,16 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         $admin = $this->admin();
         $this->supervisor('SUP-2006');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.supervisors.export'))
             ->assertOk()
             ->assertSee('SUP-2006');
     }
 
-    private function admin(): User
+    private function admin(): Admin
     {
-        return User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        return Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
     }
 
     private function supervisor(string $staffNo): Supervisor
@@ -242,3 +243,5 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         ]);
     }
 }
+
+

@@ -10,6 +10,7 @@ use App\Models\Faculty;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\Ticket;
+use App\Models\Admin;
 use App\Models\User;
 use App\Services\StudentManager;
 use Database\Seeders\AcademicStructureSeeder;
@@ -36,10 +37,10 @@ class PhaseSixKorapayPaymentsTest extends TestCase
 
     public function test_admin_can_generate_activation_tickets_for_students(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $student = $this->student();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.tickets.store'), ['student_ids' => [$student->id]])
             ->assertOk()
@@ -54,9 +55,9 @@ class PhaseSixKorapayPaymentsTest extends TestCase
 
     public function test_admin_can_generate_unassigned_ticket_stock_by_quantity(): void
     {
-        $admin = User::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.tickets.store'), ['quantity' => 3])
             ->assertOk()
@@ -248,3 +249,5 @@ class PhaseSixKorapayPaymentsTest extends TestCase
         return $student;
     }
 }
+
+

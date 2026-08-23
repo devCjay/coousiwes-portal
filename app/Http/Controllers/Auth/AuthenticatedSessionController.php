@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\AuditLogger;
@@ -30,7 +31,9 @@ class AuthenticatedSessionController extends Controller
 
         $credentials = $this->credentials($request, $role);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        $guard = $role === 'admin' ? 'admin' : 'web';
+
+        if (! Auth::guard($guard)->attempt($credentials, $request->boolean('remember'))) {
             $auditLogger->record('auth.login_failed', null, $request, metadata: [
                 'identifier' => $role === 'student'
                     ? $request->string('matric_no')->toString()
@@ -45,11 +48,13 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        /** @var User $user */
-        $user = $request->user();
+        Auth::shouldUse($guard);
+
+        /** @var User|Admin $user */
+        $user = Auth::guard($guard)->user();
 
         if ($user->status !== 'active') {
-            Auth::logout();
+            Auth::guard($guard)->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
@@ -60,7 +65,7 @@ class AuthenticatedSessionController extends Controller
 
         if (! $this->userCanUsePortal($user, $role)) {
             $auditLogger->record('auth.portal_denied', $user, $request, metadata: ['portal' => $role]);
-            Auth::logout();
+            Auth::guard($guard)->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
@@ -84,7 +89,8 @@ class AuthenticatedSessionController extends Controller
             $auditLogger->record('auth.logout', $user, $request);
         }
 
-        Auth::logout();
+        Auth::guard('web')->logout();
+        Auth::guard('admin')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
@@ -99,7 +105,7 @@ class AuthenticatedSessionController extends Controller
             ->with('toast_tone', 'success');
     }
 
-    private function userCanUsePortal(User $user, string $role): bool
+    private function userCanUsePortal(User|Admin $user, string $role): bool
     {
         return match ($role) {
             'admin' => $user->hasAnyRole(['super-admin', 'admin']),

@@ -24,7 +24,7 @@ class StoreRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'current_password' => ['required', 'current_password:web'],
+            'current_password' => ['required', 'current_password:admin'],
             'name' => ['required', 'string', 'max:80', Rule::unique('roles', 'name')->where('guard_name', 'web')->ignore($this->route('role'))],
             'permissions' => ['required', 'array', 'min:1'],
             'permissions.*' => ['required', 'string', Rule::exists('permissions', 'name')->where('guard_name', 'web')],

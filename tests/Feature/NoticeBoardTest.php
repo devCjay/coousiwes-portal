@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AppSetting;
 use App\Models\Notice;
+use App\Models\Admin;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,9 +23,9 @@ class NoticeBoardTest extends TestCase
 
     public function test_admin_can_publish_notice_to_public_notice_board(): void
     {
-        $admin = User::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.notices.store'), [
                 'title' => 'Field posting list released',
@@ -65,10 +66,10 @@ class NoticeBoardTest extends TestCase
 
     public function test_admin_can_update_public_welcome_message(): void
     {
-        $admin = User::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
         $setting = AppSetting::where('key', 'site.welcome.message')->firstOrFail();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->putJson(route('admin.settings.update', $setting), [
                 'group' => 'site',
@@ -84,3 +85,5 @@ class NoticeBoardTest extends TestCase
             ->assertSee('Custom admin welcome message.');
     }
 }
+
+
