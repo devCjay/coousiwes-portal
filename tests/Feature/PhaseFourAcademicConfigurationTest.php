@@ -408,6 +408,37 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             ->assertOk()
             ->assertJsonPath('message', 'System cache cleared successfully.');
     }
+
+    public function test_active_admin_can_open_operational_admin_pages_when_role_rows_are_stale(): void
+    {
+        $admin = Admin::query()->create([
+            'admin_code' => 'ADM-STALE-2',
+            'name' => 'Operational Stale Admin',
+            'email' => 'operational-stale-admin@example.test',
+            'password' => 'password',
+            'status' => Admin::STATUS_ACTIVE,
+            'otp_enabled' => false,
+            'email_verified_at' => now(),
+        ]);
+
+        $routes = [
+            'admin.students.index',
+            'admin.tickets.index',
+            'admin.payments.index',
+            'admin.supervisors.index',
+            'admin.academics.index',
+            'admin.notices.index',
+            'admin.assessments.rubric.index',
+            'admin.reports.index',
+        ];
+
+        foreach ($routes as $routeName) {
+            $this->actingAs($admin, 'admin')
+                ->withSession(['otp.verified' => true])
+                ->get(route($routeName))
+                ->assertOk();
+        }
+    }
 }
 
 

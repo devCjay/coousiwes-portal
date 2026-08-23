@@ -21,15 +21,20 @@ class PortalPermission
         'students.export',
         'tickets.view',
         'tickets.generate',
+        'tickets.revoke',
         'supervisors.view',
         'supervisors.create',
         'supervisors.update',
+        'supervisors.suspend',
         'supervisors.assign',
         'feedback.view',
+        'feedback.manage',
         'payments.view',
         'payments.export',
         'academics.manage',
         'settings.view',
+        'settings.update',
+        'notifications.manage',
     ];
 
     public static function userHas(object|null $user, string $permission): bool
@@ -44,6 +49,15 @@ class PortalPermission
 
         if (self::hasPermissionInDatabase($user, $permission)) {
             return true;
+        }
+
+        return self::hasFallbackPermission($user, $permission);
+    }
+
+    public static function hasFallbackPermission(object|null $user, string $permission): bool
+    {
+        if (! $user) {
+            return false;
         }
 
         return self::hasBaselineAdminPermission($user, $permission);
