@@ -383,6 +383,31 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
         $this->assertTrue(AuditLog::where('event', 'settings.cache_cleared')->exists());
     }
+
+    public function test_active_admin_can_open_settings_and_clear_cache_when_role_rows_are_stale(): void
+    {
+        $admin = Admin::query()->create([
+            'admin_code' => 'ADM-STALE',
+            'name' => 'Stale Role Admin',
+            'email' => 'stale-admin@example.test',
+            'password' => 'password',
+            'status' => Admin::STATUS_ACTIVE,
+            'otp_enabled' => false,
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.settings.index'))
+            ->assertOk()
+            ->assertSee('System Settings');
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.settings.cache.clear'))
+            ->assertOk()
+            ->assertJsonPath('message', 'System cache cleared successfully.');
+    }
 }
 
 

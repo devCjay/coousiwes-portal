@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Support\PortalPermission;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -13,7 +14,7 @@ class StoreAppSettingRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->can('settings.update') === true;
+        return PortalPermission::userHas($this->user(), 'settings.update');
     }
 
     /**

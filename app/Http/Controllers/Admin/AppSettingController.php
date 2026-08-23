@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreAppSettingRequest;
 use App\Models\AppSetting;
 use App\Services\AuditLogger;
 use App\Support\AjaxResponse;
+use App\Support\PortalPermission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -92,7 +93,7 @@ class AppSettingController extends Controller
 
     public function testEmailConnection(Request $request): JsonResponse|RedirectResponse
     {
-        abort_unless($request->user()?->can('settings.update'), 403);
+        abort_unless(PortalPermission::userHas($request->user(), 'settings.update'), 403);
 
         $host = (string) $this->settingValue('mail.host', config('mail.mailers.smtp.host'));
         $port = (int) $this->settingValue('mail.port', config('mail.mailers.smtp.port'));
@@ -119,7 +120,7 @@ class AppSettingController extends Controller
 
     public function clearCache(Request $request): JsonResponse|RedirectResponse
     {
-        abort_unless($request->user()?->can('settings.update'), 403);
+        abort_unless(PortalPermission::userHas($request->user(), 'settings.view'), 403);
 
         $commands = ['optimize:clear'];
 

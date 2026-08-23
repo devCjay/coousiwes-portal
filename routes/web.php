@@ -165,7 +165,7 @@ Route::middleware('auth:web,admin')->group(function () {
             ->middleware('permission:settings.update')
             ->name('settings.email.test');
         Route::post('/settings/cache/clear', [AppSettingController::class, 'clearCache'])
-            ->middleware(['permission:settings.update', 'throttle:10,1'])
+            ->middleware(['permission:settings.view', 'throttle:10,1'])
             ->name('settings.cache.clear');
         Route::put('/settings/{appSetting}', [AppSettingController::class, 'update'])
             ->middleware('permission:settings.update')
