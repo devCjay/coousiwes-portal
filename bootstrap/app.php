@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureOtpIsVerified;
+use App\Http\Middleware\EnsureUserHasPermission;
 use App\Http\Middleware\EnsureStudentProfileIsComplete;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\RedirectIfOtpVerified;
@@ -10,7 +11,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
-use Spatie\Permission\Middleware\PermissionMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -44,7 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'otp.verified' => EnsureOtpIsVerified::class,
             'student.profile.complete' => EnsureStudentProfileIsComplete::class,
             'otp.unverified' => RedirectIfOtpVerified::class,
-            'permission' => PermissionMiddleware::class,
+            'permission' => EnsureUserHasPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

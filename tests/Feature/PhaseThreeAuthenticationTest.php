@@ -94,6 +94,17 @@ class PhaseThreeAuthenticationTest extends TestCase
         ])->assertRedirect(route('student.dashboard'));
     }
 
+    public function test_permission_protected_admin_modules_use_database_permission_fallback(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.students.index'))
+            ->assertOk()
+            ->assertSee('Student Management');
+    }
+
     public function test_student_login_uses_matric_number_and_redirects_through_profile_setup_when_incomplete(): void
     {
         $this->post(route('login.store', 'student'), [
