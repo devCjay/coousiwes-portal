@@ -108,9 +108,9 @@ class AuthenticatedSessionController extends Controller
     private function userCanUsePortal(User|Admin $user, string $role): bool
     {
         return match ($role) {
-            'admin' => $user->hasAnyRole(['super-admin', 'admin']),
-            'supervisor' => $user->hasRole('supervisor'),
-            'student' => $user->hasRole('student'),
+            'admin' => $user instanceof Admin,
+            'supervisor' => $user instanceof User && $user->supervisor()->exists(),
+            'student' => $user instanceof User && $user->student()->exists(),
             default => false,
         };
     }

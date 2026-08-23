@@ -55,6 +55,45 @@ class PhaseThreeAuthenticationTest extends TestCase
             ]);
     }
 
+    public function test_active_admin_record_can_enter_admin_portal_even_before_role_cache_refresh(): void
+    {
+        $admin = Admin::query()->create([
+            'admin_code' => 'ADM-01000',
+            'name' => 'Cache Safe Admin',
+            'email' => 'cache.safe.admin@example.test',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+            'otp_enabled' => false,
+            'email_verified_at' => now(),
+        ]);
+
+        $this->post(route('login.store', 'admin'), [
+            'email' => $admin->email,
+            'password' => 'password',
+        ])->assertRedirect(route('admin.dashboard'));
+    }
+
+    public function test_supervisor_and_student_portal_login_use_profile_tables_even_before_role_cache_refresh(): void
+    {
+        $supervisor = User::where('email', 'supervisor@coousiwes.test')->firstOrFail();
+        $student = User::where('email', 'student@coousiwes.test')->firstOrFail();
+        $supervisor->syncRoles([]);
+        $student->syncRoles([]);
+
+        $this->post(route('login.store', 'supervisor'), [
+            'email' => 'supervisor@coousiwes.test',
+            'password' => 'password',
+        ])->assertRedirect(route('supervisor.dashboard'));
+
+        auth()->logout();
+        $this->flushSession();
+
+        $this->post(route('login.store', 'student'), [
+            'matric_no' => '2026/DEMO/001',
+            'password' => '2026/DEMO/001',
+        ])->assertRedirect(route('student.dashboard'));
+    }
+
     public function test_student_login_uses_matric_number_and_redirects_through_profile_setup_when_incomplete(): void
     {
         $this->post(route('login.store', 'student'), [
