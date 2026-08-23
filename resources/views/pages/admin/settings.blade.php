@@ -2,7 +2,7 @@
     $navigation = [
         ['label' => 'Dashboard', 'href' => route('admin.dashboard'), 'icon' => 'D'],
         ['label' => 'Generate List', 'href' => route('admin.generate-list.index'), 'icon' => 'file-text'],
-        ...(auth()->user()?->hasRole('super-admin') ? [['label' => 'Control', 'href' => route('admin.control.index'), 'icon' => 'C']] : []),
+        ...(\App\Support\PortalPermission::isRootAdmin(auth()->user()) ? [['label' => 'Control', 'href' => route('admin.control.index'), 'icon' => 'C']] : []),
         ['label' => 'Academics', 'href' => route('admin.academics.index'), 'icon' => 'A'],
         ['label' => 'Notices', 'href' => route('admin.notices.index'), 'icon' => 'N'],
         ['label' => 'Settings', 'href' => route('admin.settings.index'), 'active' => true, 'icon' => 'G'],
@@ -379,3 +379,4 @@
         </form>
     </x-ui.modal>
 </x-layouts.app-shell>
+

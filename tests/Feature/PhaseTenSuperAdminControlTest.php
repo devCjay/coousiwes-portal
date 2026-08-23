@@ -7,6 +7,7 @@ use App\Models\Admin;
 use Database\Seeders\AcademicStructureSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -39,6 +40,28 @@ class PhaseTenSuperAdminControlTest extends TestCase
             ->withSession(['otp.verified' => true])
             ->get(route('admin.control.index'))
             ->assertForbidden();
+    }
+
+    public function test_root_super_admin_can_see_and_open_control_when_role_rows_are_stale(): void
+    {
+        $superAdmin = $this->superAdmin();
+
+        DB::table('model_has_roles')
+            ->where('model_type', Admin::class)
+            ->where('model_id', $superAdmin->id)
+            ->delete();
+
+        $this->actingAs($superAdmin->fresh(), 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee(route('admin.control.index'));
+
+        $this->actingAs($superAdmin->fresh(), 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.control.index'))
+            ->assertOk()
+            ->assertSee('Super Admin Control');
     }
 
     public function test_super_admin_can_create_admin_with_roles_and_permissions(): void

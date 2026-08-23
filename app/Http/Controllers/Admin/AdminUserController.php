@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UpdateAdminUserRequest;
 use App\Models\Admin;
 use App\Services\AuditLogger;
 use App\Support\AjaxResponse;
+use App\Support\PortalPermission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
@@ -45,7 +46,7 @@ class AdminUserController extends Controller
 
     public function update(UpdateAdminUserRequest $request, Admin $admin): JsonResponse|RedirectResponse
     {
-        abort_if($admin->hasRole('super-admin'), 422, 'Super admin accounts cannot be edited here.');
+        abort_if(PortalPermission::isRootAdmin($admin), 422, 'Super admin accounts cannot be edited here.');
 
         $validated = $request->validated();
         $before = [

@@ -7,6 +7,7 @@ use App\Models\Admin;
 use App\Models\AppSetting;
 use App\Models\AuditLog;
 use App\Models\Payment;
+use App\Support\PortalPermission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -17,11 +18,10 @@ class ControlCenterController extends Controller
 {
     public function __invoke(Request $request): View
     {
-        abort_unless($request->user()?->hasRole('super-admin'), 403);
+        abort_unless(PortalPermission::isRootAdmin($request->user()), 403);
 
         return view('pages.admin.control-center', [
             'admins' => Admin::query()
-                ->role(['super-admin', 'admin'])
                 ->with(['roles', 'permissions'])
                 ->orderBy('name')
                 ->get(),

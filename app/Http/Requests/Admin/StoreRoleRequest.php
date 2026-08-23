@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Http\Requests\Admin\Concerns\ReturnsAjaxValidationErrors;
+use App\Support\PortalPermission;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -15,7 +16,7 @@ class StoreRoleRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user->hasRole('super-admin') && $user->can('roles.manage');
+        return PortalPermission::isRootAdmin($user) && $user->can('roles.manage');
     }
 
     /**

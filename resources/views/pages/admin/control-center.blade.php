@@ -92,7 +92,7 @@
                             </div>
                             <div class="min-w-0">
                                 <p class="mb-1 text-xs font-semibold uppercase text-[var(--text-soft)] lg:hidden">Update</p>
-                                @if ($admin->hasRole('super-admin'))
+                                @if (\App\Support\PortalPermission::isRootAdmin($admin))
                                     <span class="inline-flex rounded-md bg-[var(--surface-muted)] px-2 py-1 text-xs font-semibold text-[var(--text-soft)]">Protected root account</span>
                                 @else
                                     <form method="POST" action="{{ route('admin.control.admins.update', $admin) }}" class="grid gap-2 sm:grid-cols-[1fr_8rem_auto] lg:grid-cols-2 2xl:grid-cols-[1fr_8rem_auto]">

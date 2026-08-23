@@ -76,8 +76,12 @@ class PortalPermission
         return in_array($permission, self::ADMIN_BASELINE_PERMISSIONS, true);
     }
 
-    private static function isRootAdmin(Admin $admin): bool
+    public static function isRootAdmin(object|null $admin): bool
     {
+        if (! $admin instanceof Admin || $admin->status !== Admin::STATUS_ACTIVE) {
+            return false;
+        }
+
         return $admin->admin_code === 'ADM-00001'
             || $admin->email === 'superadmin@coousiwes.test'
             || self::hasRoleInDatabase($admin, 'super-admin');
