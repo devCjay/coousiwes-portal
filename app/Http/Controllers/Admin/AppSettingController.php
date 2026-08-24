@@ -195,6 +195,9 @@ class AppSettingController extends Controller
         abort_unless(PortalPermission::isRootAdmin($request->user()), 403);
 
         $commands = [
+            'migrate' => [
+                '--force' => true,
+            ],
             'db:seed' => [
                 '--class' => 'Database\\Seeders\\DatabaseSeeder',
                 '--force' => true,
@@ -218,7 +221,7 @@ class AppSettingController extends Controller
                 'error' => $exception->getMessage(),
             ]);
 
-            return AjaxResponse::error($request, 'Database seeder update failed: '.$exception->getMessage(), 500, 'seeders');
+            return AjaxResponse::error($request, 'Database migration/seeder update failed: '.$exception->getMessage(), 500, 'seeders');
         }
 
         $this->auditLogger->record('settings.database_seeded', $request->user(), $request, metadata: [
@@ -226,7 +229,7 @@ class AppSettingController extends Controller
             'results' => $results,
         ]);
 
-        return AjaxResponse::success($request, 'Database seeders imported and updated successfully.', reload: true);
+        return AjaxResponse::success($request, 'Database migrations and seeders updated successfully.', reload: true);
     }
 
     /**

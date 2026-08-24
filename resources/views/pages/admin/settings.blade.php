@@ -189,9 +189,9 @@
                             <span class="mb-3 flex size-10 items-center justify-center rounded-xl bg-amber-400 text-graphite-950 shadow-[0_12px_28px_rgb(217_155_0_/_0.25)]">
                                 <x-ui.icon name="database" class="size-5" />
                             </span>
-                            <p class="text-sm font-semibold text-[var(--text-strong)]">Import / update database seeders</p>
-                            <p class="mt-2 text-sm leading-6 text-[var(--text-soft)]">Refresh roles, permissions, academic data, and default portal settings from the application seeders.</p>
-                            <x-ui.button type="submit" class="mt-5 w-full" icon="database">Update Database Seeders</x-ui.button>
+                            <p class="text-sm font-semibold text-[var(--text-strong)]">Run migrations and update seeders</p>
+                            <p class="mt-2 text-sm leading-6 text-[var(--text-soft)]">Apply pending database repairs, then refresh roles, permissions, academic data, and default portal settings.</p>
+                            <x-ui.button type="submit" class="mt-5 w-full" icon="database">Update Database</x-ui.button>
                         </form>
                     @endif
                 </div>

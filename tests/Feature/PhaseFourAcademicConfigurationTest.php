@@ -462,7 +462,7 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.settings.database.seed'))
             ->assertOk()
-            ->assertJsonPath('message', 'Database seeders imported and updated successfully.')
+            ->assertJsonPath('message', 'Database migrations and seeders updated successfully.')
             ->assertJsonPath('reload', true);
 
         $this->assertTrue(Role::where('name', 'payment-manager')->exists());
