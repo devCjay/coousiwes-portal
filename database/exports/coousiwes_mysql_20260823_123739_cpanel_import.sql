@@ -804,7 +804,7 @@ CREATE TABLE `students` (
   `matric_no` varchar(255) NOT NULL,
   `faculty_id` bigint unsigned NOT NULL,
   `department_id` bigint unsigned NOT NULL,
-  `course_id` bigint unsigned NOT NULL,
+  `course_id` bigint unsigned NULL,
   `academic_level_id` bigint unsigned NOT NULL,
   `academic_session_id` bigint unsigned NOT NULL,
   `activation_status` varchar(255) NOT NULL DEFAULT 'inactive',
