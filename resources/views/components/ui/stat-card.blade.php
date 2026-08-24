@@ -28,8 +28,8 @@
 
 <article class="siwes-surface siwes-panel-accent rounded-2xl p-5 theme-transition hover:-translate-y-0.5">
     <p class="text-sm font-semibold text-[var(--text-soft)]">{{ $label }}</p>
-    <div class="mt-3 flex items-end justify-between gap-4">
-        <strong data-countup class="text-3xl font-bold text-[var(--text-strong)]">{{ $value }}</strong>
+    <div class="mt-3 flex items-end justify-between gap-3">
+        <strong data-countup class="min-w-0 flex-1 break-words text-[1.35rem] font-bold leading-tight text-[var(--text-strong)] sm:text-2xl">{{ $value }}</strong>
         <span class="grid size-11 shrink-0 place-items-center rounded-xl {{ $toneClasses['icon'] }} shadow-[0_14px_30px_rgb(8_15_12_/_0.14)]">
             <x-ui.icon :name="$icon" class="size-5" />
         </span>
