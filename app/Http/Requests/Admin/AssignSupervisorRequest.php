@@ -25,7 +25,7 @@ class AssignSupervisorRequest extends FormRequest
     {
         return [
             'supervisor_id' => ['required', 'integer', Rule::exists('supervisors', 'id')->whereNull('deleted_at')],
-            'student_id' => ['required', 'integer', Rule::exists('students', 'id')->whereNull('deleted_at')],
+            'student_id' => ['required', 'integer', Rule::exists('students', 'id')],
         ];
     }
 }

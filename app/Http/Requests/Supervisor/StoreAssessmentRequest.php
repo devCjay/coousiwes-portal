@@ -26,7 +26,7 @@ class StoreAssessmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'student_id' => ['required', 'integer', Rule::exists('students', 'id')->whereNull('deleted_at')],
+            'student_id' => ['required', 'integer', Rule::exists('students', 'id')],
             'feedback' => ['required', 'string', 'max:3000'],
             'scores' => ['required', 'array', 'min:1'],
             'scores.*' => ['required', 'integer', 'min:0'],

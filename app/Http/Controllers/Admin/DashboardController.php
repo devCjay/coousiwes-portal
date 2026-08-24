@@ -70,7 +70,6 @@ class DashboardController extends Controller
 
         $facultyDistribution = DB::table('students')
             ->join('faculties', 'faculties.id', '=', 'students.faculty_id')
-            ->whereNull('students.deleted_at')
             ->whereNull('faculties.deleted_at')
             ->where('faculties.is_active', true)
             ->groupBy('faculties.id', 'faculties.name', 'faculties.code')

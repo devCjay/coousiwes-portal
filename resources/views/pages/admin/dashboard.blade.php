@@ -191,7 +191,9 @@
             </label>
             <div class="flex items-end gap-2">
                 <x-ui.button>Search</x-ui.button>
-                <x-ui.button variant="secondary" data-modal-target="#student-modal">Add</x-ui.button>
+                @if ($can('students.create'))
+                    <x-ui.button type="button" variant="secondary" data-modal-target="#student-modal">Add</x-ui.button>
+                @endif
             </div>
         </div>
 
@@ -224,15 +226,22 @@
         </x-ui.card>
     @endunless
 
-    <x-ui.modal id="student-modal" title="Add Student">
-        <div class="space-y-4">
-            <x-ui.input label="Student Name" name="student_name" />
-            <x-ui.input label="Matric Number" name="matric_number" />
-            <div class="flex justify-end gap-2">
-                <x-ui.button variant="ghost" data-modal-close>Cancel</x-ui.button>
-                <x-ui.button>Add Student</x-ui.button>
-            </div>
-        </div>
-    </x-ui.modal>
+    @if ($can('students.create'))
+        <x-ui.modal id="student-modal" title="Add Student" class="w-[min(64rem,calc(100vw-2rem))]">
+            <form method="POST" action="{{ route('admin.students.store') }}" class="grid gap-4">
+                @csrf
+                <div class="grid gap-3 md:grid-cols-4">
+                    <x-ui.input label="FIRST NAME" name="first_name" placeholder="First name" required />
+                    <x-ui.input label="MIDDLE NAME" name="middle_name" placeholder="Middle name" />
+                    <x-ui.input label="LAST NAME" name="last_name" placeholder="Last name" required />
+                    <x-ui.input label="MATRIC NUMBER" name="matric_no" placeholder="2026/CSC/001" required />
+                </div>
+                <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
+                    <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
+                    <x-ui.button type="submit">Create Student</x-ui.button>
+                </div>
+            </form>
+        </x-ui.modal>
+    @endif
 </x-layouts.app-shell>
 

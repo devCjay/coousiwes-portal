@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -10,7 +11,7 @@ return new class extends Migration
     {
         DB::table('students')
             ->join('users', 'users.id', '=', 'students.user_id')
-            ->whereNull('students.deleted_at')
+            ->when(Schema::hasColumn('students', 'deleted_at'), fn ($query) => $query->whereNull('students.deleted_at'))
             ->select('users.id', 'students.matric_no')
             ->orderBy('users.id')
             ->chunk(100, function ($records): void {

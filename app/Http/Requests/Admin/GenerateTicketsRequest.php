@@ -29,7 +29,7 @@ class GenerateTicketsRequest extends FormRequest
         return [
             'quantity' => ['nullable', 'required_without:student_ids', 'integer', 'min:1', 'max:500'],
             'student_ids' => ['nullable', 'required_without:quantity', 'array', 'min:1'],
-            'student_ids.*' => ['integer', Rule::exists('students', 'id')->whereNull('deleted_at')],
+            'student_ids.*' => ['integer', Rule::exists('students', 'id')],
         ];
     }
 }

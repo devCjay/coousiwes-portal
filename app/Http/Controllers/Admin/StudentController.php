@@ -20,6 +20,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 use RuntimeException;
@@ -169,14 +170,27 @@ class StudentController extends Controller
     {
         abort_unless($request->user()?->can('students.update'), 403);
 
-        $student->user->update(['status' => 'suspended']);
-        $student->delete();
+        $matricNo = $student->matric_no;
+        $user = $student->user;
 
-        $this->auditLogger->record('students.deleted', $request->user(), $request, $student, [
-            'matric_no' => $student->matric_no,
+        DB::transaction(function () use ($student, $user): void {
+            $student->assessments()->each(function ($assessment): void {
+                $assessment->delete();
+            });
+            $student->supervisorAssignments()->delete();
+            $student->payments()->delete();
+            $student->placement()->delete();
+            $student->tickets()->withTrashed()->forceDelete();
+            $student->delete();
+            $user?->delete();
+        });
+
+        $this->auditLogger->record('students.deleted', $request->user(), $request, metadata: [
+            'matric_no' => $matricNo,
+            'deletion' => 'permanent',
         ]);
 
-        return AjaxResponse::success($request, 'Student deleted.', route('admin.students.index', absolute: false));
+        return AjaxResponse::success($request, 'Student permanently deleted.', route('admin.students.index', absolute: false));
     }
 
     public function template(Request $request, string $format): Response

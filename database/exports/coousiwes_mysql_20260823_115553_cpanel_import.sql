@@ -796,14 +796,13 @@ CREATE TABLE `students` (
   `metadata` longtext NULL,
   `created_at` datetime NULL,
   `updated_at` datetime NULL,
-  `deleted_at` datetime NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `students_matric_no_unique` (`matric_no`),
   UNIQUE KEY `students_user_id_unique` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `students` (`id`, `user_id`, `matric_no`, `faculty_id`, `department_id`, `course_id`, `academic_level_id`, `academic_session_id`, `activation_status`, `gender`, `date_of_birth`, `address`, `metadata`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 4, '2026/DEMO/001', 1, 1, 1, 6, 1, 'active', 'Male', '2000-01-01 00:00:00', 'New Haven', '{"nationality":"Nigerian","state":"Enugu","lga":"Enugu East","bank_name":"Kuda Microfinance Bank","account_number":"0022367856","sort_code":"50211"}', '2026-08-09 08:31:15', '2026-08-11 15:15:17', NULL);
+INSERT INTO `students` (`id`, `user_id`, `matric_no`, `faculty_id`, `department_id`, `course_id`, `academic_level_id`, `academic_session_id`, `activation_status`, `gender`, `date_of_birth`, `address`, `metadata`, `created_at`, `updated_at`) VALUES
+(1, 4, '2026/DEMO/001', 1, 1, 1, 6, 1, 'active', 'Male', '2000-01-01 00:00:00', 'New Haven', '{"nationality":"Nigerian","state":"Enugu","lga":"Enugu East","bank_name":"Kuda Microfinance Bank","account_number":"0022367856","sort_code":"50211"}', '2026-08-09 08:31:15', '2026-08-11 15:15:17');
 
 CREATE TABLE `supervisor_student_assignments` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,

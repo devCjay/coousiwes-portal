@@ -231,10 +231,10 @@ class PhaseFiveStudentManagementTest extends TestCase
             ->withSession(['otp.verified' => true])
             ->deleteJson(route('admin.students.destroy', $student))
             ->assertOk()
-            ->assertJsonPath('message', 'Student deleted.');
+            ->assertJsonPath('message', 'Student permanently deleted.');
 
-        $this->assertSoftDeleted('students', ['id' => $student->id]);
-        $this->assertSame('suspended', $student->user->fresh()->status);
+        $this->assertDatabaseMissing('students', ['id' => $student->id]);
+        $this->assertDatabaseMissing('users', ['id' => $student->user_id]);
     }
 
     public function test_view_only_student_admin_cannot_see_or_call_student_actions(): void

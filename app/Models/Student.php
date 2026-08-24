@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property User $user
@@ -19,8 +18,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Student extends Model
 {
-    use SoftDeletes;
-
     public const string STATUS_INACTIVE = 'inactive';
 
     public const string STATUS_ACTIVE = 'active';

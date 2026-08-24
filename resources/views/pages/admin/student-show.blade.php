@@ -70,7 +70,7 @@
                         <form method="POST" action="{{ route('admin.students.destroy', $student) }}" onsubmit="return confirm('Delete this student record?');">
                             @csrf
                             @method('DELETE')
-                            <x-ui.button type="submit" variant="danger" data-loading-text="Deleting...">Delete</x-ui.button>
+                            <x-ui.button type="submit" variant="danger" data-loading-text="Deleting...">Delete Permanently</x-ui.button>
                         </form>
                     </div>
                 @endif

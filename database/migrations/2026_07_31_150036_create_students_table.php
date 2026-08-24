@@ -26,8 +26,6 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
-            $table->softDeletes();
-
             $table->index(['activation_status', 'academic_session_id']);
             $table->index(['faculty_id', 'department_id']);
             $table->index('created_at');
