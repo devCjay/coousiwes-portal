@@ -7,6 +7,7 @@
     $selectedBankRecord = collect($banks)->firstWhere('name', $selectedBank);
     $selectedFaculty = $student->faculty_id ? (string) $student->faculty_id : '';
     $selectedDepartment = $student->department_id ? (string) $student->department_id : '';
+    $selectedSession = $student->academic_session_id ? (string) $student->academic_session_id : ($activeSession?->id ? (string) $activeSession->id : '');
     $navigation = [
         ['label' => 'Dashboard', 'href' => route('student.dashboard'), 'icon' => 'D'],
         ['label' => 'Profile Setup', 'href' => route('student.profile.edit'), 'active' => true, 'icon' => 'user-check'],
@@ -168,12 +169,13 @@
                                     data-profile-department
                                 />
                             </div>
-                            <dl class="grid min-w-0 gap-3 sm:grid-cols-2">
-                                <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3">
-                                    <dt class="text-xs font-semibold uppercase text-[var(--text-soft)]">Academic Session</dt>
-                                    <dd class="mt-1 text-sm font-semibold text-[var(--text-strong)]">{{ $student->academicSession?->name ?? 'N/A' }}</dd>
-                                </div>
-                            </div>
+                            <x-profile.search-select
+                                label="Academic Session"
+                                name="academic_session_id"
+                                placeholder="Search sessions..."
+                                :options="$sessions->map(fn ($session) => ['value' => (string) $session->id, 'label' => $session->name, 'meta' => $session->is_active ? 'Current session' : null])->all()"
+                                :value="$selectedSession"
+                            />
                         </form>
                     </x-ui.card>
                 </div>

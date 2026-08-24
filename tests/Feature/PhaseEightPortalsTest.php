@@ -85,6 +85,7 @@ class PhaseEightPortalsTest extends TestCase
     public function test_student_can_save_profile_setup_steps_over_ajax(): void
     {
         $student = $this->student('wizard-student@example.test', '2026/PORTAL/008', completeProfile: false);
+        $session = AcademicSession::where('name', '2026/2027')->firstOrFail();
 
         $this->actingAs($student->user)
             ->withSession(['otp.verified' => true])
@@ -115,6 +116,7 @@ class PhaseEightPortalsTest extends TestCase
                 'step' => 'academic',
                 'faculty_id' => Faculty::where('code', 'AGRIC')->firstOrFail()->id,
                 'department_id' => Department::where('code', 'AGE')->firstOrFail()->id,
+                'academic_session_id' => $session->id,
             ])
             ->assertOk();
 
@@ -132,6 +134,7 @@ class PhaseEightPortalsTest extends TestCase
             ->assertJsonPath('redirect', route('student.profile.complete', absolute: false));
 
         $this->assertTrue($student->fresh()->hasCompleteProfile());
+        $this->assertSame($session->id, $student->fresh()->academic_session_id);
     }
 
     public function test_student_can_update_only_their_own_profile(): void

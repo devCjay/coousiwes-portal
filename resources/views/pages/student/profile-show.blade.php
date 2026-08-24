@@ -11,6 +11,7 @@
     $selectedBankRecord = collect($banks)->firstWhere('name', $selectedBank);
     $selectedFaculty = $student->faculty_id ? (string) $student->faculty_id : '';
     $selectedDepartment = $student->department_id ? (string) $student->department_id : '';
+    $selectedSession = $student->academic_session_id ? (string) $student->academic_session_id : ($activeSession?->id ? (string) $activeSession->id : '');
     $navigation = [
         ['label' => 'Dashboard', 'href' => route('student.dashboard'), 'icon' => 'D'],
         ['label' => 'Profile', 'href' => route('student.profile.show'), 'active' => true, 'icon' => 'user-circle'],
@@ -173,6 +174,7 @@
                             <div class="grid min-w-0 gap-5 md:grid-cols-2">
                                 <x-profile.search-select label="Faculty" name="faculty_id" placeholder="Search faculties..." :options="$faculties->map(fn ($faculty) => ['value' => (string) $faculty->id, 'label' => $faculty->name, 'meta' => $faculty->code])->all()" :value="$selectedFaculty" data-profile-faculty />
                                 <x-profile.search-select label="Department" name="department_id" placeholder="Search departments..." :options="$departments->where('faculty_id', $student->faculty_id)->map(fn ($department) => ['value' => (string) $department->id, 'label' => $department->name, 'meta' => $department->code])->values()->all()" :value="$selectedDepartment" data-profile-department />
+                                <x-profile.search-select label="Academic Session" name="academic_session_id" placeholder="Search sessions..." :options="$sessions->map(fn ($session) => ['value' => (string) $session->id, 'label' => $session->name, 'meta' => $session->is_active ? 'Current session' : null])->all()" :value="$selectedSession" />
                             </div>
                             <x-ui.button type="submit" class="w-full sm:w-auto" data-loading-text="Saving...">Save Academic</x-ui.button>
                         </form>
@@ -256,6 +258,7 @@
                 <input type="hidden" name="source" value="profile">
                 <x-profile.search-select label="Faculty" name="faculty_id" placeholder="Search faculties..." :options="$faculties->map(fn ($faculty) => ['value' => (string) $faculty->id, 'label' => $faculty->name, 'meta' => $faculty->code])->all()" :value="$selectedFaculty" data-profile-faculty />
                 <x-profile.search-select label="Department" name="department_id" placeholder="Search departments..." :options="$departments->where('faculty_id', $student->faculty_id)->map(fn ($department) => ['value' => (string) $department->id, 'label' => $department->name, 'meta' => $department->code])->values()->all()" :value="$selectedDepartment" data-profile-department />
+                <x-profile.search-select label="Academic Session" name="academic_session_id" placeholder="Search sessions..." :options="$sessions->map(fn ($session) => ['value' => (string) $session->id, 'label' => $session->name, 'meta' => $session->is_active ? 'Current session' : null])->all()" :value="$selectedSession" />
                 <x-ui.button type="submit" class="w-full" data-loading-text="Saving...">Save Academic</x-ui.button>
             </form>
         </x-ui.modal>

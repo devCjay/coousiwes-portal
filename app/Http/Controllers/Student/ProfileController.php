@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\UpdateProfileStepRequest;
 use App\Http\Requests\Student\UpdateProfileRequest;
+use App\Models\AcademicSession;
 use App\Models\Department;
 use App\Models\Faculty;
 use App\Models\Student;
@@ -32,6 +33,8 @@ class ProfileController extends Controller
             'banks' => config('siwes_profile.banks', []),
             'faculties' => Faculty::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
             'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'faculty_id', 'name', 'code']),
+            'sessions' => AcademicSession::query()->orderByDesc('starts_on')->get(['id', 'name', 'starts_on', 'ends_on', 'is_active']),
+            'activeSession' => AcademicSession::active(),
         ]);
     }
 
@@ -51,6 +54,8 @@ class ProfileController extends Controller
             'banks' => config('siwes_profile.banks', []),
             'faculties' => Faculty::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
             'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'faculty_id', 'name', 'code']),
+            'sessions' => AcademicSession::query()->orderByDesc('starts_on')->get(['id', 'name', 'starts_on', 'ends_on', 'is_active']),
+            'activeSession' => AcademicSession::active(),
         ]);
     }
 
@@ -166,6 +171,7 @@ class ProfileController extends Controller
         $student->update([
             'faculty_id' => $validated['faculty_id'],
             'department_id' => $validated['department_id'],
+            'academic_session_id' => $validated['academic_session_id'],
         ]);
     }
 

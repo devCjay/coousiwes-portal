@@ -131,6 +131,7 @@ class Student extends Model
             $metadata['lga'] ?? null,
             $this->faculty_id,
             $this->department_id,
+            $this->academic_session_id,
             $metadata['bank_name'] ?? null,
             $metadata['account_number'] ?? null,
             $metadata['sort_code'] ?? null,

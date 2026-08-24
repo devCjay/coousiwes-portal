@@ -53,6 +53,7 @@ class UpdateProfileStepRequest extends FormRequest
                     'integer',
                     Rule::exists('departments', 'id')->whereNull('deleted_at')->where('faculty_id', $this->integer('faculty_id')),
                 ],
+                'academic_session_id' => ['required', 'integer', Rule::exists('academic_sessions', 'id')->whereNull('deleted_at')],
             ],
             'bank' => [
                 'step' => ['required', Rule::in(['bank'])],
