@@ -451,6 +451,76 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             ->assertJsonPath('message', 'Test email sent to recipient@example.com. Check the inbox and spam folder to confirm delivery.');
     }
 
+    public function test_email_connection_test_normalizes_tls_to_auto_smtp_scheme(): void
+    {
+        $superAdmin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.mailer'],
+            ['group' => 'mail', 'value' => 'smtp', 'type' => 'string']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.host'],
+            ['group' => 'mail', 'value' => 'smtp.example.com', 'type' => 'string']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.port'],
+            ['group' => 'mail', 'value' => 587, 'type' => 'integer']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.scheme'],
+            ['group' => 'mail', 'value' => 'tls', 'type' => 'string']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.from_address'],
+            ['group' => 'mail', 'value' => 'portal@example.com', 'type' => 'string']
+        );
+
+        Mail::shouldReceive('purge')->with('smtp')->once();
+        Mail::shouldReceive('raw')->once();
+
+        $this->actingAs($superAdmin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.settings.email.test'), ['test_email' => 'recipient@example.com'])
+            ->assertOk();
+
+        $this->assertNull(config('mail.mailers.smtp.scheme'));
+    }
+
+    public function test_email_connection_test_normalizes_ssl_to_smtps_scheme(): void
+    {
+        $superAdmin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.mailer'],
+            ['group' => 'mail', 'value' => 'smtp', 'type' => 'string']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.host'],
+            ['group' => 'mail', 'value' => 'smtp.example.com', 'type' => 'string']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.port'],
+            ['group' => 'mail', 'value' => 465, 'type' => 'integer']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.scheme'],
+            ['group' => 'mail', 'value' => 'ssl', 'type' => 'string']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.from_address'],
+            ['group' => 'mail', 'value' => 'portal@example.com', 'type' => 'string']
+        );
+
+        Mail::shouldReceive('purge')->with('smtp')->once();
+        Mail::shouldReceive('raw')->once();
+
+        $this->actingAs($superAdmin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.settings.email.test'), ['test_email' => 'recipient@example.com'])
+            ->assertOk();
+
+        $this->assertSame('smtps', config('mail.mailers.smtp.scheme'));
+    }
+
     public function test_permitted_admin_can_clear_system_cache_from_settings(): void
     {
         $superAdmin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();

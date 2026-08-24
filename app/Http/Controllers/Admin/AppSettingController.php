@@ -105,7 +105,10 @@ class AppSettingController extends Controller
         $mailer = $this->normalizeMailer($rawMailer);
         $host = $this->scalarSettingValue('mail.host', config('mail.mailers.smtp.host'));
         $port = (int) $this->scalarSettingValue('mail.port', config('mail.mailers.smtp.port'));
-        $scheme = $this->normalizeMailScheme($this->scalarSettingValue('mail.scheme', config('mail.mailers.smtp.scheme')));
+        $scheme = $this->normalizeMailScheme(
+            $this->scalarSettingValue('mail.scheme', config('mail.mailers.smtp.scheme')),
+            $port
+        );
         $username = $this->scalarSettingValue('mail.username', config('mail.mailers.smtp.username'));
         $password = $this->scalarSettingValue('mail.password', config('mail.mailers.smtp.password'));
         $fromAddress = $this->scalarSettingValue('mail.from_address', config('mail.from.address'));
@@ -286,10 +289,14 @@ class AppSettingController extends Controller
         return in_array($mailer, $supported, true) ? $mailer : 'smtp';
     }
 
-    private function normalizeMailScheme(string $scheme): string
+    private function normalizeMailScheme(string $scheme, int $port): string
     {
         $scheme = strtolower(trim($scheme));
 
-        return in_array($scheme, ['tls', 'ssl', 'smtps'], true) ? $scheme : '';
+        if (in_array($scheme, ['ssl', 'smtps'], true) || $port === 465) {
+            return 'smtps';
+        }
+
+        return '';
     }
 }
