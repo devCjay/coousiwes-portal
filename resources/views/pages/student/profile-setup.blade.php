@@ -199,8 +199,8 @@
                     </x-ui.card>
                 </div>
 
-                <div class="mt-5 grid gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-raised)] p-3 shadow-[0_16px_38px_rgb(8_15_12_/_0.06)] sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:p-4" data-profile-wizard-actions>
-                    <x-ui.button type="button" variant="secondary" class="w-full sm:w-auto" data-profile-prev data-profile-wizard-prev>Back</x-ui.button>
+                <div class="mt-5 grid gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between" data-profile-wizard-actions>
+                    <x-ui.button type="button" variant="secondary" class="hidden w-full sm:w-auto" data-profile-prev data-profile-wizard-prev hidden>Back</x-ui.button>
                     <button
                         type="submit"
                         form="profile-step-basic"
