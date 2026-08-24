@@ -167,6 +167,9 @@ Route::middleware('auth:web,admin')->group(function () {
         Route::post('/settings/cache/clear', [AppSettingController::class, 'clearCache'])
             ->middleware(['permission:settings.view', 'throttle:10,1'])
             ->name('settings.cache.clear');
+        Route::post('/settings/database/seed', [AppSettingController::class, 'seedDatabase'])
+            ->middleware(['role.portal:super-admin', 'permission:settings.update', 'throttle:3,1'])
+            ->name('settings.database.seed');
         Route::put('/settings/{appSetting}', [AppSettingController::class, 'update'])
             ->middleware('permission:settings.update')
             ->name('settings.update');

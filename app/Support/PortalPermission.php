@@ -8,35 +8,6 @@ use Illuminate\Support\Facades\DB;
 
 class PortalPermission
 {
-    /**
-     * @var list<string>
-     */
-    private const ADMIN_BASELINE_PERMISSIONS = [
-        'dashboard.view',
-        'students.view',
-        'students.create',
-        'students.update',
-        'students.suspend',
-        'students.import',
-        'students.export',
-        'tickets.view',
-        'tickets.generate',
-        'tickets.revoke',
-        'supervisors.view',
-        'supervisors.create',
-        'supervisors.update',
-        'supervisors.suspend',
-        'supervisors.assign',
-        'feedback.view',
-        'feedback.manage',
-        'payments.view',
-        'payments.export',
-        'academics.manage',
-        'settings.view',
-        'settings.update',
-        'notifications.manage',
-    ];
-
     public static function userHas(object|null $user, string $permission): bool
     {
         if (! $user) {
@@ -56,24 +27,7 @@ class PortalPermission
 
     public static function hasFallbackPermission(object|null $user, string $permission): bool
     {
-        if (! $user) {
-            return false;
-        }
-
-        return self::hasBaselineAdminPermission($user, $permission);
-    }
-
-    private static function hasBaselineAdminPermission(object $user, string $permission): bool
-    {
-        if (! $user instanceof Admin || $user->status !== Admin::STATUS_ACTIVE) {
-            return false;
-        }
-
-        if (self::isRootAdmin($user)) {
-            return true;
-        }
-
-        return in_array($permission, self::ADMIN_BASELINE_PERMISSIONS, true);
+        return self::isRootAdmin($user);
     }
 
     public static function isRootAdmin(object|null $admin): bool

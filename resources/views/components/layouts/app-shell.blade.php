@@ -4,6 +4,12 @@
     'navigation' => [],
 ])
 
+@php
+    $visibleNavigation = collect($navigation)
+        ->filter(fn (array $item): bool => $role !== 'Admin' || \App\Support\AdminNavigation::canSee($item))
+        ->values();
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
@@ -44,7 +50,7 @@
                     </div>
 
                     <nav class="flex-1 space-y-1.5 overflow-y-auto p-4">
-                        @foreach ($navigation as $item)
+                        @foreach ($visibleNavigation as $item)
                             <x-ui.sidebar-link :href="$item['href']" :active="$item['active'] ?? false" :icon="$item['icon'] ?? null">
                                 {{ $item['label'] }}
                             </x-ui.sidebar-link>

@@ -152,6 +152,45 @@ class AppSettingController extends Controller
         return AjaxResponse::success($request, 'System cache cleared successfully.', reload: true);
     }
 
+    public function seedDatabase(Request $request): JsonResponse|RedirectResponse
+    {
+        abort_unless(PortalPermission::isRootAdmin($request->user()), 403);
+
+        $commands = [
+            'db:seed' => [
+                '--class' => 'Database\\Seeders\\DatabaseSeeder',
+                '--force' => true,
+            ],
+        ];
+
+        if (array_key_exists('permission:cache-reset', Artisan::all())) {
+            $commands['permission:cache-reset'] = [];
+        }
+
+        $results = [];
+
+        try {
+            foreach ($commands as $command => $parameters) {
+                Artisan::call($command, $parameters);
+                $results[$command] = trim(Artisan::output());
+            }
+        } catch (Throwable $exception) {
+            $this->auditLogger->record('settings.database_seed_failed', $request->user(), $request, metadata: [
+                'commands' => array_keys($commands),
+                'error' => $exception->getMessage(),
+            ]);
+
+            return AjaxResponse::error($request, 'Database seeder update failed: '.$exception->getMessage(), 500, 'seeders');
+        }
+
+        $this->auditLogger->record('settings.database_seeded', $request->user(), $request, metadata: [
+            'commands' => array_keys($commands),
+            'results' => $results,
+        ]);
+
+        return AjaxResponse::success($request, 'Database seeders imported and updated successfully.', reload: true);
+    }
+
     /**
      * @return array{group: string, key: string, value: mixed, type: string, is_public: bool, description?: string|null}
      */

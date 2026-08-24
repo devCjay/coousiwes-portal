@@ -70,6 +70,13 @@ class RoleAndPermissionSeeder extends Seeder
         $admin = Role::findOrCreate('admin', self::GUARD);
         $supervisor = Role::findOrCreate('supervisor', self::GUARD);
         $student = Role::findOrCreate('student', self::GUARD);
+        $studentManager = Role::findOrCreate('student-manager', self::GUARD);
+        $ticketManager = Role::findOrCreate('ticket-manager', self::GUARD);
+        $supervisorManager = Role::findOrCreate('supervisor-manager', self::GUARD);
+        $paymentManager = Role::findOrCreate('payment-manager', self::GUARD);
+        $academicManager = Role::findOrCreate('academic-manager', self::GUARD);
+        $reportManager = Role::findOrCreate('report-manager', self::GUARD);
+        $settingsManager = Role::findOrCreate('settings-manager', self::GUARD);
 
         $superAdmin->syncPermissions($permissionModels($permissions));
 
@@ -92,6 +99,56 @@ class RoleAndPermissionSeeder extends Seeder
             'payments.export',
             'academics.manage',
             'settings.view',
+        ]));
+
+        $studentManager->syncPermissions($permissionModels([
+            'dashboard.view',
+            'students.view',
+            'students.create',
+            'students.update',
+            'students.suspend',
+            'students.import',
+            'students.export',
+        ]));
+
+        $ticketManager->syncPermissions($permissionModels([
+            'dashboard.view',
+            'tickets.view',
+            'tickets.generate',
+            'tickets.revoke',
+        ]));
+
+        $supervisorManager->syncPermissions($permissionModels([
+            'dashboard.view',
+            'supervisors.view',
+            'supervisors.create',
+            'supervisors.update',
+            'supervisors.suspend',
+            'supervisors.assign',
+        ]));
+
+        $paymentManager->syncPermissions($permissionModels([
+            'dashboard.view',
+            'payments.view',
+            'payments.export',
+        ]));
+
+        $academicManager->syncPermissions($permissionModels([
+            'dashboard.view',
+            'academics.manage',
+        ]));
+
+        $reportManager->syncPermissions($permissionModels([
+            'dashboard.view',
+            'feedback.view',
+            'feedback.manage',
+        ]));
+
+        $settingsManager->syncPermissions($permissionModels([
+            'dashboard.view',
+            'settings.view',
+            'settings.update',
+            'notifications.manage',
         ]));
 
         $supervisor->syncPermissions($permissionModels([

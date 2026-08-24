@@ -95,20 +95,43 @@
                                 @if (\App\Support\PortalPermission::isRootAdmin($admin))
                                     <span class="inline-flex rounded-md bg-[var(--surface-muted)] px-2 py-1 text-xs font-semibold text-[var(--text-soft)]">Protected root account</span>
                                 @else
-                                    <form method="POST" action="{{ route('admin.control.admins.update', $admin) }}" class="grid gap-2 sm:grid-cols-[1fr_8rem_auto] lg:grid-cols-2 2xl:grid-cols-[1fr_8rem_auto]">
+                                    <form method="POST" action="{{ route('admin.control.admins.update', $admin) }}" class="grid gap-3">
                                         @csrf
                                         @method('PUT')
                                         <input type="hidden" name="name" value="{{ $admin->name }}">
                                         <input type="hidden" name="email" value="{{ $admin->email }}">
                                         <input type="hidden" name="phone" value="{{ $admin->phone }}">
-                                        <input type="hidden" name="roles[]" value="admin">
-                                        <input class="min-w-0 rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] px-2 py-2 text-xs text-[var(--text-strong)] placeholder:text-[var(--text-soft)]" name="current_password" type="password" placeholder="Current password" required>
-                                        <select name="status" class="rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] px-2 py-2 text-xs text-[var(--text-strong)]">
-                                            <option value="active" @selected($admin->status === 'active')>Active</option>
-                                            <option value="inactive" @selected($admin->status === 'inactive')>Inactive</option>
-                                            <option value="suspended" @selected($admin->status === 'suspended')>Suspended</option>
-                                        </select>
-                                        <button class="rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white shadow-glow theme-transition hover:bg-brand-700" type="submit">Save</button>
+                                        <div class="grid gap-2 sm:grid-cols-[1fr_8rem_auto] lg:grid-cols-2 2xl:grid-cols-[1fr_8rem_auto]">
+                                            <input class="min-w-0 rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] px-2 py-2 text-xs text-[var(--text-strong)] placeholder:text-[var(--text-soft)]" name="current_password" type="password" placeholder="Current password" required>
+                                            <select name="status" class="rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] px-2 py-2 text-xs text-[var(--text-strong)]">
+                                                <option value="active" @selected($admin->status === 'active')>Active</option>
+                                                <option value="inactive" @selected($admin->status === 'inactive')>Inactive</option>
+                                                <option value="suspended" @selected($admin->status === 'suspended')>Suspended</option>
+                                            </select>
+                                            <button class="rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white shadow-glow theme-transition hover:bg-brand-700" type="submit">Save</button>
+                                        </div>
+                                        <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3">
+                                            <p class="mb-2 text-xs font-semibold uppercase text-[var(--text-soft)]">Assign Roles</p>
+                                            <div class="grid gap-2 sm:grid-cols-2">
+                                                @foreach ($roles->whereNotIn('name', ['super-admin', 'student', 'supervisor']) as $role)
+                                                    <label class="flex items-center gap-2 rounded-md bg-[var(--surface-raised)] px-2 py-1.5 text-xs font-semibold text-[var(--text-strong)]">
+                                                        <input type="checkbox" name="roles[]" value="{{ $role->name }}" @checked($admin->hasRole($role->name))>
+                                                        {{ $role->name }}
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                        <details class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3">
+                                            <summary class="cursor-pointer text-xs font-semibold uppercase text-[var(--text-soft)]">Direct Permissions</summary>
+                                            <div class="mt-3 grid max-h-44 gap-2 overflow-y-auto sm:grid-cols-2">
+                                                @foreach ($flatPermissions as $permission)
+                                                    <label class="flex items-center gap-2 text-xs text-[var(--text-strong)]">
+                                                        <input type="checkbox" name="permissions[]" value="{{ $permission->name }}" @checked($admin->hasDirectPermission($permission->name))>
+                                                        {{ $permission->name }}
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </details>
                                     </form>
                                 @endif
                             </div>

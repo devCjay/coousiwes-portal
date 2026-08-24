@@ -13,6 +13,7 @@ use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\Admin;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class PhaseFourAcademicConfigurationTest extends TestCase
@@ -384,12 +385,12 @@ class PhaseFourAcademicConfigurationTest extends TestCase
         $this->assertTrue(AuditLog::where('event', 'settings.cache_cleared')->exists());
     }
 
-    public function test_active_admin_can_open_settings_and_clear_cache_when_role_rows_are_stale(): void
+    public function test_active_admin_without_roles_cannot_open_permission_protected_modules(): void
     {
         $admin = Admin::query()->create([
-            'admin_code' => 'ADM-STALE',
-            'name' => 'Stale Role Admin',
-            'email' => 'stale-admin@example.test',
+            'admin_code' => 'ADM-NO-ROLES',
+            'name' => 'No Role Admin',
+            'email' => 'no-role-admin@example.test',
             'password' => 'password',
             'status' => Admin::STATUS_ACTIVE,
             'otp_enabled' => false,
@@ -399,45 +400,24 @@ class PhaseFourAcademicConfigurationTest extends TestCase
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.settings.index'))
-            ->assertOk()
-            ->assertSee('System Settings');
-
-        $this->actingAs($admin, 'admin')
-            ->withSession(['otp.verified' => true])
-            ->postJson(route('admin.settings.cache.clear'))
-            ->assertOk()
-            ->assertJsonPath('message', 'System cache cleared successfully.');
+            ->assertForbidden();
     }
 
-    public function test_active_admin_can_open_operational_admin_pages_when_role_rows_are_stale(): void
+    public function test_root_super_admin_can_import_and_update_database_seeders_from_settings(): void
     {
-        $admin = Admin::query()->create([
-            'admin_code' => 'ADM-STALE-2',
-            'name' => 'Operational Stale Admin',
-            'email' => 'operational-stale-admin@example.test',
-            'password' => 'password',
-            'status' => Admin::STATUS_ACTIVE,
-            'otp_enabled' => false,
-            'email_verified_at' => now(),
-        ]);
+        Role::where('name', 'payment-manager')->delete();
 
-        $routes = [
-            'admin.students.index',
-            'admin.tickets.index',
-            'admin.payments.index',
-            'admin.supervisors.index',
-            'admin.academics.index',
-            'admin.notices.index',
-            'admin.assessments.rubric.index',
-            'admin.reports.index',
-        ];
+        $superAdmin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
 
-        foreach ($routes as $routeName) {
-            $this->actingAs($admin, 'admin')
-                ->withSession(['otp.verified' => true])
-                ->get(route($routeName))
-                ->assertOk();
-        }
+        $this->actingAs($superAdmin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.settings.database.seed'))
+            ->assertOk()
+            ->assertJsonPath('message', 'Database seeders imported and updated successfully.')
+            ->assertJsonPath('reload', true);
+
+        $this->assertTrue(Role::where('name', 'payment-manager')->exists());
+        $this->assertTrue(AuditLog::where('event', 'settings.database_seeded')->exists());
     }
 }
 

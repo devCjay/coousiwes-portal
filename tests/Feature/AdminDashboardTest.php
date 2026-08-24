@@ -8,6 +8,7 @@ use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\Admin;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class AdminDashboardTest extends TestCase
@@ -54,6 +55,40 @@ class AdminDashboardTest extends TestCase
                 && $stats['submittedForms'] === StudentPlacement::query()->count())
             ->assertSee('Students yet to add placement')
             ->assertSee('Placement forms submitted');
+    }
+
+    public function test_dashboard_and_navigation_follow_assigned_admin_module_permissions(): void
+    {
+        $role = Role::query()->create(['name' => 'payment-admin', 'guard_name' => 'web']);
+        $role->givePermissionTo(['dashboard.view', 'payments.view']);
+
+        $admin = Admin::query()->create([
+            'admin_code' => 'ADM-PAY',
+            'name' => 'Payment Admin',
+            'email' => 'payment-admin@example.test',
+            'password' => 'password',
+            'status' => Admin::STATUS_ACTIVE,
+            'otp_enabled' => false,
+            'email_verified_at' => now(),
+        ]);
+        $admin->assignRole($role);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Payments')
+            ->assertSee('Verified Payments')
+            ->assertDontSee('Total Students')
+            ->assertDontSee('Students yet to add placement')
+            ->assertDontSee(route('admin.students.index'))
+            ->assertDontSee(route('admin.tickets.index'))
+            ->assertDontSee(route('admin.supervisors.index'));
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.students.index'))
+            ->assertForbidden();
     }
 }
 

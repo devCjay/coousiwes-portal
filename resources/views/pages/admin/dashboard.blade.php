@@ -13,14 +13,25 @@
         ['label' => 'Academics', 'href' => route('admin.academics.index'), 'icon' => 'A'],
         ['label' => 'Settings', 'href' => route('admin.settings.index'), 'icon' => 'G'],
     ];
+    $can = fn (string $permission): bool => \App\Support\PortalPermission::userHas(auth()->user(), $permission);
 @endphp
 
 <x-layouts.app-shell title="Admin Dashboard" role="Admin" :navigation="$navigation">
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <x-ui.stat-card label="Total Students" :value="number_format($stats['totalStudents'])" meta="Database records" />
-        <x-ui.stat-card label="Activated Students" :value="number_format($stats['activatedStudents'])" :meta="number_format($stats['verifiedPayments']).' Korapay verified'" tone="cyan" />
-        <x-ui.stat-card label="Supervisors" :value="number_format($stats['totalSupervisors'])" :meta="number_format($stats['activeSupervisors']).' active'" tone="amber" />
-        <x-ui.stat-card label="Open Tickets" :value="number_format($stats['openTickets'])" :meta="number_format($stats['urgentTickets']).' expiring soon'" tone="rose" />
+        @if ($can('students.view'))
+            <x-ui.stat-card label="Total Students" :value="number_format($stats['totalStudents'])" meta="Database records" />
+        @endif
+        @if ($can('students.view'))
+            <x-ui.stat-card label="Activated Students" :value="number_format($stats['activatedStudents'])" :meta="$can('payments.view') ? number_format($stats['verifiedPayments']).' Korapay verified' : 'Active student records'" tone="cyan" />
+        @elseif ($can('payments.view'))
+            <x-ui.stat-card label="Verified Payments" :value="number_format($stats['verifiedPayments'])" meta="Korapay verified" tone="cyan" />
+        @endif
+        @if ($can('supervisors.view'))
+            <x-ui.stat-card label="Supervisors" :value="number_format($stats['totalSupervisors'])" :meta="number_format($stats['activeSupervisors']).' active'" tone="amber" />
+        @endif
+        @if ($can('tickets.view'))
+            <x-ui.stat-card label="Open Tickets" :value="number_format($stats['openTickets'])" :meta="number_format($stats['urgentTickets']).' expiring soon'" tone="rose" />
+        @endif
     </div>
 
     @php
@@ -43,7 +54,9 @@
         };
     @endphp
 
+    @if ($can('students.view') || $can('tickets.view'))
     <div class="mt-6 grid gap-6 xl:grid-cols-3">
+        @if ($can('students.view'))
         <x-ui.card title="Student Distribution by Faculty" description="Live count grouped by faculty records.">
             @if ($facultyDistribution->isNotEmpty())
                 <div class="flex h-72 items-end gap-3 border-b border-l border-[var(--line)] px-2 pt-4">
@@ -61,7 +74,9 @@
                 </div>
             @endif
         </x-ui.card>
+        @endif
 
+        @if ($can('tickets.view'))
         <x-ui.card title="Ticket Usage Statistics" description="Live status breakdown from ticket records.">
             <div class="grid place-items-center py-4">
                 <div class="grid size-52 place-items-center rounded-full p-8 shadow-glow" style="background: conic-gradient({{ $conicGradient($ticketDistribution, $ticketChartTotal) }});">
@@ -85,7 +100,9 @@
                 </div>
             </div>
         </x-ui.card>
+        @endif
 
+        @if ($can('students.view'))
         <x-ui.card title="Gender Distribution" description="Live student gender profile from database records.">
             <div class="grid place-items-center py-4">
                 <div class="grid size-52 place-items-center rounded-full p-8 shadow-glow" style="background: conic-gradient({{ $conicGradient($genderDistribution, $genderChartTotal) }});">
@@ -115,10 +132,14 @@
                 </div>
             </div>
         </x-ui.card>
+        @endif
     </div>
+    @endif
 
+    @if ($can('students.view') || $can('feedback.view'))
     <x-ui.card class="mt-6" title="Quick Reports" description="Operational snapshots generated from current portal records.">
         <div class="grid gap-4 md:grid-cols-3">
+            @if ($can('students.view'))
             <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)]/55 p-5 text-center shadow-[0_14px_34px_rgb(8_15_12_/_0.06)] theme-transition hover:-translate-y-1 hover:border-amber-400">
                 <span class="mx-auto grid size-10 place-items-center rounded-lg bg-amber-400/15 text-amber-600 dark:text-amber-200">
                     <x-ui.icon name="user-check" class="size-5" />
@@ -127,7 +148,9 @@
                 <p data-countup class="mt-2 text-3xl font-semibold text-cyber-amber">{{ number_format($stats['pendingActivation']) }}</p>
                 <p class="mt-2 text-xs text-[var(--text-soft)]">Students yet to add placement</p>
             </div>
+            @endif
 
+            @if ($can('students.view'))
             <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)]/55 p-5 text-center shadow-[0_14px_34px_rgb(8_15_12_/_0.06)] theme-transition hover:-translate-y-1 hover:border-cyan-400">
                 <span class="mx-auto grid size-10 place-items-center rounded-lg bg-cyan-400/15 text-cyan-600 dark:text-cyan-200">
                     <x-ui.icon name="clipboard-check" class="size-5" />
@@ -136,7 +159,9 @@
                 <p data-countup class="mt-2 text-3xl font-semibold text-cyan-500">{{ number_format($stats['submittedForms']) }}</p>
                 <p class="mt-2 text-xs text-[var(--text-soft)]">Placement forms submitted</p>
             </div>
+            @endif
 
+            @if ($can('feedback.view'))
             <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)]/55 p-5 text-center shadow-[0_14px_34px_rgb(8_15_12_/_0.06)] theme-transition hover:-translate-y-1 hover:border-brand-400">
                 <span class="mx-auto grid size-10 place-items-center rounded-lg bg-brand-500/15 text-brand-700 dark:text-brand-200">
                     <x-ui.icon name="message-square" class="size-5" />
@@ -145,9 +170,12 @@
                 <p data-countup class="mt-2 text-3xl font-semibold text-brand-700 dark:text-brand-300">{{ number_format($stats['feedbackReceived']) }}</p>
                 <p class="mt-2 text-xs text-[var(--text-soft)]">Total feedback entries</p>
             </div>
+            @endif
         </div>
     </x-ui.card>
+    @endif
 
+    @if ($can('students.view'))
     <x-ui.card id="students" class="mt-6" title="Student List" description="Reusable table pattern with filters, statuses, and action controls.">
         <div class="mb-4 grid gap-3 md:grid-cols-[1fr_auto_auto]">
             <x-ui.input label="Search" name="search" placeholder="Search by name, matric number, department, phone..." data-live-search="#students-table tbody tr" />
@@ -186,6 +214,13 @@
             })->all()"
         />
     </x-ui.card>
+    @endif
+
+    @unless ($can('students.view') || $can('tickets.view') || $can('supervisors.view') || $can('payments.view') || $can('feedback.view'))
+        <x-ui.card class="mt-6" title="No Assigned Modules" description="Your dashboard will show module data after the super admin assigns roles or direct permissions to your admin account.">
+            <p class="text-sm text-[var(--text-soft)]">Contact the super admin to request access.</p>
+        </x-ui.card>
+    @endunless
 
     <x-ui.modal id="student-modal" title="Add Student">
         <div class="space-y-4">

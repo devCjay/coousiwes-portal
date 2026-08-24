@@ -147,7 +147,7 @@
         </section>
 
         <section id="system-settings-panel" class="settings-panel mt-5 hidden" data-settings-panel>
-            <div class="grid gap-4 lg:grid-cols-[1fr_22rem]">
+            <div class="grid gap-4 xl:grid-cols-[1fr_22rem]">
                 <div class="rounded-xl border border-[var(--line)] bg-[var(--surface-raised)] p-5 shadow-[0_18px_44px_rgb(8_15_12_/_0.06)]">
                     <div class="flex items-start gap-3">
                         <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-[0_12px_28px_rgb(0_81_54_/_0.2)]">
@@ -169,12 +169,26 @@
                     </div>
                 </div>
 
-                <form method="POST" action="{{ route('admin.settings.cache.clear') }}" class="rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-5">
-                    @csrf
-                    <p class="text-sm font-semibold text-[var(--text-strong)]">Clear cached files</p>
-                    <p class="mt-2 text-sm leading-6 text-[var(--text-soft)]">Use after deployment, environment changes, route updates, permission fixes, or Blade/Vite view changes.</p>
-                    <x-ui.button type="submit" class="mt-5 w-full" icon="refresh-cw">Clear System Cache</x-ui.button>
-                </form>
+                <div class="grid gap-4">
+                    <form method="POST" action="{{ route('admin.settings.cache.clear') }}" class="rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-5">
+                        @csrf
+                        <p class="text-sm font-semibold text-[var(--text-strong)]">Clear cached files</p>
+                        <p class="mt-2 text-sm leading-6 text-[var(--text-soft)]">Use after deployment, environment changes, route updates, permission fixes, or Blade/Vite view changes.</p>
+                        <x-ui.button type="submit" class="mt-5 w-full" icon="refresh-cw">Clear System Cache</x-ui.button>
+                    </form>
+
+                    @if (\App\Support\PortalPermission::isRootAdmin(auth()->user()))
+                        <form method="POST" action="{{ route('admin.settings.database.seed') }}" class="rounded-xl border border-amber-400/40 bg-amber-400/10 p-5">
+                            @csrf
+                            <span class="mb-3 flex size-10 items-center justify-center rounded-xl bg-amber-400 text-graphite-950 shadow-[0_12px_28px_rgb(217_155_0_/_0.25)]">
+                                <x-ui.icon name="database" class="size-5" />
+                            </span>
+                            <p class="text-sm font-semibold text-[var(--text-strong)]">Import / update database seeders</p>
+                            <p class="mt-2 text-sm leading-6 text-[var(--text-soft)]">Refresh roles, permissions, academic data, and default portal settings from the application seeders.</p>
+                            <x-ui.button type="submit" class="mt-5 w-full" icon="database">Update Database Seeders</x-ui.button>
+                        </form>
+                    @endif
+                </div>
             </div>
         </section>
 
