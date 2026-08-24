@@ -82,7 +82,7 @@
                                 <p class="mb-1 text-xs font-semibold uppercase text-[var(--text-soft)] lg:hidden">Roles</p>
                                 <div class="flex flex-wrap gap-1.5">
                                     @forelse ($admin->roles as $role)
-                                        <span class="rounded-md bg-amber-400/20 px-2 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-300/20 dark:text-amber-200">{{ $role->name }}</span>
+                                        <span class="rounded-md px-2 py-1 text-xs font-semibold text-graphite-950" style="background-color: var(--color-amber-300);">{{ $role->name }}</span>
                                     @empty
                                         <span class="rounded-md bg-[var(--surface-muted)] px-2 py-1 text-xs font-semibold text-[var(--text-soft)]">No role</span>
                                     @endforelse
@@ -90,14 +90,14 @@
                             </div>
                             <div>
                                 <p class="mb-1 text-xs font-semibold uppercase text-[var(--text-soft)] lg:hidden">Status</p>
-                                <span class="inline-flex rounded-md bg-emerald-500/15 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-200">{{ ucfirst((string) $admin->status) }}</span>
+                                <span class="inline-flex rounded-md px-2 py-1 text-xs font-semibold text-white" style="background-color: var(--color-brand-400);">{{ ucfirst((string) $admin->status) }}</span>
                             </div>
                             <div class="min-w-0">
                                 <p class="mb-1 text-xs font-semibold uppercase text-[var(--text-soft)] lg:hidden">Update</p>
                                 @if (\App\Support\PortalPermission::isRootAdmin($admin))
                                     <span class="inline-flex rounded-md bg-[var(--surface-muted)] px-2 py-1 text-xs font-semibold text-[var(--text-soft)]">Protected root account</span>
                                 @else
-                                    <form method="POST" action="{{ route('admin.control.admins.update', $admin) }}" class="grid gap-3">
+                                    <form id="admin-status-form-{{ $admin->id }}" method="POST" action="{{ route('admin.control.admins.update', $admin) }}" class="grid gap-3">
                                         @csrf
                                         @method('PUT')
                                         <input type="hidden" name="name" value="{{ $admin->name }}">
@@ -109,17 +109,13 @@
                                         @foreach ($admin->permissions as $permission)
                                             <input type="hidden" name="permissions[]" value="{{ $permission->name }}">
                                         @endforeach
-                                        <div class="grid gap-2 sm:grid-cols-[1fr_8rem_auto] lg:grid-cols-1 2xl:grid-cols-[1fr_8rem_auto]">
-                                            <label class="block">
-                                                <span class="mb-1 block text-[11px] font-semibold uppercase text-[var(--text-soft)]">Super Admin Password</span>
-                                                <input class="min-w-0 rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] px-2 py-2 text-xs text-[var(--text-strong)] placeholder:text-[var(--text-soft)]" name="current_password" type="password" placeholder="Confirm password" required>
-                                            </label>
+                                        <div class="grid gap-2 sm:grid-cols-[1fr_auto] lg:grid-cols-1 2xl:grid-cols-[1fr_auto]">
                                             <select name="status" class="rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] px-2 py-2 text-xs text-[var(--text-strong)]">
                                                 <option value="active" @selected($admin->status === 'active')>Active</option>
                                                 <option value="inactive" @selected($admin->status === 'inactive')>Inactive</option>
                                                 <option value="suspended" @selected($admin->status === 'suspended')>Suspended</option>
                                             </select>
-                                            <button class="rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white shadow-glow theme-transition hover:bg-brand-700" type="submit">Save</button>
+                                            <x-ui.button type="button" data-modal-target="#admin-status-confirm-{{ $admin->id }}">Confirm Status</x-ui.button>
                                         </div>
                                     </form>
                                     <x-ui.button type="button" variant="secondary" class="mt-2 w-full" data-modal-target="#admin-access-{{ $admin->id }}">Roles & Permissions</x-ui.button>
@@ -134,6 +130,30 @@
 
     @foreach ($admins as $admin)
         @continue(\App\Support\PortalPermission::isRootAdmin($admin))
+        <x-ui.modal id="admin-status-confirm-{{ $admin->id }}" title="Confirm Status Update" class="w-[min(34rem,calc(100vw-2rem))]">
+            <div class="grid gap-4">
+                <div class="rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <p class="text-sm font-semibold text-[var(--text-strong)]">{{ $admin->name }}</p>
+                    <p class="mt-1 break-all text-xs text-[var(--text-soft)]">{{ $admin->email }}</p>
+                    <p class="mt-3 text-sm text-[var(--text-soft)]">Enter your super admin password to confirm the selected status update.</p>
+                </div>
+
+                <x-ui.input
+                    label="Super Admin Password"
+                    name="current_password"
+                    type="password"
+                    placeholder="Confirm your password"
+                    required
+                    form="admin-status-form-{{ $admin->id }}"
+                />
+
+                <div class="flex justify-end gap-2">
+                    <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
+                    <x-ui.button type="submit" form="admin-status-form-{{ $admin->id }}">Confirm Update</x-ui.button>
+                </div>
+            </div>
+        </x-ui.modal>
+
         <x-ui.modal id="admin-access-{{ $admin->id }}" title="Roles & Permissions - {{ $admin->name }}" class="w-[min(62rem,calc(100vw-2rem))]">
             <form method="POST" action="{{ route('admin.control.admins.update', $admin) }}" class="grid gap-5">
                 @csrf
@@ -156,7 +176,7 @@
                         </div>
                         <div>
                             <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Status</p>
-                            <span class="mt-1 inline-flex rounded-md bg-emerald-500/15 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-200">{{ ucfirst((string) $admin->status) }}</span>
+                            <span class="mt-1 inline-flex rounded-md px-2 py-1 text-xs font-semibold text-white" style="background-color: var(--color-brand-400);">{{ ucfirst((string) $admin->status) }}</span>
                         </div>
                     </div>
                 </div>
