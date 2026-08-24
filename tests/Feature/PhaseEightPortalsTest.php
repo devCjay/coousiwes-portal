@@ -17,6 +17,8 @@ use Database\Seeders\AcademicStructureSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PhaseEightPortalsTest extends TestCase
@@ -135,6 +137,36 @@ class PhaseEightPortalsTest extends TestCase
 
         $this->assertTrue($student->fresh()->hasCompleteProfile());
         $this->assertSame($session->id, $student->fresh()->academic_session_id);
+    }
+
+    public function test_student_can_upload_profile_picture_on_basic_profile_step(): void
+    {
+        Storage::fake('public');
+
+        $student = $this->student('photo-student@example.test', '2026/PORTAL/013', completeProfile: false);
+
+        $this->actingAs($student->user)
+            ->withSession(['otp.verified' => true])
+            ->withHeaders(['Accept' => 'application/json', 'X-Requested-With' => 'XMLHttpRequest'])
+            ->post(route('student.profile.step'), [
+                'step' => 'basic',
+                'profile_photo' => UploadedFile::fake()->createWithContent(
+                    'student-photo.png',
+                    base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=')
+                ),
+                'email' => 'photo-student@example.test',
+                'phone' => '08039990013',
+                'gender' => 'Female',
+                'date_of_birth' => '2002-01-01',
+                'nationality' => 'Nigerian',
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Step saved successfully.');
+
+        $photoPath = $student->user->fresh()->metadata['profile_photo_path'] ?? null;
+
+        $this->assertNotNull($photoPath);
+        Storage::disk('public')->assertExists($photoPath);
     }
 
     public function test_student_can_update_only_their_own_profile(): void

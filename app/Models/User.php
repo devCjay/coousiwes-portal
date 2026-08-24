@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -51,5 +52,12 @@ class User extends Authenticatable
     public function supervisor(): HasOne
     {
         return $this->hasOne(Supervisor::class);
+    }
+
+    public function profilePhotoUrl(): ?string
+    {
+        $path = $this->metadata['profile_photo_path'] ?? null;
+
+        return filled($path) ? Storage::disk('public')->url($path) : null;
     }
 }

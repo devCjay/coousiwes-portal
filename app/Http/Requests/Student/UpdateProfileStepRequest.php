@@ -33,6 +33,7 @@ class UpdateProfileStepRequest extends FormRequest
         return match ((string) $this->input('step')) {
             'basic' => [
                 'step' => ['required', Rule::in(['basic'])],
+                'profile_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
                 'email' => ['required', 'email', 'max:160', Rule::unique('users', 'email')->ignore($this->user()->id)],
                 'phone' => ['required', 'string', 'max:40'],
                 'gender' => ['required', Rule::in(['Male', 'Female'])],

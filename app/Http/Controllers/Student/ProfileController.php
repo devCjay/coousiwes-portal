@@ -13,6 +13,7 @@ use App\Services\AuditLogger;
 use App\Support\AjaxResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -142,6 +143,19 @@ class ProfileController extends Controller
         ]);
 
         $metadata['nationality'] = $validated['nationality'];
+
+        if ($request->hasFile('profile_photo')) {
+            $userMetadata = $request->user()->metadata ?? [];
+            $oldPath = $userMetadata['profile_photo_path'] ?? null;
+
+            if (filled($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
+
+            $userMetadata['profile_photo_path'] = $request->file('profile_photo')->store('profile-photos', 'public');
+            $request->user()->forceFill(['metadata' => $userMetadata])->save();
+        }
+
         $student->update([
             'gender' => $validated['gender'],
             'date_of_birth' => $validated['date_of_birth'],

@@ -8,6 +8,7 @@
     $selectedFaculty = $student->faculty_id ? (string) $student->faculty_id : '';
     $selectedDepartment = $student->department_id ? (string) $student->department_id : '';
     $selectedSession = $student->academic_session_id ? (string) $student->academic_session_id : ($activeSession?->id ? (string) $activeSession->id : '');
+    $profilePhotoUrl = $student->user->profilePhotoUrl();
     $navigation = [
         ['label' => 'Dashboard', 'href' => route('student.dashboard'), 'icon' => 'D'],
         ['label' => 'Profile Setup', 'href' => route('student.profile.edit'), 'active' => true, 'icon' => 'user-check'],
@@ -75,9 +76,23 @@
             <div class="w-full min-w-0 max-w-full p-2 sm:p-6 lg:p-8">
                 <div data-profile-step-panel="0" class="profile-step-panel min-w-0">
                     <x-ui.card title="Basic Information" description="Start with your identity and direct contact details.">
-                        <form id="profile-step-basic" method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-step-index="0" data-ajax-reset="false" class="grid min-w-0 gap-5">
+                        <form id="profile-step-basic" method="POST" action="{{ route('student.profile.step') }}" enctype="multipart/form-data" data-profile-step-form data-step-index="0" data-ajax-reset="false" class="grid min-w-0 gap-5">
                             @csrf
                             <input type="hidden" name="step" value="basic">
+                            <div class="flex flex-col gap-4 rounded-2xl border border-brand-600/15 bg-[var(--surface-muted)] p-4 sm:flex-row sm:items-center">
+                                <div class="grid size-24 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-white bg-brand-600 text-2xl font-black text-white shadow-[0_18px_42px_rgb(0_81_54_/_0.18)]">
+                                    @if ($profilePhotoUrl)
+                                        <img src="{{ $profilePhotoUrl }}" alt="{{ $student->user->name }} profile photo" class="h-full w-full object-cover">
+                                    @else
+                                        <x-ui.icon name="user-circle" class="size-10" />
+                                    @endif
+                                </div>
+                                <label class="block min-w-0 flex-1">
+                                    <span class="siwes-form-label">Profile Picture</span>
+                                    <input type="file" name="profile_photo" accept="image/png,image/jpeg,image/webp" class="siwes-form-control mt-2 theme-transition file:mr-4 file:rounded-lg file:border-0 file:bg-brand-600 file:px-3 file:py-2 file:text-sm file:font-bold file:text-white">
+                                    <span class="mt-2 block text-xs leading-5 text-[var(--text-soft)]">Upload a clear JPG, PNG, or WEBP image. Maximum size is 2MB.</span>
+                                </label>
+                            </div>
                             <div class="grid min-w-0 gap-5 md:grid-cols-2">
                                 <x-ui.input label="Email Address" name="email" type="email" value="{{ $student->user->email }}" required />
                                 <x-ui.input label="Phone Number" name="phone" value="{{ $student->user->phone }}" required />
