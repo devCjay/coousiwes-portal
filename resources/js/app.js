@@ -724,6 +724,10 @@ if (profileWizard) {
         const isFinalMilestone = !activeForm;
 
         if (wizardActions) {
+            if (activeForm && wizardActions.parentElement !== activeForm) {
+                activeForm.appendChild(wizardActions);
+            }
+
             wizardActions.hidden = isFinalMilestone;
             wizardActions.classList.toggle('hidden', isFinalMilestone);
         }
@@ -733,8 +737,7 @@ if (profileWizard) {
             wizardPrev.classList.toggle('hidden', targetIndex === 0);
         }
 
-        if (wizardSubmit && activeForm) {
-            wizardSubmit.setAttribute('form', activeForm.id);
+        if (wizardSubmit) {
             wizardSubmit.dataset.loadingText = targetIndex === 3 ? 'Completing...' : 'Saving...';
         }
 

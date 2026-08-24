@@ -101,6 +101,18 @@
                                     data-profile-nationality
                                 />
                             </div>
+                            <div class="mt-1 grid gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between" data-profile-wizard-actions>
+                                <x-ui.button type="button" variant="secondary" class="hidden w-full sm:w-auto" data-profile-prev data-profile-wizard-prev hidden>Back</x-ui.button>
+                                <button
+                                    type="submit"
+                                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-[0_16px_34px_rgb(0_81_54_/_0.22)] theme-transition hover:-translate-y-0.5 hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-graphite-950 dark:hover:bg-brand-300 sm:w-auto"
+                                    data-loading-text="Saving..."
+                                    data-profile-wizard-submit
+                                >
+                                    <x-ui.icon name="save" class="size-4 shrink-0" />
+                                    <span data-profile-wizard-submit-label>Save and Continue</span>
+                                </button>
+                            </div>
                         </form>
                     </x-ui.card>
                 </div>
@@ -199,19 +211,6 @@
                     </x-ui.card>
                 </div>
 
-                <div class="mt-5 grid gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between" data-profile-wizard-actions>
-                    <x-ui.button type="button" variant="secondary" class="hidden w-full sm:w-auto" data-profile-prev data-profile-wizard-prev hidden>Back</x-ui.button>
-                    <button
-                        type="submit"
-                        form="profile-step-basic"
-                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-[0_16px_34px_rgb(0_81_54_/_0.22)] theme-transition hover:-translate-y-0.5 hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-graphite-950 dark:hover:bg-brand-300 sm:w-auto"
-                        data-loading-text="Saving..."
-                        data-profile-wizard-submit
-                    >
-                        <x-ui.icon name="save" class="size-4 shrink-0" />
-                        <span data-profile-wizard-submit-label>Save and Continue</span>
-                    </button>
-                </div>
             </div>
         </div>
     </section>
