@@ -82,23 +82,6 @@ class RoleAndPermissionSeeder extends Seeder
 
         $admin->syncPermissions($permissionModels([
             'dashboard.view',
-            'students.view',
-            'students.create',
-            'students.update',
-            'students.suspend',
-            'students.import',
-            'students.export',
-            'tickets.view',
-            'tickets.generate',
-            'supervisors.view',
-            'supervisors.create',
-            'supervisors.update',
-            'supervisors.assign',
-            'feedback.view',
-            'payments.view',
-            'payments.export',
-            'academics.manage',
-            'settings.view',
         ]));
 
         $studentManager->syncPermissions($permissionModels([

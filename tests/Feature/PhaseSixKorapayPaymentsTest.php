@@ -33,6 +33,10 @@ class PhaseSixKorapayPaymentsTest extends TestCase
         Config::set('siwes.payments.ticket_amount', 5000);
         $this->seed(RoleAndPermissionSeeder::class);
         $this->seed(AcademicStructureSeeder::class);
+
+        Admin::where('email', 'admin@coousiwes.test')
+            ->firstOrFail()
+            ->assignRole('ticket-manager');
     }
 
     public function test_admin_can_generate_activation_tickets_for_students(): void

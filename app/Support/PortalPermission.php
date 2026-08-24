@@ -8,6 +8,27 @@ use Illuminate\Support\Facades\DB;
 
 class PortalPermission
 {
+    public static function gateBefore(object $user, string $permission): ?bool
+    {
+        if (! $user instanceof Admin) {
+            return null;
+        }
+
+        if (self::isRootAdmin($user)) {
+            return true;
+        }
+
+        if ($user->status !== Admin::STATUS_ACTIVE) {
+            return false;
+        }
+
+        if ($permission === 'dashboard.view') {
+            return true;
+        }
+
+        return self::hasPermissionInDatabase($user, $permission, ignoreBaseAdminRole: true);
+    }
+
     public static function userHas(object|null $user, string $permission): bool
     {
         if (! $user) {
@@ -18,7 +39,7 @@ class PortalPermission
             return true;
         }
 
-        if (self::hasPermissionInDatabase($user, $permission)) {
+        if (self::hasPermissionInDatabase($user, $permission, ignoreBaseAdminRole: $user instanceof Admin)) {
             return true;
         }
 
@@ -41,7 +62,7 @@ class PortalPermission
             || self::hasRoleInDatabase($admin, 'super-admin');
     }
 
-    private static function hasPermissionInDatabase(object $user, string $permission): bool
+    private static function hasPermissionInDatabase(object $user, string $permission, bool $ignoreBaseAdminRole = false): bool
     {
         $modelType = match (true) {
             $user instanceof Admin => Admin::class,
@@ -67,14 +88,20 @@ class PortalPermission
             return true;
         }
 
-        return DB::table('model_has_roles')
+        $roleQuery = DB::table('model_has_roles')
             ->join('role_has_permissions', 'role_has_permissions.role_id', '=', 'model_has_roles.role_id')
+            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
             ->join('permissions', 'permissions.id', '=', 'role_has_permissions.permission_id')
             ->where('model_has_roles.model_type', $modelType)
             ->where('model_has_roles.model_id', $modelId)
             ->where('permissions.name', $permission)
-            ->where('permissions.guard_name', 'web')
-            ->exists();
+            ->where('permissions.guard_name', 'web');
+
+        if ($ignoreBaseAdminRole && $user instanceof Admin) {
+            $roleQuery->where('roles.name', '!=', 'admin');
+        }
+
+        return $roleQuery->exists();
     }
 
     private static function hasRoleInDatabase(Admin $admin, string $role): bool

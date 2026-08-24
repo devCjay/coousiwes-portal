@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::before(static function (object $user, string $ability): ?bool {
-            return PortalPermission::hasFallbackPermission($user, $ability) ?: null;
+            return PortalPermission::gateBefore($user, $ability);
         });
     }
 }

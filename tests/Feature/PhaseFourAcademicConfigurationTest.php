@@ -25,6 +25,10 @@ class PhaseFourAcademicConfigurationTest extends TestCase
         parent::setUp();
 
         $this->seed(RoleAndPermissionSeeder::class);
+
+        Admin::where('email', 'admin@coousiwes.test')
+            ->firstOrFail()
+            ->assignRole(['academic-manager', 'student-manager', 'settings-manager']);
     }
 
     public function test_permitted_admins_can_open_academic_and_settings_configuration_pages(): void

@@ -24,7 +24,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_admin_dashboard_uses_database_synced_student_totals(): void
     {
-        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
@@ -37,6 +37,7 @@ class AdminDashboardTest extends TestCase
     public function test_admin_dashboard_quick_reports_use_placement_records(): void
     {
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin->assignRole('student-manager');
         $student = Student::query()->firstOrFail();
 
         $student->placement()->create([
@@ -81,6 +82,27 @@ class AdminDashboardTest extends TestCase
             ->assertSee('Verified Payments')
             ->assertDontSee('Total Students')
             ->assertDontSee('Students yet to add placement')
+            ->assertDontSee(route('admin.students.index'))
+            ->assertDontSee(route('admin.tickets.index'))
+            ->assertDontSee(route('admin.supervisors.index'));
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.students.index'))
+            ->assertForbidden();
+    }
+
+    public function test_base_admin_role_only_shows_dashboard_without_module_features(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('No Assigned Modules')
+            ->assertDontSee('Total Students')
+            ->assertDontSee('Open Tickets')
             ->assertDontSee(route('admin.students.index'))
             ->assertDontSee(route('admin.tickets.index'))
             ->assertDontSee(route('admin.supervisors.index'));

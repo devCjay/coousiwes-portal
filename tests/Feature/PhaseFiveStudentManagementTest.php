@@ -31,6 +31,10 @@ class PhaseFiveStudentManagementTest extends TestCase
 
         $this->seed(RoleAndPermissionSeeder::class);
         $this->seed(AcademicStructureSeeder::class);
+
+        Admin::where('email', 'admin@coousiwes.test')
+            ->firstOrFail()
+            ->assignRole('student-manager');
     }
 
     public function test_admin_can_open_student_management_page(): void

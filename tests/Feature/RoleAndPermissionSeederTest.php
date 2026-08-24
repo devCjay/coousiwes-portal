@@ -23,7 +23,8 @@ it('seeds the baseline portal roles and permissions', function () {
         ->and(Permission::where('name', 'payments.view')->exists())->toBeTrue();
 
     expect(Role::findByName('super-admin')->hasPermissionTo('roles.manage'))->toBeTrue()
-        ->and(Role::findByName('admin')->hasPermissionTo('students.import'))->toBeTrue()
+        ->and(Role::findByName('admin')->hasPermissionTo('dashboard.view'))->toBeTrue()
+        ->and(Role::findByName('admin')->hasPermissionTo('students.import'))->toBeFalse()
         ->and(Role::findByName('student-manager')->hasPermissionTo('students.export'))->toBeTrue()
         ->and(Role::findByName('ticket-manager')->hasPermissionTo('tickets.revoke'))->toBeTrue()
         ->and(Role::findByName('supervisor-manager')->hasPermissionTo('supervisors.assign'))->toBeTrue()
