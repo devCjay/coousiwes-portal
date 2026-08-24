@@ -12,6 +12,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 use Illuminate\Validation\Rule;
 use Throwable;
@@ -95,27 +97,63 @@ class AppSettingController extends Controller
     {
         abort_unless(PortalPermission::userHas($request->user(), 'settings.update'), 403);
 
+        $validated = $request->validate([
+            'test_email' => ['required', 'email', 'max:190'],
+        ]);
+
+        $mailer = (string) $this->settingValue('mail.mailer', config('mail.default', 'smtp'));
         $host = (string) $this->settingValue('mail.host', config('mail.mailers.smtp.host'));
         $port = (int) $this->settingValue('mail.port', config('mail.mailers.smtp.port'));
         $scheme = (string) $this->settingValue('mail.scheme', config('mail.mailers.smtp.scheme'));
-        $timeout = 8;
+        $username = (string) $this->settingValue('mail.username', config('mail.mailers.smtp.username'));
+        $password = (string) $this->settingValue('mail.password', config('mail.mailers.smtp.password'));
+        $fromAddress = (string) $this->settingValue('mail.from_address', config('mail.from.address'));
+        $fromName = (string) $this->settingValue('mail.from_name', config('mail.from.name', 'COOU SIWES Portal'));
 
-        if ($host === '' || $port <= 0) {
+        if ($mailer === 'smtp' && ($host === '' || $port <= 0)) {
             return AjaxResponse::error($request, 'SMTP host and port are required before testing email connection.');
         }
 
-        $target = ($scheme === 'smtps' ? 'ssl://' : '').$host.':'.$port;
-        $errno = 0;
-        $error = '';
-        $connection = @stream_socket_client($target, $errno, $error, $timeout);
-
-        if (! is_resource($connection)) {
-            return AjaxResponse::error($request, "SMTP connection failed: {$error}", key: 'email');
+        if ($fromAddress === '') {
+            return AjaxResponse::error($request, 'From address is required before sending a test email.');
         }
 
-        fclose($connection);
+        Config::set('mail.default', $mailer);
+        Config::set("mail.mailers.{$mailer}.host", $host);
+        Config::set("mail.mailers.{$mailer}.port", $port);
+        Config::set("mail.mailers.{$mailer}.scheme", $scheme ?: null);
+        Config::set("mail.mailers.{$mailer}.username", $username ?: null);
+        Config::set("mail.mailers.{$mailer}.password", $password ?: null);
+        Config::set('mail.from.address', $fromAddress);
+        Config::set('mail.from.name', $fromName ?: 'COOU SIWES Portal');
 
-        return AjaxResponse::success($request, "SMTP connection to {$host}:{$port} succeeded.");
+        try {
+            Mail::raw(
+                "This is a COOU SIWES Portal email configuration test.\n\nIf you received this message, the portal can send email using the configured mail settings.",
+                fn ($message) => $message
+                    ->to($validated['test_email'])
+                    ->subject('COOU SIWES Portal Email Test')
+            );
+        } catch (Throwable $exception) {
+            $this->auditLogger->record('settings.email_test_failed', $request->user(), $request, metadata: [
+                'mailer' => $mailer,
+                'host' => $host,
+                'port' => $port,
+                'test_email' => $validated['test_email'],
+                'error' => $exception->getMessage(),
+            ]);
+
+            return AjaxResponse::error($request, 'Email test failed: '.$exception->getMessage(), 500, 'email');
+        }
+
+        $this->auditLogger->record('settings.email_test_sent', $request->user(), $request, metadata: [
+            'mailer' => $mailer,
+            'host' => $host,
+            'port' => $port,
+            'test_email' => $validated['test_email'],
+        ]);
+
+        return AjaxResponse::success($request, "Test email sent to {$validated['test_email']}. Check the inbox and spam folder to confirm delivery.", reload: false);
     }
 
     public function clearCache(Request $request): JsonResponse|RedirectResponse

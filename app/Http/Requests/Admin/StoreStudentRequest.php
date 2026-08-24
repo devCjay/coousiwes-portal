@@ -87,6 +87,19 @@ class StoreStudentRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'faculty_id.required' => 'No active faculty/department setup was found. Open System Settings and run Import / update database seeders.',
+            'department_id.required' => 'No active department setup was found. Open System Settings and run Import / update database seeders.',
+            'academic_level_id.required' => 'No active academic level setup was found. Open System Settings and run Import / update database seeders.',
+            'academic_session_id.required' => 'No academic session setup was found. Open System Settings and run Import / update database seeders.',
+        ];
+    }
+
     private function generatedEmail(string $matricNo): string
     {
         $slug = Str::of($matricNo)

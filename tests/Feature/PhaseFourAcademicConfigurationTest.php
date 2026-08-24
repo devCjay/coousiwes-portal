@@ -13,6 +13,7 @@ use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\Admin;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -364,16 +365,59 @@ class PhaseFourAcademicConfigurationTest extends TestCase
         $this->assertSame(7500, AppSetting::where('key', 'payment.ticket_amount')->firstOrFail()->value);
     }
 
-    public function test_email_connection_test_requires_smtp_host_and_port(): void
+    public function test_settings_page_shows_email_test_modal_with_recipient_input(): void
     {
         $superAdmin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
-        config(['mail.mailers.smtp.host' => '', 'mail.mailers.smtp.port' => null]);
 
         $this->actingAs($superAdmin, 'admin')
             ->withSession(['otp.verified' => true])
-            ->postJson(route('admin.settings.email.test'))
+            ->get(route('admin.settings.index'))
+            ->assertOk()
+            ->assertSee('email-test-modal')
+            ->assertSee('Test Email Address')
+            ->assertSee('Send Test Email');
+    }
+
+    public function test_email_connection_test_requires_smtp_host_and_port_after_recipient(): void
+    {
+        $superAdmin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        config(['mail.default' => 'smtp', 'mail.mailers.smtp.host' => '', 'mail.mailers.smtp.port' => null]);
+        AppSetting::query()->whereIn('key', ['mail.host', 'mail.port'])->delete();
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.mailer'],
+            ['group' => 'mail', 'value' => 'smtp', 'type' => 'string']
+        );
+
+        $this->actingAs($superAdmin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.settings.email.test'), ['test_email' => 'test@example.com'])
             ->assertUnprocessable()
             ->assertJsonPath('message', 'SMTP host and port are required before testing email connection.');
+    }
+
+    public function test_email_connection_test_sends_real_test_message_to_recipient(): void
+    {
+        $superAdmin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        config([
+            'mail.default' => 'smtp',
+            'mail.mailers.smtp.host' => 'smtp.example.com',
+            'mail.mailers.smtp.port' => 587,
+            'mail.from.address' => 'portal@example.com',
+            'mail.from.name' => 'COOU SIWES Portal',
+        ]);
+
+        Mail::shouldReceive('raw')
+            ->once()
+            ->withArgs(fn (string $body, callable $callback): bool => str_contains($body, 'COOU SIWES Portal email configuration test'));
+
+        $this->actingAs($superAdmin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.settings.email.test'), ['test_email' => 'recipient@example.com'])
+            ->assertOk()
+            ->assertJsonPath('message', 'Test email sent to recipient@example.com. Check the inbox and spam folder to confirm delivery.')
+            ->assertJsonPath('reload', false);
+
+        $this->assertTrue(AuditLog::where('event', 'settings.email_test_sent')->exists());
     }
 
     public function test_permitted_admin_can_clear_system_cache_from_settings(): void

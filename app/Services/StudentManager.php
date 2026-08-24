@@ -7,6 +7,7 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 
 class StudentManager
 {
@@ -16,6 +17,10 @@ class StudentManager
     public function create(array $data): Student
     {
         return DB::transaction(function () use ($data): Student {
+            if (! Role::query()->where('name', 'student')->where('guard_name', 'web')->exists()) {
+                throw new \RuntimeException('Student role is missing. Open System Settings and run Import / update database seeders, then clear cache.');
+            }
+
             $user = User::query()->create([
                 'name' => $data['name'],
                 'email' => $data['email'],

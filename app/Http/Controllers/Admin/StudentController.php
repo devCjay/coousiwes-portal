@@ -22,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
+use RuntimeException;
 
 class StudentController extends Controller
 {
@@ -81,7 +82,11 @@ class StudentController extends Controller
 
     public function store(StoreStudentRequest $request): JsonResponse|RedirectResponse
     {
-        $student = $this->studentManager->create($request->validated());
+        try {
+            $student = $this->studentManager->create($request->validated());
+        } catch (RuntimeException $exception) {
+            return AjaxResponse::error($request, $exception->getMessage(), key: 'student');
+        }
 
         $this->auditLogger->record('students.created', $request->user(), $request, $student, $student->only(['matric_no']));
 

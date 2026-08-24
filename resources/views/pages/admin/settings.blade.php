@@ -128,10 +128,7 @@
                 <div class="flex flex-wrap gap-2">
                     @if ($canUpdateSettings)
                         <x-ui.button type="button" data-modal-target="#email-settings-modal">Configure Email</x-ui.button>
-                        <form method="POST" action="{{ route('admin.settings.email.test') }}">
-                            @csrf
-                            <x-ui.button type="submit" variant="secondary">Test Connection</x-ui.button>
-                        </form>
+                        <x-ui.button type="button" variant="secondary" data-modal-target="#email-test-modal">Test Connection</x-ui.button>
                     @endif
                 </div>
             </div>
@@ -374,6 +371,21 @@
             <div class="flex justify-end gap-2">
                 <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
                 <x-ui.button type="submit">Save Email Settings</x-ui.button>
+            </div>
+        </form>
+        </x-ui.modal>
+
+        <x-ui.modal id="email-test-modal" title="Send Test Email" class="w-[min(34rem,calc(100vw-2rem))]">
+        <form method="POST" action="{{ route('admin.settings.email.test') }}" class="grid gap-4" data-ajax-reset="false">
+            @csrf
+            <div class="rounded-xl border border-cyan-400/35 bg-cyan-400/10 p-4">
+                <p class="text-sm font-semibold text-[var(--text-strong)]">Test actual email delivery</p>
+                <p class="mt-1 text-sm leading-6 text-[var(--text-soft)]">Enter an inbox you can access. The portal will send a real test message using the current SMTP settings.</p>
+            </div>
+            <x-ui.input label="Test Email Address" name="test_email" type="email" placeholder="you@example.com" required />
+            <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
+                <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
+                <x-ui.button type="submit" icon="mail" data-loading-text="Sending...">Send Test Email</x-ui.button>
             </div>
         </form>
         </x-ui.modal>
