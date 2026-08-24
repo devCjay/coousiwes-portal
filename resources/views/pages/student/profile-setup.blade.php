@@ -74,7 +74,7 @@
             <div class="w-full min-w-0 max-w-full p-2 sm:p-6 lg:p-8">
                 <div data-profile-step-panel="0" class="profile-step-panel min-w-0">
                     <x-ui.card title="Basic Information" description="Start with your identity and direct contact details.">
-                        <form method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-step-index="0" data-ajax-reset="false" class="grid min-w-0 gap-5">
+                        <form id="profile-step-basic" method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-step-index="0" data-ajax-reset="false" class="grid min-w-0 gap-5">
                             @csrf
                             <input type="hidden" name="step" value="basic">
                             <div class="grid min-w-0 gap-5 md:grid-cols-2">
@@ -101,16 +101,13 @@
                                     data-profile-nationality
                                 />
                             </div>
-                            <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                                <x-ui.button type="submit" class="w-full sm:w-auto" data-loading-text="Saving...">Save and Continue</x-ui.button>
-                            </div>
                         </form>
                     </x-ui.card>
                 </div>
 
                 <div data-profile-step-panel="1" class="profile-step-panel hidden min-w-0" hidden>
                     <x-ui.card title="Contact Information" description="Choose your current state and local government area with live filtering.">
-                        <form method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-step-index="1" data-ajax-reset="false" class="grid min-w-0 gap-5">
+                        <form id="profile-step-contact" method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-step-index="1" data-ajax-reset="false" class="grid min-w-0 gap-5">
                             @csrf
                             <input type="hidden" name="step" value="contact">
                             <x-ui.input label="Address" name="address" value="{{ $student->address }}" required />
@@ -132,17 +129,13 @@
                                     data-profile-lga
                                 />
                             </div>
-                            <div class="grid gap-3 sm:flex sm:flex-wrap sm:justify-between">
-                                <x-ui.button type="button" variant="secondary" class="w-full sm:w-auto" data-profile-prev>Back</x-ui.button>
-                                <x-ui.button type="submit" class="w-full sm:w-auto" data-loading-text="Saving...">Save and Continue</x-ui.button>
-                            </div>
                         </form>
                     </x-ui.card>
                 </div>
 
                 <div data-profile-step-panel="2" class="profile-step-panel hidden min-w-0" hidden>
                     <x-ui.card title="Academic Information" description="Select the faculty and department linked to your SIWES record.">
-                        <form method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-step-index="2" data-ajax-reset="false" class="grid min-w-0 gap-5">
+                        <form id="profile-step-academic" method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-step-index="2" data-ajax-reset="false" class="grid min-w-0 gap-5">
                             @csrf
                             <input type="hidden" name="step" value="academic">
                             <div class="grid min-w-0 gap-5 md:grid-cols-2">
@@ -169,17 +162,13 @@
                                     <dd class="mt-1 text-sm font-semibold text-[var(--text-strong)]">{{ $student->academicSession?->name ?? 'N/A' }}</dd>
                                 </div>
                             </div>
-                            <div class="grid gap-3 sm:flex sm:flex-wrap sm:justify-between">
-                                <x-ui.button type="button" variant="secondary" class="w-full sm:w-auto" data-profile-prev>Back</x-ui.button>
-                                <x-ui.button type="submit" class="w-full sm:w-auto" data-loading-text="Saving...">Save and Continue</x-ui.button>
-                            </div>
                         </form>
                     </x-ui.card>
                 </div>
 
                 <div data-profile-step-panel="3" class="profile-step-panel hidden min-w-0" hidden>
                     <x-ui.card title="Bank Information" description="Select your bank and confirm your student account details.">
-                        <form method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-step-index="3" data-ajax-reset="false" class="grid min-w-0 gap-5">
+                        <form id="profile-step-bank" method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-step-index="3" data-ajax-reset="false" class="grid min-w-0 gap-5">
                             @csrf
                             <input type="hidden" name="step" value="bank">
                             <div class="grid min-w-0 gap-5 md:grid-cols-2">
@@ -193,10 +182,6 @@
                                 />
                                 <x-ui.input label="Account Number" name="account_number" value="{{ $metadata['account_number'] ?? '' }}" inputmode="numeric" maxlength="10" required />
                                 <x-ui.input label="Sort Code" name="sort_code" value="{{ $metadata['sort_code'] ?? ($selectedBankRecord['sort_code'] ?? '') }}" required readonly data-profile-sort-code />
-                            </div>
-                            <div class="grid gap-3 sm:flex sm:flex-wrap sm:justify-between">
-                                <x-ui.button type="button" variant="secondary" class="w-full sm:w-auto" data-profile-prev>Back</x-ui.button>
-                                <x-ui.button type="submit" class="w-full sm:w-auto" data-loading-text="Completing...">Complete Profile</x-ui.button>
                             </div>
                         </form>
                     </x-ui.card>
@@ -212,6 +197,20 @@
                             <p class="mx-auto mt-2 max-w-xl text-sm leading-6 text-white/78">Save your bank information to finish the profile milestone. A congratulatory page will open once your completion reaches 100%.</p>
                         </div>
                     </x-ui.card>
+                </div>
+
+                <div class="mt-5 grid gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-raised)] p-3 shadow-[0_16px_38px_rgb(8_15_12_/_0.06)] sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:p-4" data-profile-wizard-actions>
+                    <x-ui.button type="button" variant="secondary" class="w-full sm:w-auto" data-profile-prev data-profile-wizard-prev>Back</x-ui.button>
+                    <button
+                        type="submit"
+                        form="profile-step-basic"
+                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-[0_16px_34px_rgb(0_81_54_/_0.22)] theme-transition hover:-translate-y-0.5 hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-graphite-950 dark:hover:bg-brand-300 sm:w-auto"
+                        data-loading-text="Saving..."
+                        data-profile-wizard-submit
+                    >
+                        <x-ui.icon name="save" class="size-4 shrink-0" />
+                        <span data-profile-wizard-submit-label>Save and Continue</span>
+                    </button>
                 </div>
             </div>
         </div>

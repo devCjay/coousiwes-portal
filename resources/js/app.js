@@ -423,7 +423,7 @@ document.addEventListener('submit', async (event) => {
     event.preventDefault();
 
     const submitter = event.submitter;
-    const originalText = submitter?.textContent;
+    const originalMarkup = submitter?.innerHTML;
 
     if (submitter) {
         submitter.disabled = true;
@@ -487,7 +487,7 @@ document.addEventListener('submit', async (event) => {
         setProgress(false);
         if (submitter) {
             submitter.disabled = false;
-            submitter.textContent = originalText;
+            submitter.innerHTML = originalMarkup;
         }
     }
 });
@@ -674,6 +674,10 @@ if (profileWizard) {
     const stepPanels = [...profileWizard.querySelectorAll('[data-profile-step-panel]')];
     const progressFill = profileWizard.querySelector('[data-profile-progress]');
     const progressPercent = profileWizard.querySelector('[data-profile-percent]');
+    const wizardActions = profileWizard.querySelector('[data-profile-wizard-actions]');
+    const wizardPrev = profileWizard.querySelector('[data-profile-wizard-prev]');
+    const wizardSubmit = profileWizard.querySelector('[data-profile-wizard-submit]');
+    const wizardSubmitLabel = profileWizard.querySelector('[data-profile-wizard-submit-label]');
     const hasStepWizard = stepPanels.length > 0;
     let activeStep = 0;
     let highestUnlockedStep = 0;
@@ -715,6 +719,28 @@ if (profileWizard) {
             button.classList.toggle('opacity-55', !isUnlocked);
             button.disabled = !isUnlocked;
         });
+
+        const activeForm = stepPanels[targetIndex]?.querySelector('[data-profile-step-form]');
+        const isFinalMilestone = !activeForm;
+
+        if (wizardActions) {
+            wizardActions.hidden = isFinalMilestone;
+            wizardActions.classList.toggle('hidden', isFinalMilestone);
+        }
+
+        if (wizardPrev) {
+            wizardPrev.hidden = targetIndex === 0;
+            wizardPrev.classList.toggle('hidden', targetIndex === 0);
+        }
+
+        if (wizardSubmit && activeForm) {
+            wizardSubmit.setAttribute('form', activeForm.id);
+            wizardSubmit.dataset.loadingText = targetIndex === 3 ? 'Completing...' : 'Saving...';
+        }
+
+        if (wizardSubmitLabel) {
+            wizardSubmitLabel.textContent = targetIndex === 3 ? 'Complete Profile' : 'Save and Continue';
+        }
     };
 
     const closeComboboxes = (except = null) => {
