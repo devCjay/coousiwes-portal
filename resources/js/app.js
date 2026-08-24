@@ -493,6 +493,26 @@ document.addEventListener('submit', async (event) => {
 });
 
 document.addEventListener('change', (event) => {
+    const photoInput = event.target.closest('[data-profile-photo-input]');
+
+    if (photoInput) {
+        const file = photoInput.files?.[0];
+        const form = photoInput.closest('form');
+        const preview = form?.querySelector('[data-profile-photo-preview]');
+
+        if (file && preview) {
+            const image = preview.querySelector('[data-profile-photo-image]') || document.createElement('img');
+
+            image.src = URL.createObjectURL(file);
+            image.alt = 'Selected profile photo preview';
+            image.className = 'h-full w-full object-cover';
+            image.dataset.profilePhotoImage = 'true';
+            preview.replaceChildren(image);
+        }
+
+        return;
+    }
+
     const toggle = event.target.closest('[data-check-all]');
 
     if (!toggle) {

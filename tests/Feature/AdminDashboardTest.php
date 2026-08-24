@@ -59,6 +59,48 @@ class AdminDashboardTest extends TestCase
             ->assertSee('Placement forms submitted');
     }
 
+    public function test_admin_dashboard_activated_students_count_uses_placement_records(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin->assignRole('student-manager');
+        $students = Student::query()->take(2)->get();
+
+        if ($students->count() < 2) {
+            $base = Student::query()->firstOrFail();
+            $user = User::factory()->create([
+                'name' => 'Second Dashboard Student',
+                'email' => 'second-dashboard-student@example.test',
+            ]);
+            $user->assignRole('student');
+            $students->push(Student::query()->create([
+                'user_id' => $user->id,
+                'matric_no' => '2026/DASH/002',
+                'faculty_id' => $base->faculty_id,
+                'department_id' => $base->department_id,
+                'academic_session_id' => $base->academic_session_id,
+                'activation_status' => Student::STATUS_ACTIVE,
+            ]));
+        }
+
+        [$withPlacement, $withoutPlacement] = $students->values();
+        $withPlacement->update(['activation_status' => Student::STATUS_ACTIVE]);
+        $withoutPlacement->update(['activation_status' => Student::STATUS_ACTIVE]);
+        StudentPlacement::query()->delete();
+        $withPlacement->placement()->create([
+            'academic_level_id' => $withPlacement->academic_level_id,
+            'academic_session_id' => $withPlacement->academic_session_id,
+            'siwes_year' => 2026,
+            'attachment_period' => 'April to October',
+            'company_name' => 'Future Works Ltd',
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertViewHas('stats', fn (array $stats): bool => $stats['activatedStudents'] === 1);
+    }
+
     public function test_student_distribution_groups_students_by_their_current_faculty_records(): void
     {
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();

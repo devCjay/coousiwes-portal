@@ -18,7 +18,8 @@ class DashboardController extends Controller
     {
         $totalStudents = Student::query()->count();
         $activatedStudents = Student::query()
-            ->where('activation_status', Student::STATUS_ACTIVE)
+            ->whereHas('placement')
+            ->where('activation_status', '!=', Student::STATUS_SUSPENDED)
             ->count();
         $totalSupervisors = Supervisor::query()->count();
         $activeSupervisors = Supervisor::query()

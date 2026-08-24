@@ -133,16 +133,16 @@
                             <input type="hidden" name="step" value="basic">
                             <input type="hidden" name="source" value="profile">
                             <div class="flex flex-col gap-4 rounded-2xl border border-brand-600/15 bg-[var(--surface-muted)] p-4 sm:flex-row sm:items-center">
-                                <div class="grid size-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-white bg-brand-600 text-xl font-black text-white shadow-[0_18px_42px_rgb(0_81_54_/_0.18)]">
+                                <div class="grid size-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-white bg-brand-600 text-xl font-black text-white shadow-[0_18px_42px_rgb(0_81_54_/_0.18)]" data-profile-photo-preview>
                                     @if ($profilePhotoUrl)
-                                        <img src="{{ $profilePhotoUrl }}" alt="{{ $student->user->name }} profile photo" class="h-full w-full object-cover">
+                                        <img src="{{ $profilePhotoUrl }}" alt="{{ $student->user->name }} profile photo" class="h-full w-full object-cover" data-profile-photo-image>
                                     @else
                                         {{ $initials }}
                                     @endif
                                 </div>
                                 <label class="block min-w-0 flex-1">
                                     <span class="siwes-form-label">Profile Picture</span>
-                                    <input type="file" name="profile_photo" accept="image/png,image/jpeg,image/webp" class="siwes-form-control mt-2 theme-transition file:mr-4 file:rounded-lg file:border-0 file:bg-brand-600 file:px-3 file:py-2 file:text-sm file:font-bold file:text-white">
+                                    <input type="file" name="profile_photo" accept="image/png,image/jpeg,image/webp" class="siwes-form-control mt-2 theme-transition file:mr-4 file:rounded-lg file:border-0 file:bg-brand-600 file:px-3 file:py-2 file:text-sm file:font-bold file:text-white" data-profile-photo-input>
                                     <span class="mt-2 block text-xs leading-5 text-[var(--text-soft)]">Optional. Upload JPG, PNG, or WEBP, max 2MB.</span>
                                 </label>
                             </div>
@@ -245,16 +245,16 @@
                 <input type="hidden" name="step" value="basic">
                 <input type="hidden" name="source" value="profile">
                 <div class="flex flex-col gap-4 rounded-2xl border border-brand-600/15 bg-[var(--surface-muted)] p-4">
-                    <div class="grid size-20 place-items-center overflow-hidden rounded-2xl border-4 border-white bg-brand-600 text-xl font-black text-white shadow-[0_18px_42px_rgb(0_81_54_/_0.18)]">
+                    <div class="grid size-20 place-items-center overflow-hidden rounded-2xl border-4 border-white bg-brand-600 text-xl font-black text-white shadow-[0_18px_42px_rgb(0_81_54_/_0.18)]" data-profile-photo-preview>
                         @if ($profilePhotoUrl)
-                            <img src="{{ $profilePhotoUrl }}" alt="{{ $student->user->name }} profile photo" class="h-full w-full object-cover">
+                            <img src="{{ $profilePhotoUrl }}" alt="{{ $student->user->name }} profile photo" class="h-full w-full object-cover" data-profile-photo-image>
                         @else
                             {{ $initials }}
                         @endif
                     </div>
                     <label class="block min-w-0">
                         <span class="siwes-form-label">Profile Picture</span>
-                        <input type="file" name="profile_photo" accept="image/png,image/jpeg,image/webp" class="siwes-form-control mt-2 theme-transition file:mr-4 file:rounded-lg file:border-0 file:bg-brand-600 file:px-3 file:py-2 file:text-sm file:font-bold file:text-white">
+                        <input type="file" name="profile_photo" accept="image/png,image/jpeg,image/webp" class="siwes-form-control mt-2 theme-transition file:mr-4 file:rounded-lg file:border-0 file:bg-brand-600 file:px-3 file:py-2 file:text-sm file:font-bold file:text-white" data-profile-photo-input>
                     </label>
                 </div>
                 <x-ui.input label="Email Address" name="email" type="email" value="{{ $student->user->email }}" required />

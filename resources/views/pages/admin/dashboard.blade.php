@@ -22,7 +22,7 @@
             <x-ui.stat-card label="Total Students" :value="number_format($stats['totalStudents'])" meta="Database records" />
         @endif
         @if ($can('students.view'))
-            <x-ui.stat-card label="Activated Students" :value="number_format($stats['activatedStudents'])" :meta="$can('payments.view') ? number_format($stats['verifiedPayments']).' Korapay verified' : 'Active student records'" tone="cyan" />
+            <x-ui.stat-card label="Activated Students" :value="number_format($stats['activatedStudents'])" :meta="$can('payments.view') ? number_format($stats['verifiedPayments']).' Korapay verified' : 'Students with placement'" tone="cyan" />
         @elseif ($can('payments.view'))
             <x-ui.stat-card label="Verified Payments" :value="number_format($stats['verifiedPayments'])" meta="Korapay verified" tone="cyan" />
         @endif
