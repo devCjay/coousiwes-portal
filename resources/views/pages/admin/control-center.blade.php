@@ -81,14 +81,16 @@
                             <div class="min-w-0">
                                 <p class="mb-1 text-xs font-semibold uppercase text-[var(--text-soft)] lg:hidden">Roles</p>
                                 <div class="flex flex-wrap gap-1.5">
-                                    @foreach ($admin->roles as $role)
-                                        <span class="rounded-md bg-brand-500/10 px-2 py-1 text-xs font-semibold text-brand-700 dark:text-brand-200">{{ $role->name }}</span>
-                                    @endforeach
+                                    @forelse ($admin->roles as $role)
+                                        <span class="rounded-md bg-amber-400/20 px-2 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-300/20 dark:text-amber-200">{{ $role->name }}</span>
+                                    @empty
+                                        <span class="rounded-md bg-[var(--surface-muted)] px-2 py-1 text-xs font-semibold text-[var(--text-soft)]">No role</span>
+                                    @endforelse
                                 </div>
                             </div>
                             <div>
                                 <p class="mb-1 text-xs font-semibold uppercase text-[var(--text-soft)] lg:hidden">Status</p>
-                                <span class="inline-flex rounded-md bg-brand-500/10 px-2 py-1 text-xs font-semibold text-brand-700 dark:text-brand-200">{{ ucfirst((string) $admin->status) }}</span>
+                                <span class="inline-flex rounded-md bg-emerald-500/15 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-200">{{ ucfirst((string) $admin->status) }}</span>
                             </div>
                             <div class="min-w-0">
                                 <p class="mb-1 text-xs font-semibold uppercase text-[var(--text-soft)] lg:hidden">Update</p>
@@ -101,8 +103,17 @@
                                         <input type="hidden" name="name" value="{{ $admin->name }}">
                                         <input type="hidden" name="email" value="{{ $admin->email }}">
                                         <input type="hidden" name="phone" value="{{ $admin->phone }}">
-                                        <div class="grid gap-2 sm:grid-cols-[1fr_8rem_auto] lg:grid-cols-2 2xl:grid-cols-[1fr_8rem_auto]">
-                                            <input class="min-w-0 rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] px-2 py-2 text-xs text-[var(--text-strong)] placeholder:text-[var(--text-soft)]" name="current_password" type="password" placeholder="Current password" required>
+                                        @foreach ($admin->roles as $role)
+                                            <input type="hidden" name="roles[]" value="{{ $role->name }}">
+                                        @endforeach
+                                        @foreach ($admin->permissions as $permission)
+                                            <input type="hidden" name="permissions[]" value="{{ $permission->name }}">
+                                        @endforeach
+                                        <div class="grid gap-2 sm:grid-cols-[1fr_8rem_auto] lg:grid-cols-1 2xl:grid-cols-[1fr_8rem_auto]">
+                                            <label class="block">
+                                                <span class="mb-1 block text-[11px] font-semibold uppercase text-[var(--text-soft)]">Super Admin Password</span>
+                                                <input class="min-w-0 rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] px-2 py-2 text-xs text-[var(--text-strong)] placeholder:text-[var(--text-soft)]" name="current_password" type="password" placeholder="Confirm password" required>
+                                            </label>
                                             <select name="status" class="rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] px-2 py-2 text-xs text-[var(--text-strong)]">
                                                 <option value="active" @selected($admin->status === 'active')>Active</option>
                                                 <option value="inactive" @selected($admin->status === 'inactive')>Inactive</option>
@@ -110,29 +121,8 @@
                                             </select>
                                             <button class="rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white shadow-glow theme-transition hover:bg-brand-700" type="submit">Save</button>
                                         </div>
-                                        <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3">
-                                            <p class="mb-2 text-xs font-semibold uppercase text-[var(--text-soft)]">Assign Roles</p>
-                                            <div class="grid gap-2 sm:grid-cols-2">
-                                                @foreach ($roles->whereNotIn('name', ['super-admin', 'student', 'supervisor']) as $role)
-                                                    <label class="flex items-center gap-2 rounded-md bg-[var(--surface-raised)] px-2 py-1.5 text-xs font-semibold text-[var(--text-strong)]">
-                                                        <input type="checkbox" name="roles[]" value="{{ $role->name }}" @checked($admin->hasRole($role->name))>
-                                                        {{ $role->name }}
-                                                    </label>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                        <details class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3">
-                                            <summary class="cursor-pointer text-xs font-semibold uppercase text-[var(--text-soft)]">Direct Permissions</summary>
-                                            <div class="mt-3 grid max-h-44 gap-2 overflow-y-auto sm:grid-cols-2">
-                                                @foreach ($flatPermissions as $permission)
-                                                    <label class="flex items-center gap-2 text-xs text-[var(--text-strong)]">
-                                                        <input type="checkbox" name="permissions[]" value="{{ $permission->name }}" @checked($admin->hasDirectPermission($permission->name))>
-                                                        {{ $permission->name }}
-                                                    </label>
-                                                @endforeach
-                                            </div>
-                                        </details>
                                     </form>
+                                    <x-ui.button type="button" variant="secondary" class="mt-2 w-full" data-modal-target="#admin-access-{{ $admin->id }}">Roles & Permissions</x-ui.button>
                                 @endif
                             </div>
                         </article>
@@ -141,6 +131,71 @@
             </div>
         </x-ui.card>
     </div>
+
+    @foreach ($admins as $admin)
+        @continue(\App\Support\PortalPermission::isRootAdmin($admin))
+        <x-ui.modal id="admin-access-{{ $admin->id }}" title="Roles & Permissions - {{ $admin->name }}" class="w-[min(62rem,calc(100vw-2rem))]">
+            <form method="POST" action="{{ route('admin.control.admins.update', $admin) }}" class="grid gap-5">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="name" value="{{ $admin->name }}">
+                <input type="hidden" name="email" value="{{ $admin->email }}">
+                <input type="hidden" name="phone" value="{{ $admin->phone }}">
+                <input type="hidden" name="status" value="{{ $admin->status }}">
+
+                <div class="rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <p class="text-sm font-semibold text-[var(--text-strong)]">Admin Account</p>
+                    <div class="mt-3 grid gap-3 sm:grid-cols-3">
+                        <div>
+                            <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Name</p>
+                            <p class="mt-1 text-sm font-semibold text-[var(--text-strong)]">{{ $admin->name }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Email</p>
+                            <p class="mt-1 break-all text-sm font-semibold text-[var(--text-strong)]">{{ $admin->email }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Status</p>
+                            <span class="mt-1 inline-flex rounded-md bg-emerald-500/15 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-200">{{ ucfirst((string) $admin->status) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-sm font-semibold text-[var(--text-strong)]">Assign Roles</p>
+                    <p class="mt-1 text-xs text-[var(--text-soft)]">Select one or more module roles for this admin.</p>
+                    <div class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        @foreach ($roles->whereNotIn('name', ['super-admin', 'student', 'supervisor']) as $role)
+                            <label class="flex items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] px-3 py-3 text-sm font-semibold text-[var(--text-strong)] theme-transition hover:border-amber-400">
+                                <input type="checkbox" name="roles[]" value="{{ $role->name }}" @checked($admin->hasRole($role->name))>
+                                <span>{{ $role->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <details class="rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <summary class="cursor-pointer text-sm font-semibold text-[var(--text-strong)]">Direct Permissions</summary>
+                    <p class="mt-2 text-xs text-[var(--text-soft)]">Use direct permissions only for exceptions not covered by roles.</p>
+                    <div class="mt-4 grid max-h-64 gap-3 overflow-y-auto md:grid-cols-2">
+                        @foreach ($flatPermissions as $permission)
+                            <label class="flex items-center gap-2 rounded-lg bg-[var(--surface-raised)] px-3 py-2 text-xs text-[var(--text-strong)]">
+                                <input type="checkbox" name="permissions[]" value="{{ $permission->name }}" @checked($admin->hasDirectPermission($permission->name))>
+                                {{ $permission->name }}
+                            </label>
+                        @endforeach
+                    </div>
+                </details>
+
+                <x-ui.input label="Super Admin Password" name="current_password" type="password" placeholder="Confirm your password to save access changes" required />
+
+                <div class="flex justify-end gap-2">
+                    <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
+                    <x-ui.button type="submit">Save Access Changes</x-ui.button>
+                </div>
+            </form>
+        </x-ui.modal>
+    @endforeach
 
     <div class="mt-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <x-ui.card title="Role Builder" description="Create custom admin roles and assign granular privileges.">

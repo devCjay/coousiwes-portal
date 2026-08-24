@@ -31,7 +31,9 @@ class PhaseTenSuperAdminControlTest extends TestCase
             ->assertOk()
             ->assertSee('Super Admin Control')
             ->assertSee('Create Admin')
-            ->assertSee('Role Builder');
+            ->assertSee('Role Builder')
+            ->assertSee('Roles &amp; Permissions', false)
+            ->assertSee('Super Admin Password');
     }
 
     public function test_regular_admin_cannot_open_control_center(): void
