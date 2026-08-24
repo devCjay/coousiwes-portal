@@ -36,11 +36,12 @@
                     </select>
                 </label>
                 <div class="md:col-span-2 xl:col-span-1 2xl:col-span-2">
-                    <p class="text-sm font-medium text-[var(--text-strong)]">Roles</p>
+                    <input type="hidden" name="roles[]" value="admin">
+                    <p class="text-sm font-medium text-[var(--text-strong)]">Module Roles</p>
                     <div class="mt-2 grid gap-2 sm:grid-cols-2">
-                        @foreach ($roles->whereNotIn('name', ['super-admin', 'student', 'supervisor']) as $role)
+                        @foreach ($roles->whereNotIn('name', ['super-admin', 'admin', 'student', 'supervisor']) as $role)
                             <label class="flex items-center gap-2 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] px-3 py-2 text-sm">
-                                <input type="checkbox" name="roles[]" value="{{ $role->name }}" @checked($role->name === 'admin')>
+                                <input type="checkbox" name="roles[]" value="{{ $role->name }}">
                                 {{ $role->name }}
                             </label>
                         @endforeach
@@ -81,10 +82,10 @@
                             <div class="min-w-0">
                                 <p class="mb-1 text-xs font-semibold uppercase text-[var(--text-soft)] lg:hidden">Roles</p>
                                 <div class="flex flex-wrap gap-1.5">
-                                    @forelse ($admin->roles as $role)
+                                    @forelse ($admin->roles->where('name', '!=', 'admin') as $role)
                                         <span class="rounded-md px-2 py-1 text-xs font-semibold text-graphite-950" style="background-color: var(--color-amber-300);">{{ $role->name }}</span>
                                     @empty
-                                        <span class="rounded-md bg-[var(--surface-muted)] px-2 py-1 text-xs font-semibold text-[var(--text-soft)]">No role</span>
+                                        <span class="rounded-md bg-[var(--surface-muted)] px-2 py-1 text-xs font-semibold text-[var(--text-soft)]">Base admin</span>
                                     @endforelse
                                 </div>
                             </div>
@@ -103,7 +104,8 @@
                                         <input type="hidden" name="name" value="{{ $admin->name }}">
                                         <input type="hidden" name="email" value="{{ $admin->email }}">
                                         <input type="hidden" name="phone" value="{{ $admin->phone }}">
-                                        @foreach ($admin->roles as $role)
+                                        <input type="hidden" name="roles[]" value="admin">
+                                        @foreach ($admin->roles->where('name', '!=', 'admin') as $role)
                                             <input type="hidden" name="roles[]" value="{{ $role->name }}">
                                         @endforeach
                                         @foreach ($admin->permissions as $permission)
@@ -182,10 +184,11 @@
                 </div>
 
                 <div>
-                    <p class="text-sm font-semibold text-[var(--text-strong)]">Assign Roles</p>
+                    <input type="hidden" name="roles[]" value="admin">
+                    <p class="text-sm font-semibold text-[var(--text-strong)]">Assign Module Roles</p>
                     <p class="mt-1 text-xs text-[var(--text-soft)]">Select one or more module roles for this admin.</p>
                     <div class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        @foreach ($roles->whereNotIn('name', ['super-admin', 'student', 'supervisor']) as $role)
+                        @foreach ($roles->whereNotIn('name', ['super-admin', 'admin', 'student', 'supervisor']) as $role)
                             <label class="flex items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] px-3 py-3 text-sm font-semibold text-[var(--text-strong)] theme-transition hover:border-amber-400">
                                 <input type="checkbox" name="roles[]" value="{{ $role->name }}" @checked($admin->hasRole($role->name))>
                                 <span>{{ $role->name }}</span>
