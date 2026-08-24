@@ -12,6 +12,7 @@
         \App\Models\Ticket::STATUS_UNUSED => 'Unused',
         \App\Models\Ticket::STATUS_USED => 'Used',
     ];
+    $can = fn (string $permission): bool => \App\Support\PortalPermission::userHas(auth('admin')->user(), $permission);
 @endphp
 
 <x-layouts.app-shell title="Manage Tickets" role="Admin" :navigation="$navigation">
@@ -21,27 +22,29 @@
         <x-ui.stat-card label="Ticket Fee" :value="'NGN '.number_format(config('siwes.payments.ticket_amount'))" meta="Paid through Korapay" tone="cyan" />
     </div>
 
-    <section class="mt-6 overflow-hidden rounded-lg border border-brand-400/25 bg-graphite-900 p-5 text-white shadow-[0_22px_60px_rgb(8_15_12_/_0.28)]">
-        <header class="mb-5">
-            <div class="flex items-center gap-3">
-                <span class="grid size-10 place-items-center rounded-lg bg-brand-400/12 text-brand-200 shadow-glow">
-                    <x-ui.icon name="ticket" class="size-5" />
-                </span>
-                <div>
-                    <h2 class="text-base font-semibold text-white">Generate Tickets</h2>
-                    <p class="mt-1 text-sm text-white/62">Create activation tickets. Tickets remain unused until a student's Korapay activation payment is verified.</p>
+    @if ($can('tickets.generate'))
+        <section class="mt-6 overflow-hidden rounded-lg border border-brand-400/25 bg-graphite-900 p-5 text-white shadow-[0_22px_60px_rgb(8_15_12_/_0.28)]">
+            <header class="mb-5">
+                <div class="flex items-center gap-3">
+                    <span class="grid size-10 place-items-center rounded-lg bg-brand-400/12 text-brand-200 shadow-glow">
+                        <x-ui.icon name="ticket" class="size-5" />
+                    </span>
+                    <div>
+                        <h2 class="text-base font-semibold text-white">Generate Tickets</h2>
+                        <p class="mt-1 text-sm text-white/62">Create activation tickets. Tickets remain unused until a student's Korapay activation payment is verified.</p>
+                    </div>
                 </div>
-            </div>
-        </header>
-        <form method="POST" action="{{ route('admin.tickets.store') }}" class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
-            @csrf
-            <label class="block">
-                <span class="text-sm font-medium text-white/86">Number of Tickets to Generate</span>
-                <input name="quantity" type="number" min="1" max="500" placeholder="Enter number of tickets" required class="mt-2 w-full rounded-lg border border-white/12 bg-white/8 px-3 py-2.5 text-sm text-white shadow-sm theme-transition placeholder:text-white/45 focus:border-brand-300 focus:ring-4 focus:ring-brand-400/20">
-            </label>
-            <x-ui.button type="submit">Generate</x-ui.button>
-        </form>
-    </section>
+            </header>
+            <form method="POST" action="{{ route('admin.tickets.store') }}" class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+                @csrf
+                <label class="block">
+                    <span class="text-sm font-medium text-white/86">Number of Tickets to Generate</span>
+                    <input name="quantity" type="number" min="1" max="500" placeholder="Enter number of tickets" required class="mt-2 w-full rounded-lg border border-white/12 bg-white/8 px-3 py-2.5 text-sm text-white shadow-sm theme-transition placeholder:text-white/45 focus:border-brand-300 focus:ring-4 focus:ring-brand-400/20">
+                </label>
+                <x-ui.button type="submit">Generate</x-ui.button>
+            </form>
+        </section>
+    @endif
 
     <x-ui.card class="mt-6" title="All Tickets (Total: {{ number_format($ticketTotal) }})" description="Search, filter, print, and export activation ticket records.">
         <form method="GET" action="{{ route('admin.tickets.index') }}" data-ajax="false" class="mb-4 grid gap-3">

@@ -173,7 +173,10 @@ class PhaseNineAssessmentReportingTest extends TestCase
 
     private function admin(): Admin
     {
-        return Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin->assignRole('report-manager');
+
+        return $admin;
     }
 
     private function superAdmin(): Admin

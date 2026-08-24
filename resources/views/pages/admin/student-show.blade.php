@@ -34,6 +34,7 @@
         ['id' => 'placement', 'label' => 'Placement', 'icon' => 'building'],
         ['id' => 'account', 'label' => 'Account', 'icon' => 'shield'],
     ];
+    $can = fn (string $permission): bool => \App\Support\PortalPermission::userHas(auth('admin')->user(), $permission);
 @endphp
 
 <x-layouts.app-shell title="Student Profile" role="Admin" :navigation="$navigation">
@@ -55,22 +56,24 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap gap-2">
-                    <x-ui.button type="button" data-modal-target="#edit-student-modal">Edit</x-ui.button>
-                    <form method="POST" action="{{ route('admin.students.reset-password', $student) }}">
-                        @csrf
-                        <x-ui.button type="submit" variant="secondary" data-loading-text="Resetting...">Reset Password</x-ui.button>
-                    </form>
-                    <form method="POST" action="{{ route('admin.students.reactivate', $student) }}">
-                        @csrf
-                        <x-ui.button type="submit" variant="secondary" data-loading-text="Activating...">Activate</x-ui.button>
-                    </form>
-                    <form method="POST" action="{{ route('admin.students.destroy', $student) }}" onsubmit="return confirm('Delete this student record?');">
-                        @csrf
-                        @method('DELETE')
-                        <x-ui.button type="submit" variant="danger" data-loading-text="Deleting...">Delete</x-ui.button>
-                    </form>
-                </div>
+                @if ($can('students.update'))
+                    <div class="flex flex-wrap gap-2">
+                        <x-ui.button type="button" data-modal-target="#edit-student-modal">Edit</x-ui.button>
+                        <form method="POST" action="{{ route('admin.students.reset-password', $student) }}">
+                            @csrf
+                            <x-ui.button type="submit" variant="secondary" data-loading-text="Resetting...">Reset Password</x-ui.button>
+                        </form>
+                        <form method="POST" action="{{ route('admin.students.reactivate', $student) }}">
+                            @csrf
+                            <x-ui.button type="submit" variant="secondary" data-loading-text="Activating...">Activate</x-ui.button>
+                        </form>
+                        <form method="POST" action="{{ route('admin.students.destroy', $student) }}" onsubmit="return confirm('Delete this student record?');">
+                            @csrf
+                            @method('DELETE')
+                            <x-ui.button type="submit" variant="danger" data-loading-text="Deleting...">Delete</x-ui.button>
+                        </form>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -198,75 +201,77 @@
         </div>
     </section>
 
-    <x-ui.modal id="edit-student-modal" title="Edit Student" class="w-[min(62rem,calc(100vw-2rem))]">
-        <form method="POST" action="{{ route('admin.students.update', $student) }}" class="grid gap-4" data-ajax-reset="false">
-            @csrf
-            @method('PUT')
-            <div class="grid gap-4 md:grid-cols-2">
-                <x-ui.input label="Full Name" name="name" value="{{ $student->user->name }}" required />
-                <x-ui.input label="Email" name="email" type="email" value="{{ $student->user->email }}" required />
-                <x-ui.input label="Phone" name="phone" value="{{ $student->user->phone }}" />
-                <x-ui.input label="Matric Number" name="matric_no" value="{{ $student->matric_no }}" required />
-                <label class="block">
-                    <span class="siwes-form-label">Faculty</span>
-                    <select name="faculty_id" class="siwes-form-control mt-2" data-filter-parent="#admin-student-department" required>
-                        @foreach ($faculties as $faculty)
-                            <option value="{{ $faculty->id }}" @selected($student->faculty_id === $faculty->id)>{{ $faculty->name }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label class="block">
-                    <span class="siwes-form-label">Course</span>
-                    <select id="admin-student-department" name="department_id" class="siwes-form-control mt-2" required>
-                        @foreach ($departments as $department)
-                            <option value="{{ $department->id }}" data-parent-value="{{ $department->faculty_id }}" @selected($student->department_id === $department->id)>{{ $department->name }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label class="block">
-                    <span class="siwes-form-label">Academic Level</span>
-                    <select name="academic_level_id" class="siwes-form-control mt-2" required>
-                        @foreach ($levels as $level)
-                            <option value="{{ $level->id }}" @selected($student->academic_level_id === $level->id)>{{ $level->name }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label class="block">
-                    <span class="siwes-form-label">Academic Session</span>
-                    <select name="academic_session_id" class="siwes-form-control mt-2" required>
-                        @foreach ($sessions as $session)
-                            <option value="{{ $session->id }}" @selected($student->academic_session_id === $session->id)>{{ $session->name }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label class="block">
-                    <span class="siwes-form-label">Activation Status</span>
-                    <select name="activation_status" class="siwes-form-control mt-2" required>
-                        @foreach (['inactive', 'active', 'suspended'] as $status)
-                            <option value="{{ $status }}" @selected($student->activation_status === $status)>{{ ucfirst($status) }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label class="block">
-                    <span class="siwes-form-label">Gender</span>
-                    <select name="gender" class="siwes-form-control mt-2">
-                        <option value="">Not set</option>
-                        <option value="Male" @selected($student->gender === 'Male')>Male</option>
-                        <option value="Female" @selected($student->gender === 'Female')>Female</option>
-                    </select>
-                </label>
-                <x-ui.input label="Date of Birth" name="date_of_birth" type="date" value="{{ $student->date_of_birth?->format('Y-m-d') }}" />
-                <label class="block md:col-span-2">
-                    <span class="siwes-form-label">Address</span>
-                    <textarea name="address" rows="4" class="siwes-form-control mt-2">{{ $student->address }}</textarea>
-                </label>
-            </div>
-            <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
-                <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
-                <x-ui.button type="submit" data-loading-text="Saving...">Save Changes</x-ui.button>
-            </div>
-        </form>
-    </x-ui.modal>
+    @if ($can('students.update'))
+        <x-ui.modal id="edit-student-modal" title="Edit Student" class="w-[min(62rem,calc(100vw-2rem))]">
+            <form method="POST" action="{{ route('admin.students.update', $student) }}" class="grid gap-4" data-ajax-reset="false">
+                @csrf
+                @method('PUT')
+                <div class="grid gap-4 md:grid-cols-2">
+                    <x-ui.input label="Full Name" name="name" value="{{ $student->user->name }}" required />
+                    <x-ui.input label="Email" name="email" type="email" value="{{ $student->user->email }}" required />
+                    <x-ui.input label="Phone" name="phone" value="{{ $student->user->phone }}" />
+                    <x-ui.input label="Matric Number" name="matric_no" value="{{ $student->matric_no }}" required />
+                    <label class="block">
+                        <span class="siwes-form-label">Faculty</span>
+                        <select name="faculty_id" class="siwes-form-control mt-2" data-filter-parent="#admin-student-department" required>
+                            @foreach ($faculties as $faculty)
+                                <option value="{{ $faculty->id }}" @selected($student->faculty_id === $faculty->id)>{{ $faculty->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="siwes-form-label">Course</span>
+                        <select id="admin-student-department" name="department_id" class="siwes-form-control mt-2" required>
+                            @foreach ($departments as $department)
+                                <option value="{{ $department->id }}" data-parent-value="{{ $department->faculty_id }}" @selected($student->department_id === $department->id)>{{ $department->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="siwes-form-label">Academic Level</span>
+                        <select name="academic_level_id" class="siwes-form-control mt-2" required>
+                            @foreach ($levels as $level)
+                                <option value="{{ $level->id }}" @selected($student->academic_level_id === $level->id)>{{ $level->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="siwes-form-label">Academic Session</span>
+                        <select name="academic_session_id" class="siwes-form-control mt-2" required>
+                            @foreach ($sessions as $session)
+                                <option value="{{ $session->id }}" @selected($student->academic_session_id === $session->id)>{{ $session->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="siwes-form-label">Activation Status</span>
+                        <select name="activation_status" class="siwes-form-control mt-2" required>
+                            @foreach (['inactive', 'active', 'suspended'] as $status)
+                                <option value="{{ $status }}" @selected($student->activation_status === $status)>{{ ucfirst($status) }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="siwes-form-label">Gender</span>
+                        <select name="gender" class="siwes-form-control mt-2">
+                            <option value="">Not set</option>
+                            <option value="Male" @selected($student->gender === 'Male')>Male</option>
+                            <option value="Female" @selected($student->gender === 'Female')>Female</option>
+                        </select>
+                    </label>
+                    <x-ui.input label="Date of Birth" name="date_of_birth" type="date" value="{{ $student->date_of_birth?->format('Y-m-d') }}" />
+                    <label class="block md:col-span-2">
+                        <span class="siwes-form-label">Address</span>
+                        <textarea name="address" rows="4" class="siwes-form-control mt-2">{{ $student->address }}</textarea>
+                    </label>
+                </div>
+                <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
+                    <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
+                    <x-ui.button type="submit" data-loading-text="Saving...">Save Changes</x-ui.button>
+                </div>
+            </form>
+        </x-ui.modal>
+    @endif
 
     <script>
         (() => {

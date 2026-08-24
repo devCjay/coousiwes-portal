@@ -22,6 +22,7 @@
 
         return $level ? (string) max(1, (int) floor($level / 100)) : 'N/A';
     };
+    $can = fn (string $permission): bool => \App\Support\PortalPermission::userHas(auth('admin')->user(), $permission);
 @endphp
 
 <x-layouts.app-shell title="Student Management" role="Admin" :navigation="$navigation">
@@ -46,20 +47,28 @@
                 <p class="text-sm font-semibold text-[var(--text-strong)]">Student actions</p>
                 <p class="mt-1 text-xs text-[var(--text-soft)]">Create a single record or preview a bulk import without leaving the list.</p>
             </div>
-            <div class="flex flex-wrap gap-2">
-                <x-ui.button type="button" data-modal-target="#add-student-modal">
-                    <x-ui.icon name="user-plus" class="size-4" />
-                    Add Student
-                </x-ui.button>
-                <x-ui.button type="button" variant="secondary" data-modal-target="#bulk-upload-modal">
-                    <x-ui.icon name="upload" class="size-4" />
-                    Bulk Upload
-                </x-ui.button>
-                <x-ui.button type="button" variant="secondary" data-modal-target="#download-posting-modal">
-                    <x-ui.icon name="download" class="size-4" />
-                    Download Student Posting
-                </x-ui.button>
-            </div>
+            @if ($can('students.create') || $can('students.import') || $can('students.export'))
+                <div class="flex flex-wrap gap-2">
+                    @if ($can('students.create'))
+                        <x-ui.button type="button" data-modal-target="#add-student-modal">
+                            <x-ui.icon name="user-plus" class="size-4" />
+                            Add Student
+                        </x-ui.button>
+                    @endif
+                    @if ($can('students.import'))
+                        <x-ui.button type="button" variant="secondary" data-modal-target="#bulk-upload-modal">
+                            <x-ui.icon name="upload" class="size-4" />
+                            Bulk Upload
+                        </x-ui.button>
+                    @endif
+                    @if ($can('students.export'))
+                        <x-ui.button type="button" variant="secondary" data-modal-target="#download-posting-modal">
+                            <x-ui.icon name="download" class="size-4" />
+                            Download Student Posting
+                        </x-ui.button>
+                    @endif
+                </div>
+            @endif
         </div>
 
         <form method="GET" action="{{ route('admin.students.index') }}" data-ajax="false" class="mb-4 grid gap-3 lg:grid-cols-[1fr_12rem_12rem_auto]">
@@ -84,7 +93,9 @@
             </label>
             <div class="flex items-end gap-2">
                 <x-ui.button type="submit">Filter</x-ui.button>
-                <x-ui.button :href="route('admin.students.export')" variant="secondary">Export</x-ui.button>
+                @if ($can('students.export'))
+                    <x-ui.button :href="route('admin.students.export')" variant="secondary">Export</x-ui.button>
+                @endif
             </div>
         </form>
 
@@ -160,64 +171,70 @@
         />
     </x-ui.card>
 
-    <x-ui.modal id="add-student-modal" title="Add Student" class="w-[min(64rem,calc(100vw-2rem))]">
-        <form method="POST" action="{{ route('admin.students.store') }}" class="grid gap-4">
-            @csrf
-            <div class="grid gap-3 md:grid-cols-4">
-                <x-ui.input label="FIRST NAME" name="first_name" placeholder="First name" required />
-                <x-ui.input label="MIDDLE NAME" name="middle_name" placeholder="Middle name" />
-                <x-ui.input label="LAST NAME" name="last_name" placeholder="Last name" required />
-                <x-ui.input label="MATRIC NUMBER" name="matric_no" placeholder="2026/CSC/001" required />
-            </div>
-            <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
-                <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
-                <x-ui.button type="submit">Create Student</x-ui.button>
-            </div>
-        </form>
-    </x-ui.modal>
-
-    <x-ui.modal id="bulk-upload-modal" title="Bulk Upload" class="w-[min(52rem,calc(100vw-2rem))]">
-        <div class="max-h-[75vh] overflow-y-auto pr-1">
-            <p class="mb-4 text-sm text-[var(--text-soft)]">Upload CSV or XLSX files for preview, duplicate detection, and queued processing.</p>
-            <div class="mb-4 flex flex-wrap gap-2">
-                <x-ui.button :href="route('admin.students.template', 'csv')" variant="secondary">CSV Template</x-ui.button>
-                <x-ui.button :href="route('admin.students.template', 'xlsx')" variant="secondary">XLSX Template</x-ui.button>
-            </div>
-            <form method="POST" action="{{ route('admin.students.imports.preview') }}" enctype="multipart/form-data" class="grid gap-4" data-preview-target="#student-import-preview" data-ajax-reset="false">
+    @if ($can('students.create'))
+        <x-ui.modal id="add-student-modal" title="Add Student" class="w-[min(64rem,calc(100vw-2rem))]">
+            <form method="POST" action="{{ route('admin.students.store') }}" class="grid gap-4">
                 @csrf
-                <x-ui.input label="Student File" name="students_file" type="file" accept=".csv,.txt,.xlsx" required />
-                <x-ui.button type="submit">Preview Import</x-ui.button>
+                <div class="grid gap-3 md:grid-cols-4">
+                    <x-ui.input label="FIRST NAME" name="first_name" placeholder="First name" required />
+                    <x-ui.input label="MIDDLE NAME" name="middle_name" placeholder="Middle name" />
+                    <x-ui.input label="LAST NAME" name="last_name" placeholder="Last name" required />
+                    <x-ui.input label="MATRIC NUMBER" name="matric_no" placeholder="2026/CSC/001" required />
+                </div>
+                <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
+                    <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
+                    <x-ui.button type="submit">Create Student</x-ui.button>
+                </div>
             </form>
-            <div id="student-import-preview" class="mt-4"></div>
-        </div>
-    </x-ui.modal>
+        </x-ui.modal>
+    @endif
 
-    <x-ui.modal id="download-posting-modal" title="Download Student Posting List" class="w-[min(30rem,calc(100vw-2rem))]">
-        <form method="GET" action="{{ route('admin.students.posting-list') }}" data-ajax="false" class="grid gap-4">
-            <label class="block">
-                <span class="text-sm font-medium text-[var(--text-strong)]">Filter by Student Level (Optional)</span>
-                <select name="academic_level_id" class="siwes-form-control mt-2">
-                    <option value="">All Levels</option>
-                    @foreach ($postingLevels as $level)
-                        <option value="{{ $level->id }}">{{ $level->name }}</option>
-                    @endforeach
-                </select>
-            </label>
-
-            <label class="block">
-                <span class="text-sm font-medium text-[var(--text-strong)]">Filter by State (Optional)</span>
-                <select name="state" class="siwes-form-control mt-2">
-                    <option value="">All States</option>
-                    @foreach ($postingStates as $state)
-                        <option value="{{ $state }}">{{ $state }}</option>
-                    @endforeach
-                </select>
-            </label>
-
-            <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
-                <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
-                <x-ui.button type="submit">Download</x-ui.button>
+    @if ($can('students.import'))
+        <x-ui.modal id="bulk-upload-modal" title="Bulk Upload" class="w-[min(52rem,calc(100vw-2rem))]">
+            <div class="max-h-[75vh] overflow-y-auto pr-1">
+                <p class="mb-4 text-sm text-[var(--text-soft)]">Upload CSV or XLSX files for preview, duplicate detection, and queued processing.</p>
+                <div class="mb-4 flex flex-wrap gap-2">
+                    <x-ui.button :href="route('admin.students.template', 'csv')" variant="secondary">CSV Template</x-ui.button>
+                    <x-ui.button :href="route('admin.students.template', 'xlsx')" variant="secondary">XLSX Template</x-ui.button>
+                </div>
+                <form method="POST" action="{{ route('admin.students.imports.preview') }}" enctype="multipart/form-data" class="grid gap-4" data-preview-target="#student-import-preview" data-ajax-reset="false">
+                    @csrf
+                    <x-ui.input label="Student File" name="students_file" type="file" accept=".csv,.txt,.xlsx" required />
+                    <x-ui.button type="submit">Preview Import</x-ui.button>
+                </form>
+                <div id="student-import-preview" class="mt-4"></div>
             </div>
-        </form>
-    </x-ui.modal>
+        </x-ui.modal>
+    @endif
+
+    @if ($can('students.export'))
+        <x-ui.modal id="download-posting-modal" title="Download Student Posting List" class="w-[min(30rem,calc(100vw-2rem))]">
+            <form method="GET" action="{{ route('admin.students.posting-list') }}" data-ajax="false" class="grid gap-4">
+                <label class="block">
+                    <span class="text-sm font-medium text-[var(--text-strong)]">Filter by Student Level (Optional)</span>
+                    <select name="academic_level_id" class="siwes-form-control mt-2">
+                        <option value="">All Levels</option>
+                        @foreach ($postingLevels as $level)
+                            <option value="{{ $level->id }}">{{ $level->name }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <label class="block">
+                    <span class="text-sm font-medium text-[var(--text-strong)]">Filter by State (Optional)</span>
+                    <select name="state" class="siwes-form-control mt-2">
+                        <option value="">All States</option>
+                        @foreach ($postingStates as $state)
+                            <option value="{{ $state }}">{{ $state }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
+                    <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
+                    <x-ui.button type="submit">Download</x-ui.button>
+                </div>
+            </form>
+        </x-ui.modal>
+    @endif
 </x-layouts.app-shell>

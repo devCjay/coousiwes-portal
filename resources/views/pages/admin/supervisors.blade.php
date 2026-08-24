@@ -19,6 +19,7 @@
         ['label' => 'Total Assessments', 'value' => $summary['assessments'], 'icon' => 'clipboard-check', 'class' => 'from-amber-400 to-orange-500'],
         ['label' => 'Avg Performance Score', 'value' => number_format($summary['average_performance'], 1), 'icon' => 'star', 'class' => 'from-cyan-600 to-indigo-600'],
     ];
+    $can = fn (string $permission): bool => \App\Support\PortalPermission::userHas(auth('admin')->user(), $permission);
 @endphp
 
 <x-layouts.app-shell title="Manage Supervisors" role="Admin" :navigation="$navigation">
@@ -28,11 +29,17 @@
                 <h1 class="text-2xl font-extrabold tracking-normal text-[var(--text-strong)]">Manage Supervisors</h1>
                 <p class="mt-1 text-sm text-[var(--text-soft)]">Track supervisor workload, assessment performance, assignments, and account actions.</p>
             </div>
-            <div class="flex flex-wrap gap-3">
-                <x-ui.button type="button" data-modal-target="#add-supervisor-modal">Add Supervisor</x-ui.button>
-                <x-ui.button type="button" variant="secondary" data-modal-target="#assign-student-modal">Assign Student</x-ui.button>
-                <x-ui.button type="button" variant="secondary" data-modal-target="#bulk-assignment-modal">Bulk Assignment</x-ui.button>
-            </div>
+            @if ($can('supervisors.create') || $can('supervisors.assign'))
+                <div class="flex flex-wrap gap-3">
+                    @if ($can('supervisors.create'))
+                        <x-ui.button type="button" data-modal-target="#add-supervisor-modal">Add Supervisor</x-ui.button>
+                    @endif
+                    @if ($can('supervisors.assign'))
+                        <x-ui.button type="button" variant="secondary" data-modal-target="#assign-student-modal">Assign Student</x-ui.button>
+                        <x-ui.button type="button" variant="secondary" data-modal-target="#bulk-assignment-modal">Bulk Assignment</x-ui.button>
+                    @endif
+                </div>
+            @endif
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -161,10 +168,12 @@
         </section>
 
         <x-ui.card title="Current Assignments" description="Search active student-supervisor assignments and revoke assignment access when required.">
-            <form id="bulk-revoke-assignments-form" method="POST" action="{{ route('admin.supervisor-assignments.bulk-revoke') }}">
-                @csrf
-                <input type="hidden" name="reason" value="Revoked from assignment table">
-            </form>
+            @if ($can('supervisors.assign'))
+                <form id="bulk-revoke-assignments-form" method="POST" action="{{ route('admin.supervisor-assignments.bulk-revoke') }}">
+                    @csrf
+                    <input type="hidden" name="reason" value="Revoked from assignment table">
+                </form>
+            @endif
 
             <form method="GET" action="{{ route('admin.supervisors.index') }}" data-ajax="false" class="mb-4 grid gap-3 lg:grid-cols-[1fr_auto_auto]">
                 <x-ui.input
@@ -183,9 +192,11 @@
             </form>
 
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <x-ui.button type="submit" form="bulk-revoke-assignments-form" variant="danger" data-loading-text="Revoking...">
-                    Revoke Selected
-                </x-ui.button>
+                @if ($can('supervisors.assign'))
+                    <x-ui.button type="submit" form="bulk-revoke-assignments-form" variant="danger" data-loading-text="Revoking...">
+                        Revoke Selected
+                    </x-ui.button>
+                @endif
                 <span class="text-sm text-[var(--text-soft)]">{{ $assignments->total() }} active assignment(s)</span>
             </div>
 
@@ -194,47 +205,55 @@
                     <table id="assignments-table" class="min-w-full divide-y divide-[var(--line)] text-left text-sm">
                         <thead class="bg-brand-600/10 text-xs font-bold uppercase text-brand-700 dark:bg-white/5 dark:text-brand-200">
                             <tr>
-                                <th class="whitespace-nowrap px-4 py-3.5">
-                                    <input type="checkbox" class="rounded border-[var(--line)]" data-check-all="[data-assignment-checkbox]" aria-label="Select all assignments">
-                                </th>
+                                @if ($can('supervisors.assign'))
+                                    <th class="whitespace-nowrap px-4 py-3.5">
+                                        <input type="checkbox" class="rounded border-[var(--line)]" data-check-all="[data-assignment-checkbox]" aria-label="Select all assignments">
+                                    </th>
+                                @endif
                                 <th class="whitespace-nowrap px-4 py-3.5">#</th>
                                 <th class="whitespace-nowrap px-4 py-3.5">Student Name</th>
                                 <th class="whitespace-nowrap px-4 py-3.5">Matric Number</th>
                                 <th class="whitespace-nowrap px-4 py-3.5">Year</th>
                                 <th class="whitespace-nowrap px-4 py-3.5">Supervisor</th>
-                                <th class="whitespace-nowrap px-4 py-3.5">Action</th>
+                                @if ($can('supervisors.assign'))
+                                    <th class="whitespace-nowrap px-4 py-3.5">Action</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-[var(--line)] bg-[var(--surface-raised)]">
                             @forelse ($assignments as $assignment)
                                 <tr class="theme-transition hover:bg-brand-600/5">
-                                    <td class="whitespace-nowrap px-4 py-3.5">
-                                        <input
-                                            type="checkbox"
-                                            name="assignment_ids[]"
-                                            value="{{ $assignment->id }}"
-                                            form="bulk-revoke-assignments-form"
-                                            class="rounded border-[var(--line)]"
-                                            data-assignment-checkbox
-                                            aria-label="Select assignment for {{ $assignment->student->matric_no }}"
-                                        >
-                                    </td>
+                                    @if ($can('supervisors.assign'))
+                                        <td class="whitespace-nowrap px-4 py-3.5">
+                                            <input
+                                                type="checkbox"
+                                                name="assignment_ids[]"
+                                                value="{{ $assignment->id }}"
+                                                form="bulk-revoke-assignments-form"
+                                                class="rounded border-[var(--line)]"
+                                                data-assignment-checkbox
+                                                aria-label="Select assignment for {{ $assignment->student->matric_no }}"
+                                            >
+                                        </td>
+                                    @endif
                                     <td class="whitespace-nowrap px-4 py-3.5 text-[var(--text-strong)]">{{ $loop->iteration + $assignments->firstItem() - 1 }}</td>
                                     <td class="whitespace-nowrap px-4 py-3.5 text-[var(--text-strong)]">{{ $assignment->student->user->name }}</td>
                                     <td class="whitespace-nowrap px-4 py-3.5 text-[var(--text-strong)]">{{ $assignment->student->matric_no }}</td>
                                     <td class="whitespace-nowrap px-4 py-3.5 text-[var(--text-strong)]">{{ $assignment->student->placement?->siwes_year ?? 'N/A' }}</td>
                                     <td class="whitespace-nowrap px-4 py-3.5 text-[var(--text-strong)]">{{ $assignment->supervisor->user->name }}</td>
-                                    <td class="whitespace-nowrap px-4 py-3.5">
-                                        <form method="POST" action="{{ route('admin.supervisor-assignments.revoke', $assignment) }}" class="inline-block">
-                                            @csrf
-                                            <input type="hidden" name="reason" value="Revoked from assignment table">
-                                            <x-ui.button type="submit" variant="danger" class="px-3 py-2 text-xs" data-loading-text="Revoking...">Revoke</x-ui.button>
-                                        </form>
-                                    </td>
+                                    @if ($can('supervisors.assign'))
+                                        <td class="whitespace-nowrap px-4 py-3.5">
+                                            <form method="POST" action="{{ route('admin.supervisor-assignments.revoke', $assignment) }}" class="inline-block">
+                                                @csrf
+                                                <input type="hidden" name="reason" value="Revoked from assignment table">
+                                                <x-ui.button type="submit" variant="danger" class="px-3 py-2 text-xs" data-loading-text="Revoking...">Revoke</x-ui.button>
+                                            </form>
+                                        </td>
+                                    @endif
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-4 py-8 text-center text-sm text-[var(--text-soft)]">No assignments found.</td>
+                                    <td colspan="{{ $can('supervisors.assign') ? 7 : 5 }}" class="px-4 py-8 text-center text-sm text-[var(--text-soft)]">No assignments found.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -248,92 +267,96 @@
         </x-ui.card>
     </div>
 
-    <x-ui.modal id="add-supervisor-modal" title="Add Supervisor" class="w-[min(42rem,calc(100vw-2rem))]">
-        <form method="POST" action="{{ route('admin.supervisors.store') }}" class="grid gap-4">
-            @csrf
-            <div class="grid gap-4 md:grid-cols-2">
-                <x-ui.input label="Full Name" name="name" required />
-                <x-ui.input label="Email" name="email" type="email" required />
-            </div>
-            <div class="flex justify-end gap-2">
-                <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
-                <x-ui.button type="submit">Create Supervisor</x-ui.button>
-            </div>
-        </form>
-    </x-ui.modal>
+    @if ($can('supervisors.create'))
+        <x-ui.modal id="add-supervisor-modal" title="Add Supervisor" class="w-[min(42rem,calc(100vw-2rem))]">
+            <form method="POST" action="{{ route('admin.supervisors.store') }}" class="grid gap-4">
+                @csrf
+                <div class="grid gap-4 md:grid-cols-2">
+                    <x-ui.input label="Full Name" name="name" required />
+                    <x-ui.input label="Email" name="email" type="email" required />
+                </div>
+                <div class="flex justify-end gap-2">
+                    <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
+                    <x-ui.button type="submit">Create Supervisor</x-ui.button>
+                </div>
+            </form>
+        </x-ui.modal>
+    @endif
 
-    <x-ui.modal id="assign-student-modal" title="Assign Student" class="w-[min(40rem,calc(100vw-2rem))]">
-        <form method="POST" action="{{ route('admin.supervisor-assignments.store') }}" class="grid gap-4">
-            @csrf
-            <label class="block">
-                <span class="text-sm font-medium text-[var(--text-strong)]">Supervisor</span>
-                <select name="supervisor_id" class="siwes-form-control mt-2">
-                    @foreach ($allSupervisors as $supervisor)
-                        <option value="{{ $supervisor->id }}">{{ $supervisor->user->name }} / {{ $supervisor->staff_no }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <label class="block">
-                <span class="text-sm font-medium text-[var(--text-strong)]">Student</span>
-                <select name="student_id" class="siwes-form-control mt-2">
-                    @foreach ($students as $student)
-                        <option value="{{ $student->id }}">{{ $student->user->name }} / {{ $student->matric_no }} / {{ $student->department->code }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <div class="flex justify-end gap-2">
-                <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
-                <x-ui.button type="submit">Assign Student</x-ui.button>
-            </div>
-        </form>
-    </x-ui.modal>
+    @if ($can('supervisors.assign'))
+        <x-ui.modal id="assign-student-modal" title="Assign Student" class="w-[min(40rem,calc(100vw-2rem))]">
+            <form method="POST" action="{{ route('admin.supervisor-assignments.store') }}" class="grid gap-4">
+                @csrf
+                <label class="block">
+                    <span class="text-sm font-medium text-[var(--text-strong)]">Supervisor</span>
+                    <select name="supervisor_id" class="siwes-form-control mt-2">
+                        @foreach ($allSupervisors as $supervisor)
+                            <option value="{{ $supervisor->id }}">{{ $supervisor->user->name }} / {{ $supervisor->staff_no }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <label class="block">
+                    <span class="text-sm font-medium text-[var(--text-strong)]">Student</span>
+                    <select name="student_id" class="siwes-form-control mt-2">
+                        @foreach ($students as $student)
+                            <option value="{{ $student->id }}">{{ $student->user->name }} / {{ $student->matric_no }} / {{ $student->department->code }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <div class="flex justify-end gap-2">
+                    <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
+                    <x-ui.button type="submit">Assign Student</x-ui.button>
+                </div>
+            </form>
+        </x-ui.modal>
 
-    <x-ui.modal id="bulk-assignment-modal" title="Bulk Assignment" class="w-[min(52rem,calc(100vw-2rem))]">
-        <form method="POST" action="{{ route('admin.supervisor-assignments.bulk') }}" class="grid gap-4">
-            @csrf
-            <label class="block">
-                <span class="text-sm font-medium text-[var(--text-strong)]">Supervisor</span>
-                <select name="supervisor_id" class="siwes-form-control mt-2">
-                    @foreach ($allSupervisors as $supervisor)
-                        <option value="{{ $supervisor->id }}">{{ $supervisor->user->name }} / {{ $supervisor->staff_no }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <div class="grid gap-3 md:grid-cols-2">
+        <x-ui.modal id="bulk-assignment-modal" title="Bulk Assignment" class="w-[min(52rem,calc(100vw-2rem))]">
+            <form method="POST" action="{{ route('admin.supervisor-assignments.bulk') }}" class="grid gap-4">
+                @csrf
                 <label class="block">
-                    <span class="text-sm font-medium text-[var(--text-strong)]">Faculty</span>
-                    <select name="faculty_id" class="siwes-form-control mt-2" data-filter-parent="#bulk-assignment-department">
-                        <option value="">Any</option>
-                        @foreach ($faculties as $faculty)
-                            <option value="{{ $faculty->id }}">{{ $faculty->name }}</option>
+                    <span class="text-sm font-medium text-[var(--text-strong)]">Supervisor</span>
+                    <select name="supervisor_id" class="siwes-form-control mt-2">
+                        @foreach ($allSupervisors as $supervisor)
+                            <option value="{{ $supervisor->id }}">{{ $supervisor->user->name }} / {{ $supervisor->staff_no }}</option>
                         @endforeach
                     </select>
                 </label>
-                <label class="block">
-                    <span class="text-sm font-medium text-[var(--text-strong)]">Department</span>
-                    <select id="bulk-assignment-department" name="department_id" class="siwes-form-control mt-2">
-                        <option value="">Any</option>
-                        @foreach ($departments as $department)
-                            <option value="{{ $department->id }}" data-parent-value="{{ $department->faculty_id }}">{{ $department->name }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label class="block">
-                    <span class="text-sm font-medium text-[var(--text-strong)]">Session</span>
-                    <select name="academic_session_id" class="siwes-form-control mt-2">
-                        <option value="">Any</option>
-                        @foreach ($sessions as $session)
-                            <option value="{{ $session->id }}">{{ $session->name }}</option>
-                        @endforeach
-                    </select>
-                </label>
-            </div>
-            <div class="flex justify-end gap-2">
-                <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
-                <x-ui.button type="submit">Bulk Assign</x-ui.button>
-            </div>
-        </form>
-    </x-ui.modal>
+                <div class="grid gap-3 md:grid-cols-2">
+                    <label class="block">
+                        <span class="text-sm font-medium text-[var(--text-strong)]">Faculty</span>
+                        <select name="faculty_id" class="siwes-form-control mt-2" data-filter-parent="#bulk-assignment-department">
+                            <option value="">Any</option>
+                            @foreach ($faculties as $faculty)
+                                <option value="{{ $faculty->id }}">{{ $faculty->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-[var(--text-strong)]">Department</span>
+                        <select id="bulk-assignment-department" name="department_id" class="siwes-form-control mt-2">
+                            <option value="">Any</option>
+                            @foreach ($departments as $department)
+                                <option value="{{ $department->id }}" data-parent-value="{{ $department->faculty_id }}">{{ $department->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-[var(--text-strong)]">Session</span>
+                        <select name="academic_session_id" class="siwes-form-control mt-2">
+                            <option value="">Any</option>
+                            @foreach ($sessions as $session)
+                                <option value="{{ $session->id }}">{{ $session->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
+                    <x-ui.button type="submit">Bulk Assign</x-ui.button>
+                </div>
+            </form>
+        </x-ui.modal>
+    @endif
 
     <script>
         (() => {

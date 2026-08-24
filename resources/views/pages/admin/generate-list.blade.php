@@ -7,6 +7,7 @@
         ['label' => 'Academics', 'href' => route('admin.academics.index'), 'icon' => 'A'],
         ['label' => 'Settings', 'href' => route('admin.settings.index'), 'icon' => 'G'],
     ];
+    $can = fn (string $permission): bool => \App\Support\PortalPermission::userHas(auth('admin')->user(), $permission);
 @endphp
 
 <x-layouts.app-shell title="Generate List" role="Admin" :navigation="$navigation">
@@ -16,39 +17,44 @@
         <x-ui.stat-card label="Departments" :value="number_format($departmentCount)" meta="Mapped academic units" tone="amber" />
     </div>
 
-    <x-ui.card class="mt-6" title="List Generation" description="Prepare master and placement list workflows from this workspace.">
-        <div class="grid gap-4 md:grid-cols-2">
-            <button
-                type="button"
-                data-modal-target="#masters-list-modal"
-                class="group flex min-h-36 items-center justify-between gap-4 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5 text-left theme-transition hover:-translate-y-1 hover:border-brand-400 hover:bg-[var(--surface-raised)] hover:shadow-glow"
-            >
-                <span>
-                    <span class="block text-base font-semibold text-[var(--text-strong)]">Generate Masters List</span>
-                    <span class="mt-2 block text-sm leading-6 text-[var(--text-soft)]">Compile the complete student master list from current academic records.</span>
-                </span>
-                <span class="grid size-12 shrink-0 place-items-center rounded-lg bg-brand-600 text-white shadow-glow">
-                    <x-ui.icon name="file-text" class="size-5" />
-                </span>
-            </button>
+    @if ($can('generate-list.export'))
+        <x-ui.card class="mt-6" title="List Generation" description="Prepare master and placement list workflows from this workspace.">
+            <div class="grid gap-4 md:grid-cols-2">
+                <button
+                    type="button"
+                    data-modal-target="#masters-list-modal"
+                    class="group flex min-h-36 items-center justify-between gap-4 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5 text-left theme-transition hover:-translate-y-1 hover:border-brand-400 hover:bg-[var(--surface-raised)] hover:shadow-glow"
+                >
+                    <span>
+                        <span class="block text-base font-semibold text-[var(--text-strong)]">Generate Masters List</span>
+                        <span class="mt-2 block text-sm leading-6 text-[var(--text-soft)]">Compile the complete student master list from current academic records.</span>
+                    </span>
+                    <span class="grid size-12 shrink-0 place-items-center rounded-lg bg-brand-600 text-white shadow-glow">
+                        <x-ui.icon name="file-text" class="size-5" />
+                    </span>
+                </button>
 
-            <button
-                type="button"
-                data-modal-target="#placement-list-modal"
-                class="group flex min-h-36 items-center justify-between gap-4 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5 text-left theme-transition hover:-translate-y-1 hover:border-brand-400 hover:bg-[var(--surface-raised)] hover:shadow-glow"
-            >
-                <span>
-                    <span class="block text-base font-semibold text-[var(--text-strong)]">Generate Placement List</span>
-                    <span class="mt-2 block text-sm leading-6 text-[var(--text-soft)]">Prepare the SIWES placement list workflow for assigned students.</span>
-                </span>
-                <span class="grid size-12 shrink-0 place-items-center rounded-lg bg-cyan-500 text-white shadow-glow">
-                    <x-ui.icon name="clipboard-check" class="size-5" />
-                </span>
-            </button>
-        </div>
-    </x-ui.card>
+                <button
+                    type="button"
+                    data-modal-target="#placement-list-modal"
+                    class="group flex min-h-36 items-center justify-between gap-4 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5 text-left theme-transition hover:-translate-y-1 hover:border-brand-400 hover:bg-[var(--surface-raised)] hover:shadow-glow"
+                >
+                    <span>
+                        <span class="block text-base font-semibold text-[var(--text-strong)]">Generate Placement List</span>
+                        <span class="mt-2 block text-sm leading-6 text-[var(--text-soft)]">Prepare the SIWES placement list workflow for assigned students.</span>
+                    </span>
+                    <span class="grid size-12 shrink-0 place-items-center rounded-lg bg-cyan-500 text-white shadow-glow">
+                        <x-ui.icon name="clipboard-check" class="size-5" />
+                    </span>
+                </button>
+            </div>
+        </x-ui.card>
+    @else
+        <x-ui.card class="mt-6" title="List Generation" description="You can view list counters, but export permission is required to generate master or placement files." />
+    @endif
 
-    <x-ui.modal id="masters-list-modal" title="Generate Masters List" class="w-[min(44rem,calc(100vw-2rem))]">
+    @if ($can('generate-list.export'))
+        <x-ui.modal id="masters-list-modal" title="Generate Masters List" class="w-[min(44rem,calc(100vw-2rem))]">
         <p class="text-sm leading-6 text-[var(--text-soft)]">Download an Excel-compatible master list grouped by faculty and department.</p>
         <form method="GET" action="{{ route('admin.generate-list.master') }}" data-ajax="false" class="mt-5 grid gap-4">
             <div class="grid gap-4 md:grid-cols-2">
@@ -94,9 +100,9 @@
                 <x-ui.button type="submit">Download XLS</x-ui.button>
             </div>
         </form>
-    </x-ui.modal>
+        </x-ui.modal>
 
-    <x-ui.modal id="placement-list-modal" title="Generate Placement List" class="w-[min(44rem,calc(100vw-2rem))]">
+        <x-ui.modal id="placement-list-modal" title="Generate Placement List" class="w-[min(44rem,calc(100vw-2rem))]">
         <p class="text-sm leading-6 text-[var(--text-soft)]">Download an Excel-compatible placement list using submitted SIWES placement records.</p>
         <form method="GET" action="{{ route('admin.generate-list.placement') }}" data-ajax="false" class="mt-5 grid gap-4">
             <div class="grid gap-4 md:grid-cols-2">
@@ -142,6 +148,7 @@
                 <x-ui.button type="submit">Download XLS</x-ui.button>
             </div>
         </form>
-    </x-ui.modal>
+        </x-ui.modal>
+    @endif
 </x-layouts.app-shell>
 

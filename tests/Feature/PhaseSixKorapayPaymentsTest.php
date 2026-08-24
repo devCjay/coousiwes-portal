@@ -36,7 +36,8 @@ class PhaseSixKorapayPaymentsTest extends TestCase
 
         Admin::where('email', 'admin@coousiwes.test')
             ->firstOrFail()
-            ->assignRole('ticket-manager');
+            ->assignRole('ticket-manager')
+            ->givePermissionTo('tickets.generate');
     }
 
     public function test_admin_can_generate_activation_tickets_for_students(): void

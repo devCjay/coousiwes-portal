@@ -34,7 +34,14 @@ class PhaseFiveStudentManagementTest extends TestCase
 
         Admin::where('email', 'admin@coousiwes.test')
             ->firstOrFail()
-            ->assignRole('student-manager');
+            ->assignRole('student-manager')
+            ->givePermissionTo([
+                'students.create',
+                'students.update',
+                'students.suspend',
+                'students.import',
+                'students.export',
+            ]);
     }
 
     public function test_admin_can_open_student_management_page(): void
@@ -226,6 +233,71 @@ class PhaseFiveStudentManagementTest extends TestCase
 
         $this->assertSoftDeleted('students', ['id' => $student->id]);
         $this->assertSame('suspended', $student->user->fresh()->status);
+    }
+
+    public function test_view_only_student_admin_cannot_see_or_call_student_actions(): void
+    {
+        $student = $this->createStudent('view-only-student@example.test', '2026/CSC/031');
+        $viewOnlyAdmin = Admin::query()->create([
+            'admin_code' => 'ADM-STUDENT-VIEW',
+            'name' => 'Student Viewer',
+            'email' => 'student.viewer@example.test',
+            'password' => 'password',
+            'status' => Admin::STATUS_ACTIVE,
+            'otp_enabled' => false,
+            'email_verified_at' => now(),
+        ]);
+        $viewOnlyAdmin->assignRole('student-manager');
+
+        $this->actingAs($viewOnlyAdmin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.students.index'))
+            ->assertOk()
+            ->assertSee('Student List')
+            ->assertDontSee('Add Student')
+            ->assertDontSee('Bulk Upload')
+            ->assertDontSee('Download Student Posting')
+            ->assertDontSee('>Export<', false)
+            ->assertDontSee('add-student-modal')
+            ->assertDontSee('bulk-upload-modal');
+
+        $this->actingAs($viewOnlyAdmin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.students.show', $student))
+            ->assertOk()
+            ->assertSee($student->matric_no)
+            ->assertDontSee('Edit')
+            ->assertDontSee('Reset Password')
+            ->assertDontSee('Delete')
+            ->assertDontSee('edit-student-modal');
+
+        $this->actingAs($viewOnlyAdmin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.students.store'), [
+                'first_name' => 'Blocked',
+                'last_name' => 'Student',
+                'matric_no' => '2026/CSC/099',
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($viewOnlyAdmin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->putJson(route('admin.students.update', $student), $this->studentPayload([
+                'email' => $student->user->email,
+                'matric_no' => $student->matric_no,
+                'name' => 'Blocked Update',
+            ]))
+            ->assertForbidden();
+
+        $this->actingAs($viewOnlyAdmin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.students.reset-password', $student))
+            ->assertForbidden();
+
+        $this->actingAs($viewOnlyAdmin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->deleteJson(route('admin.students.destroy', $student))
+            ->assertForbidden();
     }
 
     public function test_export_and_templates_are_available_to_permitted_admins(): void

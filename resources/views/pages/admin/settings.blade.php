@@ -2,7 +2,7 @@
     $navigation = [
         ['label' => 'Dashboard', 'href' => route('admin.dashboard'), 'icon' => 'D'],
         ['label' => 'Generate List', 'href' => route('admin.generate-list.index'), 'icon' => 'file-text'],
-        ...(\App\Support\PortalPermission::isRootAdmin(auth()->user()) ? [['label' => 'Control', 'href' => route('admin.control.index'), 'icon' => 'C']] : []),
+        ...(\App\Support\PortalPermission::isRootAdmin(auth('admin')->user()) ? [['label' => 'Control', 'href' => route('admin.control.index'), 'icon' => 'C']] : []),
         ['label' => 'Academics', 'href' => route('admin.academics.index'), 'icon' => 'A'],
         ['label' => 'Notices', 'href' => route('admin.notices.index'), 'icon' => 'N'],
         ['label' => 'Settings', 'href' => route('admin.settings.index'), 'active' => true, 'icon' => 'G'],
@@ -16,6 +16,7 @@
         $welcomeTitle = $allSettings->get('site.welcome.title');
         $welcomeEnabled = $allSettings->get('site.welcome.enabled');
         $welcomeDuration = $allSettings->get('site.welcome.duration_seconds');
+        $canUpdateSettings = \App\Support\PortalPermission::userHas(auth('admin')->user(), 'settings.update');
         $settingValue = fn (string $key, mixed $default = null) => $allSettings->get($key)?->value ?? $default;
         $paymentFields = [
             ['group' => 'payment', 'key' => 'payment.provider', 'label' => 'Payment Provider', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('payment.provider', config('siwes.payments.provider', 'korapay')), 'description' => 'Active payment provider. Use korapay.'],
@@ -55,7 +56,9 @@
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#payment-settings-panel" aria-selected="false">Payment Settings</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#email-settings-panel" aria-selected="false">Email Settings</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#system-settings-panel" aria-selected="false">System Settings</button>
-                <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#create-settings-panel" aria-selected="false">Create Setting</button>
+                @if ($canUpdateSettings)
+                    <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#create-settings-panel" aria-selected="false">Create Setting</button>
+                @endif
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#settings-records-panel" aria-selected="false">Settings Records</button>
             </div>
         </div>
@@ -66,7 +69,9 @@
                     <h2 class="text-base font-semibold text-[var(--text-strong)]">Welcome Message</h2>
                     <p class="mt-1 text-sm text-[var(--text-soft)]">Controls the welcome toast shown on public pages.</p>
                 </div>
-                <x-ui.button type="button" data-modal-target="#welcome-settings-modal">Configure Welcome Message</x-ui.button>
+                @if ($canUpdateSettings)
+                    <x-ui.button type="button" data-modal-target="#welcome-settings-modal">Configure Welcome Message</x-ui.button>
+                @endif
             </div>
             <div class="mt-5 grid gap-4 md:grid-cols-3">
                 <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
@@ -94,7 +99,9 @@
                     <h2 class="text-base font-semibold text-[var(--text-strong)]">Payment Settings</h2>
                     <p class="mt-1 text-sm text-[var(--text-soft)]">Korapay credentials, ticket pricing, currency, and payment callback configuration.</p>
                 </div>
-                <x-ui.button type="button" data-modal-target="#payment-settings-modal">Configure Payment</x-ui.button>
+                @if ($canUpdateSettings)
+                    <x-ui.button type="button" data-modal-target="#payment-settings-modal">Configure Payment</x-ui.button>
+                @endif
             </div>
             <div class="mt-5 grid gap-4 md:grid-cols-3">
                 <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
@@ -119,11 +126,13 @@
                     <p class="mt-1 text-sm text-[var(--text-soft)]">SMTP host, credentials, sender identity, and live connection test.</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <x-ui.button type="button" data-modal-target="#email-settings-modal">Configure Email</x-ui.button>
-                    <form method="POST" action="{{ route('admin.settings.email.test') }}">
-                        @csrf
-                        <x-ui.button type="submit" variant="secondary">Test Connection</x-ui.button>
-                    </form>
+                    @if ($canUpdateSettings)
+                        <x-ui.button type="button" data-modal-target="#email-settings-modal">Configure Email</x-ui.button>
+                        <form method="POST" action="{{ route('admin.settings.email.test') }}">
+                            @csrf
+                            <x-ui.button type="submit" variant="secondary">Test Connection</x-ui.button>
+                        </form>
+                    @endif
                 </div>
             </div>
             <div class="mt-5 grid gap-4 md:grid-cols-4">
@@ -177,7 +186,7 @@
                         <x-ui.button type="submit" class="mt-5 w-full" icon="refresh-cw">Clear System Cache</x-ui.button>
                     </form>
 
-                    @if (\App\Support\PortalPermission::isRootAdmin(auth()->user()))
+                    @if ($canUpdateSettings && \App\Support\PortalPermission::isRootAdmin(auth('admin')->user()))
                         <form method="POST" action="{{ route('admin.settings.database.seed') }}" class="rounded-xl border border-amber-400/40 bg-amber-400/10 p-5">
                             @csrf
                             <span class="mb-3 flex size-10 items-center justify-center rounded-xl bg-amber-400 text-graphite-950 shadow-[0_12px_28px_rgb(217_155_0_/_0.25)]">
@@ -192,18 +201,20 @@
             </div>
         </section>
 
-        <section id="create-settings-panel" class="settings-panel mt-5 hidden" data-settings-panel>
-            <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <h2 class="text-base font-semibold text-[var(--text-strong)]">Create Setting</h2>
-                    <p class="mt-1 text-sm text-[var(--text-soft)]">Typed configuration for site, academic, OTP, upload, payment, theme, and notifications.</p>
+        @if ($canUpdateSettings)
+            <section id="create-settings-panel" class="settings-panel mt-5 hidden" data-settings-panel>
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-base font-semibold text-[var(--text-strong)]">Create Setting</h2>
+                        <p class="mt-1 text-sm text-[var(--text-soft)]">Typed configuration for site, academic, OTP, upload, payment, theme, and notifications.</p>
+                    </div>
+                    <x-ui.button type="button" data-modal-target="#create-setting-modal">Create Setting</x-ui.button>
                 </div>
-                <x-ui.button type="button" data-modal-target="#create-setting-modal">Create Setting</x-ui.button>
-            </div>
-            <div class="mt-5 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
-                <p class="text-sm text-[var(--text-soft)]">Use grouped keys such as <span class="font-mono text-[var(--text-strong)]">payment.provider</span> or <span class="font-mono text-[var(--text-strong)]">site.welcome.title</span> so configuration stays searchable and auditable.</p>
-            </div>
-        </section>
+                <div class="mt-5 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <p class="text-sm text-[var(--text-soft)]">Use grouped keys such as <span class="font-mono text-[var(--text-strong)]">payment.provider</span> or <span class="font-mono text-[var(--text-strong)]">site.welcome.title</span> so configuration stays searchable and auditable.</p>
+                </div>
+            </section>
+        @endif
 
         <section id="settings-records-panel" class="settings-panel mt-5 hidden" data-settings-panel>
             <div class="mb-4">
@@ -240,7 +251,8 @@
         </section>
     </x-ui.card>
 
-    <x-ui.modal id="welcome-settings-modal" title="Configure Welcome Message" class="w-[min(56rem,calc(100vw-2rem))]">
+    @if ($canUpdateSettings)
+        <x-ui.modal id="welcome-settings-modal" title="Configure Welcome Message" class="w-[min(56rem,calc(100vw-2rem))]">
         <div class="grid gap-5">
             <form method="POST" action="{{ $welcomeMessage ? route('admin.settings.update', $welcomeMessage) : route('admin.settings.store') }}" class="grid gap-4">
                 @csrf
@@ -308,9 +320,9 @@
                 <x-ui.button type="submit" variant="secondary">Save Visibility</x-ui.button>
             </form>
         </div>
-    </x-ui.modal>
+        </x-ui.modal>
 
-    <x-ui.modal id="payment-settings-modal" title="Payment Settings" class="w-[min(58rem,calc(100vw-2rem))]">
+        <x-ui.modal id="payment-settings-modal" title="Payment Settings" class="w-[min(58rem,calc(100vw-2rem))]">
         <form method="POST" action="{{ route('admin.settings.bulk') }}" class="grid gap-4">
             @csrf
             <div class="grid gap-4 md:grid-cols-2">
@@ -336,9 +348,9 @@
                 <x-ui.button type="submit">Save Payment Settings</x-ui.button>
             </div>
         </form>
-    </x-ui.modal>
+        </x-ui.modal>
 
-    <x-ui.modal id="email-settings-modal" title="Email Settings" class="w-[min(58rem,calc(100vw-2rem))]">
+        <x-ui.modal id="email-settings-modal" title="Email Settings" class="w-[min(58rem,calc(100vw-2rem))]">
         <form method="POST" action="{{ route('admin.settings.bulk') }}" class="grid gap-4">
             @csrf
             <div class="grid gap-4 md:grid-cols-2">
@@ -364,9 +376,9 @@
                 <x-ui.button type="submit">Save Email Settings</x-ui.button>
             </div>
         </form>
-    </x-ui.modal>
+        </x-ui.modal>
 
-    <x-ui.modal id="create-setting-modal" title="Create Setting" class="w-[min(42rem,calc(100vw-2rem))]">
+        <x-ui.modal id="create-setting-modal" title="Create Setting" class="w-[min(42rem,calc(100vw-2rem))]">
         <form method="POST" action="{{ route('admin.settings.store') }}" class="grid gap-4">
             @csrf
             <x-ui.input label="Group" name="group" placeholder="payment" />
@@ -391,6 +403,7 @@
                 <x-ui.button type="submit">Create Setting</x-ui.button>
             </div>
         </form>
-    </x-ui.modal>
+        </x-ui.modal>
+    @endif
 </x-layouts.app-shell>
 

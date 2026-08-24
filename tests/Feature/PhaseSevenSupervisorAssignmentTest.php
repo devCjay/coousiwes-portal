@@ -210,7 +210,16 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
 
     private function admin(): Admin
     {
-        return Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin->assignRole('supervisor-manager');
+        $admin->givePermissionTo([
+            'supervisors.create',
+            'supervisors.update',
+            'supervisors.suspend',
+            'supervisors.assign',
+        ]);
+
+        return $admin;
     }
 
     private function supervisor(string $staffNo): Supervisor

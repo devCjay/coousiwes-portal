@@ -90,39 +90,26 @@ class RoleAndPermissionSeeder extends Seeder
         $studentManager->syncPermissions($permissionModels([
             'dashboard.view',
             'students.view',
-            'students.create',
-            'students.update',
-            'students.suspend',
-            'students.import',
-            'students.export',
         ]));
 
         $generateListManager->syncPermissions($permissionModels([
             'dashboard.view',
             'generate-list.view',
-            'generate-list.export',
         ]));
 
         $ticketManager->syncPermissions($permissionModels([
             'dashboard.view',
             'tickets.view',
-            'tickets.generate',
-            'tickets.revoke',
         ]));
 
         $supervisorManager->syncPermissions($permissionModels([
             'dashboard.view',
             'supervisors.view',
-            'supervisors.create',
-            'supervisors.update',
-            'supervisors.suspend',
-            'supervisors.assign',
         ]));
 
         $paymentManager->syncPermissions($permissionModels([
             'dashboard.view',
             'payments.view',
-            'payments.export',
         ]));
 
         $academicManager->syncPermissions($permissionModels([
@@ -133,14 +120,11 @@ class RoleAndPermissionSeeder extends Seeder
         $reportManager->syncPermissions($permissionModels([
             'dashboard.view',
             'feedback.view',
-            'feedback.manage',
         ]));
 
         $settingsManager->syncPermissions($permissionModels([
             'dashboard.view',
             'settings.view',
-            'settings.update',
-            'notifications.manage',
         ]));
 
         $supervisor->syncPermissions($permissionModels([
