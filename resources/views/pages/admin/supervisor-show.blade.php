@@ -33,7 +33,7 @@
                 :rows="$supervisor->assignments->map(fn ($assignment) => [
                     e($assignment->student->user->name),
                     e($assignment->student->matric_no),
-                    e($assignment->student->department->name),
+                    e($assignment->student->department?->name ?? 'N/A'),
                     e($assignment->assigned_at->toDateString()),
                     $assignment->revoked_at ? 'Revoked' : 'Active',
                 ])->all()"

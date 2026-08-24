@@ -166,7 +166,7 @@
                             <dl class="grid min-w-0 gap-3 sm:grid-cols-2">
                                 <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3">
                                     <dt class="text-xs font-semibold uppercase text-[var(--text-soft)]">Academic Session</dt>
-                                    <dd class="mt-1 text-sm font-semibold text-[var(--text-strong)]">{{ $student->academicSession->name }}</dd>
+                                    <dd class="mt-1 text-sm font-semibold text-[var(--text-strong)]">{{ $student->academicSession?->name ?? 'N/A' }}</dd>
                                 </div>
                             </div>
                             <div class="grid gap-3 sm:flex sm:flex-wrap sm:justify-between">

@@ -194,7 +194,7 @@
 
     <section class="mt-6">
         <x-ui.alert tone="{{ $student->activation_status === 'active' ? 'success' : 'warning' }}" title="Activation status">
-            Your account is currently {{ $student->activation_status }} for {{ $student->academicSession->name }}.
+            Your account is currently {{ $student->activation_status }} for {{ $student->academicSession?->name ?? 'N/A' }}.
             @if ($latestTicket)
                 Latest ticket: {{ $latestTicket->serial_number }} ({{ ucfirst($latestTicket->status) }}).
             @endif

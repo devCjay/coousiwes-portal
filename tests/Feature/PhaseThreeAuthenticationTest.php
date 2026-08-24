@@ -97,6 +97,7 @@ class PhaseThreeAuthenticationTest extends TestCase
     public function test_permission_protected_admin_modules_use_database_permission_fallback(): void
     {
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin->givePermissionTo('students.view');
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])

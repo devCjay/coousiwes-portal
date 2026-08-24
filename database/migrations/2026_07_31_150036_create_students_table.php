@@ -15,11 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
             $table->string('matric_no', 40)->unique();
-            $table->foreignId('faculty_id')->constrained()->restrictOnDelete();
-            $table->foreignId('department_id')->constrained()->restrictOnDelete();
+            $table->foreignId('faculty_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('course_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('academic_level_id')->constrained()->restrictOnDelete();
-            $table->foreignId('academic_session_id')->constrained()->restrictOnDelete();
+            $table->foreignId('academic_level_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('academic_session_id')->nullable()->constrained()->nullOnDelete();
             $table->string('activation_status', 30)->default('inactive');
             $table->string('gender', 20)->nullable();
             $table->date('date_of_birth')->nullable();

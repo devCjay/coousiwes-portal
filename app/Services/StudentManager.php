@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\AcademicSession;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Support\Arr;
@@ -23,7 +22,7 @@ class StudentManager
 
             $user = User::query()->create([
                 'name' => $data['name'],
-                'email' => $data['email'],
+                'email' => $data['email'] ?? null,
                 'phone' => $data['phone'] ?? null,
                 'password' => $data['matric_no'],
                 'status' => $data['activation_status'] === Student::STATUS_SUSPENDED ? 'suspended' : 'active',
@@ -75,11 +74,11 @@ class StudentManager
         return [
             'user_id' => $user->id,
             'matric_no' => $data['matric_no'],
-            'faculty_id' => $data['faculty_id'],
-            'department_id' => $data['department_id'],
+            'faculty_id' => $data['faculty_id'] ?? null,
+            'department_id' => $data['department_id'] ?? null,
             'course_id' => $data['course_id'] ?? null,
-            'academic_level_id' => $data['academic_level_id'],
-            'academic_session_id' => $data['academic_session_id'] ?? AcademicSession::active()?->id,
+            'academic_level_id' => $data['academic_level_id'] ?? null,
+            'academic_session_id' => $data['academic_session_id'] ?? null,
             'activation_status' => $data['activation_status'] ?? Student::STATUS_INACTIVE,
             'gender' => Arr::get($data, 'gender'),
             'date_of_birth' => Arr::get($data, 'date_of_birth'),

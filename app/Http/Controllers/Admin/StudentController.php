@@ -208,13 +208,13 @@ class StudentController extends Controller
             ->each(function (Student $student) use ($handle): void {
                 fputcsv($handle, [
                     $student->user->name,
-                    $student->user->email,
+                    $student->user->email ?: 'N/A',
                     $student->user->phone,
                     $student->matric_no,
-                    $student->faculty->name,
-                    $student->department->name,
-                    $student->academicLevel->name,
-                    $student->academicSession->name,
+                    $student->faculty?->name ?? 'N/A',
+                    $student->department?->name ?? 'N/A',
+                    $student->academicLevel?->name ?? 'N/A',
+                    $student->academicSession?->name ?? 'N/A',
                     $student->activation_status,
                 ]);
             });

@@ -299,7 +299,7 @@
                     <span class="text-sm font-medium text-[var(--text-strong)]">Student</span>
                     <select name="student_id" class="siwes-form-control mt-2">
                         @foreach ($students as $student)
-                            <option value="{{ $student->id }}">{{ $student->user->name }} / {{ $student->matric_no }} / {{ $student->department->code }}</option>
+                            <option value="{{ $student->id }}">{{ $student->user->name }} / {{ $student->matric_no }} / {{ $student->department?->code ?? 'N/A' }}</option>
                         @endforeach
                     </select>
                 </label>

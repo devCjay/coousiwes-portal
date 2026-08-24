@@ -136,11 +136,13 @@ class PhaseFiveStudentManagementTest extends TestCase
 
         $this->assertSame('Ada Nneka Okoye', $student->user->name);
         $this->assertSame(Student::STATUS_ACTIVE, $student->activation_status);
-        $this->assertSame('2026.csc.010@students.coousiwes.local', $student->user->email);
+        $this->assertNull($student->user->email);
         $this->assertTrue(Hash::check('2026/CSC/010', $student->user->password));
-        $this->assertNotNull($student->faculty_id);
-        $this->assertNotNull($student->department_id);
+        $this->assertNull($student->faculty_id);
+        $this->assertNull($student->department_id);
         $this->assertNull($student->course_id);
+        $this->assertNull($student->academic_level_id);
+        $this->assertNull($student->academic_session_id);
     }
 
     public function test_duplicate_matric_numbers_are_rejected(): void

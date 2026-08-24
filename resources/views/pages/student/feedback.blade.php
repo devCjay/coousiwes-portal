@@ -12,7 +12,7 @@
     <div class="grid gap-4 md:grid-cols-3">
         <x-ui.stat-card label="Assessments" :value="$assessments->count()" meta="Supervisor submissions" />
         <x-ui.stat-card label="Latest Score" :value="$latest ? $latest->total_score.' / '.$latest->max_score : 'Pending'" meta="Weighted rubric score" tone="cyan" />
-        <x-ui.stat-card label="Academic Level" :value="$student->placement?->academicLevel?->name ?? 'N/A'" meta="{{ $student->department->name }}" tone="amber" />
+        <x-ui.stat-card label="Academic Level" :value="$student->placement?->academicLevel?->name ?? 'N/A'" meta="{{ $student->department?->name ?? 'N/A' }}" tone="amber" />
     </div>
 
     <x-ui.card class="mt-6" title="Feedback Timeline" description="Only feedback submitted for your student profile is visible here.">

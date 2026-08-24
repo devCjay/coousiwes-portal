@@ -35,7 +35,7 @@
                             {{ $student->matric_no }}
                         </p>
                         <h2 class="mt-3 truncate text-2xl font-bold sm:text-3xl">{{ $student->user->name }}</h2>
-                        <p class="mt-1 text-sm text-white/78">{{ $student->department->name }} - {{ $student->placement?->academicLevel?->name ?? 'N/A' }}</p>
+                        <p class="mt-1 text-sm text-white/78">{{ $student->department?->name ?? 'N/A' }} - {{ $student->placement?->academicLevel?->name ?? 'N/A' }}</p>
                     </div>
                 </div>
                 <div class="rounded-2xl bg-white/12 p-4 ring-1 ring-white/15 sm:min-w-56">
@@ -108,9 +108,9 @@
                     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <x-profile.info-card icon="user-circle" label="Full Name" :value="$student->user->name" meta="Locked by admin" locked />
                         <x-profile.info-card icon="graduation-cap" label="Matric Number" :value="$student->matric_no" meta="Locked by admin" locked />
-                        <x-profile.info-card icon="credit-card" label="Email" :value="$student->user->email" meta="Student editable" />
+                        <x-profile.info-card icon="credit-card" label="Email" :value="$student->user->email ?: 'N/A'" meta="Student editable" />
                         <x-profile.info-card icon="home" label="Location" :value="($metadata['state'] ?? 'Not set').' / '.($metadata['lga'] ?? 'Not set')" meta="Contact details" />
-                        <x-profile.info-card icon="building" label="Faculty" :value="$student->faculty->name" meta="Student editable" />
+                        <x-profile.info-card icon="building" label="Faculty" :value="$student->faculty?->name ?? 'N/A'" meta="Student editable" />
                         <x-profile.info-card icon="wallet" label="Bank" :value="$metadata['bank_name'] ?? 'Not set'" meta="Student editable" />
                     </div>
                 </div>
@@ -163,7 +163,7 @@
                     <x-ui.card title="Academic Information" description="Update the faculty and department details you submitted during profile setup.">
                         <dl class="grid gap-3 sm:grid-cols-2">
                             <x-profile.detail label="Level" :value="$student->placement?->academicLevel?->name ?? 'N/A'" />
-                            <x-profile.detail label="Academic Session" :value="$student->academicSession->name" />
+                            <x-profile.detail label="Academic Session" :value="$student->academicSession?->name ?? 'N/A'" />
                             <x-profile.detail label="Activation Status" :value="ucfirst($student->activation_status)" />
                         </dl>
                         <form id="academic-edit" method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-ajax-reset="false" class="mt-5 grid min-w-0 gap-5">
@@ -206,9 +206,9 @@
             <div class="grid gap-4">
                 <x-profile.info-card icon="user-circle" label="Full Name" :value="$student->user->name" meta="Locked by admin" locked />
                 <x-profile.info-card icon="graduation-cap" label="Matric Number" :value="$student->matric_no" meta="Locked by admin" locked />
-                <x-profile.info-card icon="credit-card" label="Email" :value="$student->user->email" meta="Student editable" />
+                <x-profile.info-card icon="credit-card" label="Email" :value="$student->user->email ?: 'N/A'" meta="Student editable" />
                 <x-profile.info-card icon="home" label="Location" :value="($metadata['state'] ?? 'Not set').' / '.($metadata['lga'] ?? 'Not set')" meta="Contact details" />
-                <x-profile.info-card icon="building" label="Faculty" :value="$student->faculty->name" meta="Student editable" />
+                <x-profile.info-card icon="building" label="Faculty" :value="$student->faculty?->name ?? 'N/A'" meta="Student editable" />
                 <x-profile.info-card icon="wallet" label="Bank" :value="$metadata['bank_name'] ?? 'Not set'" meta="Student editable" />
             </div>
         </x-ui.modal>
@@ -247,7 +247,7 @@
         <x-ui.modal id="mobile-profile-academic" title="Academic Information" class="w-[min(42rem,calc(100vw-1rem))]">
             <dl class="grid gap-3">
                 <x-profile.detail label="Level" :value="$student->placement?->academicLevel?->name ?? 'N/A'" />
-                <x-profile.detail label="Academic Session" :value="$student->academicSession->name" />
+                <x-profile.detail label="Academic Session" :value="$student->academicSession?->name ?? 'N/A'" />
                 <x-profile.detail label="Activation Status" :value="ucfirst($student->activation_status)" />
             </dl>
             <form method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-ajax-reset="false" class="mt-5 grid min-w-0 gap-5">

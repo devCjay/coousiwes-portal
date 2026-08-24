@@ -113,7 +113,7 @@
                         <x-ui.card title="Personal Summary" description="Core identity and direct contact details.">
                             <dl class="grid gap-4 sm:grid-cols-2">
                                 <x-profile.detail label="Full Name" :value="$student->user->name" />
-                                <x-profile.detail label="Email" :value="$student->user->email" />
+                                <x-profile.detail label="Email" :value="$student->user->email ?: 'N/A'" />
                                 <x-profile.detail label="Phone" :value="$student->user->phone ?: 'N/A'" />
                                 <x-profile.detail label="Gender" :value="$student->gender ?: 'N/A'" />
                             </dl>
@@ -134,7 +134,7 @@
                     <x-ui.card title="Personal Data" description="Student biodata and contact information submitted during profile setup.">
                         <dl class="grid gap-4 md:grid-cols-2">
                             <x-profile.detail label="Full Name" :value="$student->user->name" />
-                            <x-profile.detail label="Email" :value="$student->user->email" />
+                            <x-profile.detail label="Email" :value="$student->user->email ?: 'N/A'" />
                             <x-profile.detail label="Phone" :value="$student->user->phone ?: 'N/A'" />
                             <x-profile.detail label="Gender" :value="$student->gender ?: 'N/A'" />
                             <x-profile.detail label="Date of Birth" :value="$student->date_of_birth?->format('d M Y') ?? 'N/A'" />
@@ -188,7 +188,7 @@
                 <div id="student-tab-account" data-student-admin-panel class="hidden">
                     <x-ui.card title="Account and Security" description="Login state, payment count, and administrative security actions.">
                         <dl class="grid gap-4 md:grid-cols-2">
-                            <x-profile.detail label="Portal Email" :value="$student->user->email" />
+                            <x-profile.detail label="Portal Email" :value="$student->user->email ?: 'N/A'" />
                             <x-profile.detail label="User Status" :value="ucfirst($student->user->status)" />
                             <x-profile.detail label="Activation Status" :value="ucfirst($student->activation_status)" />
                             <x-profile.detail label="Displayed Status" :value="ucfirst($displayStatus)" />
@@ -208,12 +208,13 @@
                 @method('PUT')
                 <div class="grid gap-4 md:grid-cols-2">
                     <x-ui.input label="Full Name" name="name" value="{{ $student->user->name }}" required />
-                    <x-ui.input label="Email" name="email" type="email" value="{{ $student->user->email }}" required />
+                    <x-ui.input label="Email" name="email" type="email" value="{{ $student->user->email }}" />
                     <x-ui.input label="Phone" name="phone" value="{{ $student->user->phone }}" />
                     <x-ui.input label="Matric Number" name="matric_no" value="{{ $student->matric_no }}" required />
                     <label class="block">
                         <span class="siwes-form-label">Faculty</span>
-                        <select name="faculty_id" class="siwes-form-control mt-2" data-filter-parent="#admin-student-department" required>
+                        <select name="faculty_id" class="siwes-form-control mt-2" data-filter-parent="#admin-student-department">
+                            <option value="">Not set</option>
                             @foreach ($faculties as $faculty)
                                 <option value="{{ $faculty->id }}" @selected($student->faculty_id === $faculty->id)>{{ $faculty->name }}</option>
                             @endforeach
@@ -221,7 +222,8 @@
                     </label>
                     <label class="block">
                         <span class="siwes-form-label">Course</span>
-                        <select id="admin-student-department" name="department_id" class="siwes-form-control mt-2" required>
+                        <select id="admin-student-department" name="department_id" class="siwes-form-control mt-2">
+                            <option value="">Not set</option>
                             @foreach ($departments as $department)
                                 <option value="{{ $department->id }}" data-parent-value="{{ $department->faculty_id }}" @selected($student->department_id === $department->id)>{{ $department->name }}</option>
                             @endforeach
@@ -229,7 +231,8 @@
                     </label>
                     <label class="block">
                         <span class="siwes-form-label">Academic Level</span>
-                        <select name="academic_level_id" class="siwes-form-control mt-2" required>
+                        <select name="academic_level_id" class="siwes-form-control mt-2">
+                            <option value="">Not set</option>
                             @foreach ($levels as $level)
                                 <option value="{{ $level->id }}" @selected($student->academic_level_id === $level->id)>{{ $level->name }}</option>
                             @endforeach
@@ -237,7 +240,8 @@
                     </label>
                     <label class="block">
                         <span class="siwes-form-label">Academic Session</span>
-                        <select name="academic_session_id" class="siwes-form-control mt-2" required>
+                        <select name="academic_session_id" class="siwes-form-control mt-2">
+                            <option value="">Not set</option>
                             @foreach ($sessions as $session)
                                 <option value="{{ $session->id }}" @selected($student->academic_session_id === $session->id)>{{ $session->name }}</option>
                             @endforeach

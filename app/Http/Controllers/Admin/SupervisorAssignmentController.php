@@ -100,7 +100,7 @@ class SupervisorAssignmentController extends Controller
                 $assignment->supervisor->user->name,
                 $assignment->student->user->name,
                 $assignment->student->matric_no,
-                $assignment->student->department->name,
+                $assignment->student->department?->name ?? 'N/A',
                 $assignment->assigned_at->toDateTimeString(),
                 $assignment->revoked_at?->toDateTimeString(),
             ]);

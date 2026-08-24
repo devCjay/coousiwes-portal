@@ -137,7 +137,7 @@
                                 <td class="whitespace-nowrap px-4 py-3 text-[var(--text-strong)]">{{ $studentYear($student) }}</td>
                                 <td class="whitespace-nowrap px-4 py-3 text-[var(--text-strong)]">{{ $academicYear($student->placement?->academicSession ?? $student->academicSession) }}</td>
                                 <td class="whitespace-nowrap px-4 py-3 text-[var(--text-strong)]">{{ $student->user->phone ?: 'N/A' }}</td>
-                                <td class="whitespace-nowrap px-4 py-3 text-[var(--text-strong)]">{{ $student->user->email }}</td>
+                                <td class="whitespace-nowrap px-4 py-3 text-[var(--text-strong)]">{{ $student->user->email ?: 'N/A' }}</td>
                                 <td class="whitespace-nowrap px-4 py-3">
                                     <span class="inline-flex rounded-md px-2.5 py-1 text-xs font-extrabold uppercase {{ $statusClasses }}">{{ $status }}</span>
                                 </td>

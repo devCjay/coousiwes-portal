@@ -116,7 +116,7 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * @return array{email: string, password: string}
+     * @return array<string, mixed>
      */
     private function credentials(Request $request, string $role): array
     {
@@ -138,7 +138,7 @@ class AuthenticatedSessionController extends Controller
             ->first();
 
         return [
-            'email' => $student?->user?->email ?? '',
+            'id' => $student?->user?->id ?? 0,
             'password' => $validated['password'],
         ];
     }

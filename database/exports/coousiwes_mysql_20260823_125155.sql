@@ -587,7 +587,7 @@ CREATE TABLE `passkeys` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `password_reset_tokens` (
-  `email` varchar(255) NOT NULL,
+  `email` varchar(255) NULL,
   `token` varchar(255) NOT NULL,
   `created_at` datetime NULL,
   PRIMARY KEY (`email`)
@@ -806,11 +806,11 @@ CREATE TABLE `students` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `user_id` bigint unsigned NOT NULL,
   `matric_no` varchar(255) NOT NULL,
-  `faculty_id` bigint unsigned NOT NULL,
-  `department_id` bigint unsigned NOT NULL,
+  `faculty_id` bigint unsigned NULL,
+  `department_id` bigint unsigned NULL,
   `course_id` bigint unsigned NULL,
-  `academic_level_id` bigint unsigned NOT NULL,
-  `academic_session_id` bigint unsigned NOT NULL,
+  `academic_level_id` bigint unsigned NULL,
+  `academic_session_id` bigint unsigned NULL,
   `activation_status` varchar(255) NOT NULL DEFAULT 'inactive',
   `gender` varchar(255) NULL,
   `date_of_birth` date NULL,
@@ -899,7 +899,7 @@ INSERT INTO `tickets` (`id`, `student_id`, `generated_by`, `code_hash`, `amount`
 CREATE TABLE `users` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
+  `email` varchar(255) NULL,
   `phone` varchar(255) NULL,
   `email_verified_at` datetime NULL,
   `password` varchar(255) NOT NULL,
