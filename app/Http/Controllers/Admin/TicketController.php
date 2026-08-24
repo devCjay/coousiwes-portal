@@ -26,7 +26,14 @@ class TicketController extends Controller
         abort_unless($request->user()?->can('tickets.view'), 403);
 
         $tickets = Ticket::query()
-            ->with(['student.user', 'student.department', 'student.payments'])
+            ->with([
+                'student.user',
+                'student.faculty',
+                'student.department',
+                'student.payments',
+                'placement.academicLevel',
+                'placement.academicSession',
+            ])
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = $request->string('search')->toString();
                 $query->where(function ($inner) use ($search): void {

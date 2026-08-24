@@ -25,8 +25,9 @@
                     <div class="rounded-lg border border-brand-400/35 bg-brand-500/10 p-4">
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <p class="font-semibold">{{ $availableTicket->currency }} {{ number_format($availableTicket->amount) }}</p>
-                                <p class="text-xs text-[var(--text-soft)]">Activation ticket available / expires {{ $availableTicket->expires_at?->toDateString() ?? 'open' }}</p>
+                                <p class="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-200">Available Ticket</p>
+                                <p class="mt-1 font-semibold text-[var(--text-strong)]">{{ $availableTicket->serial_number }}</p>
+                                <p class="text-xs text-[var(--text-soft)]">{{ $availableTicket->currency }} {{ number_format($availableTicket->amount) }} / expires {{ $availableTicket->expires_at?->toDateString() ?? 'open' }}</p>
                             </div>
                             <form method="POST" action="{{ route('student.payments.initialize') }}">
                                 @csrf
@@ -38,11 +39,32 @@
                 @endif
 
                 @forelse ($tickets as $ticket)
-                    <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] p-4">
+                    <div @class([
+                        'rounded-lg border p-4',
+                        'border-brand-400/35 bg-brand-500/10' => $ticket->isPayable(),
+                        'border-emerald-500/25 bg-emerald-500/10' => $ticket->status === \App\Models\Ticket::STATUS_USED,
+                        'border-[var(--line)] bg-[var(--surface-raised)]' => ! $ticket->isPayable() && $ticket->status !== \App\Models\Ticket::STATUS_USED,
+                    ])>
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <p class="font-semibold">{{ $ticket->currency }} {{ number_format($ticket->amount) }}</p>
-                                <p class="text-xs text-[var(--text-soft)]">{{ ucfirst($ticket->status) }} / expires {{ $ticket->expires_at?->toDateString() ?? 'open' }}</p>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <p class="font-semibold text-[var(--text-strong)]">{{ $ticket->serial_number }}</p>
+                                    <span @class([
+                                        'inline-flex rounded-full px-2.5 py-1 text-xs font-extrabold uppercase',
+                                        'bg-emerald-600 text-white' => $ticket->status === \App\Models\Ticket::STATUS_USED,
+                                        'bg-amber-300 text-graphite-950' => $ticket->status !== \App\Models\Ticket::STATUS_USED,
+                                    ])>
+                                        {{ $ticket->status === \App\Models\Ticket::STATUS_USED ? 'Used Ticket' : 'Unused Ticket' }}
+                                    </span>
+                                </div>
+                                <p class="mt-1 text-xs text-[var(--text-soft)]">
+                                    {{ $ticket->currency }} {{ number_format($ticket->amount) }}
+                                    @if ($ticket->status === \App\Models\Ticket::STATUS_USED)
+                                        / used {{ $ticket->used_at?->toDateString() ?? $ticket->updated_at?->toDateString() ?? 'recently' }}
+                                    @else
+                                        / expires {{ $ticket->expires_at?->toDateString() ?? 'open' }}
+                                    @endif
+                                </p>
                             </div>
                             @if ($ticket->isPayable())
                                 <form method="POST" action="{{ route('student.payments.initialize') }}">

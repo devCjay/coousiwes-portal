@@ -85,6 +85,7 @@
                             <th class="whitespace-nowrap px-3 py-3">Printed</th>
                             <th class="whitespace-nowrap px-3 py-3">Activated By</th>
                             <th class="whitespace-nowrap px-3 py-3">Activated At</th>
+                            <th class="whitespace-nowrap px-3 py-3">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[var(--line)] bg-[var(--surface-raised)]">
@@ -92,6 +93,8 @@
                             @php
                                 $payment = $ticket->student?->payments?->where('ticket_id', $ticket->id)->where('status', \App\Models\Payment::STATUS_SUCCESSFUL)->sortByDesc('paid_at')->first();
                                 $printed = data_get($ticket->metadata, 'printed_at') !== null;
+                                $isUsed = in_array($ticket->status, \App\Models\Ticket::usedStatuses(), true);
+                                $placement = $ticket->placement;
                             @endphp
                             <tr class="theme-transition hover:bg-[var(--surface-muted)]">
                                 <td class="px-3 py-3"><input type="checkbox" data-ticket-checkbox value="{{ $ticket->id }}" aria-label="Select ticket {{ $ticket->id }}"></td>
@@ -106,10 +109,20 @@
                                 <td class="whitespace-nowrap px-3 py-3">{{ $printed ? 'Yes' : 'No' }}</td>
                                 <td class="whitespace-nowrap px-3 py-3">{{ $payment ? $ticket->student?->user?->name : '-' }}</td>
                                 <td class="whitespace-nowrap px-3 py-3">{{ ($ticket->used_at ?? $ticket->paid_at)?->toDateTimeString() ?? '-' }}</td>
+                                <td class="whitespace-nowrap px-3 py-3">
+                                    @if ($isUsed)
+                                        <x-ui.button type="button" variant="secondary" class="px-3 py-2 text-xs" data-modal-target="#ticket-details-{{ $ticket->id }}">
+                                            <x-ui.icon name="eye" class="size-4" />
+                                            View Details
+                                        </x-ui.button>
+                                    @else
+                                        <span class="text-xs text-[var(--text-soft)]">-</span>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-3 py-8 text-center text-sm text-[var(--text-soft)]">No tickets match the current filters.</td>
+                                <td colspan="8" class="px-3 py-8 text-center text-sm text-[var(--text-soft)]">No tickets match the current filters.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -125,4 +138,77 @@
             {{ $tickets->links() }}
         </div>
     </x-ui.card>
+
+    @foreach ($tickets as $ticket)
+        @php
+            $payment = $ticket->student?->payments?->where('ticket_id', $ticket->id)->where('status', \App\Models\Payment::STATUS_SUCCESSFUL)->sortByDesc('paid_at')->first();
+            $placement = $ticket->placement;
+            $isUsed = in_array($ticket->status, \App\Models\Ticket::usedStatuses(), true);
+        @endphp
+
+        @if ($isUsed)
+            <x-ui.modal id="ticket-details-{{ $ticket->id }}" title="Ticket Details" class="w-[min(62rem,calc(100vw-2rem))]">
+                <div class="grid gap-5">
+                    <div class="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-5">
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-extrabold uppercase text-emerald-700 dark:text-emerald-200">Used Ticket</p>
+                                <h3 class="mt-1 text-xl font-black text-[var(--text-strong)]">{{ $ticket->serial_number ?? 'SIWES-'.str_pad((string) $ticket->id, 12, '0', STR_PAD_LEFT) }}</h3>
+                                <p class="mt-1 text-sm text-[var(--text-soft)]">{{ $ticket->currency }} {{ number_format($ticket->amount) }} / used {{ ($ticket->used_at ?? $ticket->paid_at)?->toDayDateTimeString() ?? 'recently' }}</p>
+                            </div>
+                            <span class="inline-flex rounded-full bg-emerald-600 px-3 py-1 text-xs font-extrabold uppercase text-white">Used</span>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <x-ui.card title="Student Information" description="Student who used this activation ticket.">
+                            <dl class="grid gap-4 sm:grid-cols-2">
+                                <x-profile.detail label="Name" :value="$ticket->student?->user?->name ?? 'N/A'" />
+                                <x-profile.detail label="Matric Number" :value="$ticket->student?->matric_no ?? 'N/A'" />
+                                <x-profile.detail label="Email" :value="$ticket->student?->user?->email ?? 'N/A'" />
+                                <x-profile.detail label="Phone" :value="$ticket->student?->user?->phone ?: 'N/A'" />
+                                <x-profile.detail label="Faculty" :value="$ticket->student?->faculty?->name ?? 'N/A'" />
+                                <x-profile.detail label="Department" :value="$ticket->student?->department?->name ?? 'N/A'" />
+                            </dl>
+                        </x-ui.card>
+
+                        <x-ui.card title="Payment Information" description="Korapay verification linked to this ticket.">
+                            <dl class="grid gap-4 sm:grid-cols-2">
+                                <x-profile.detail label="Reference" :value="$payment?->reference ?? 'N/A'" />
+                                <x-profile.detail label="Provider" :value="$payment?->provider ? ucfirst($payment->provider) : 'N/A'" />
+                                <x-profile.detail label="Amount" :value="$payment ? $payment->currency.' '.number_format($payment->amount) : 'N/A'" />
+                                <x-profile.detail label="Status" :value="$payment ? ucfirst($payment->status) : 'N/A'" />
+                                <x-profile.detail label="Verified At" :value="$payment?->verified_at?->toDateTimeString() ?? 'N/A'" />
+                                <x-profile.detail label="Paid At" :value="$payment?->paid_at?->toDateTimeString() ?? 'N/A'" />
+                            </dl>
+                        </x-ui.card>
+                    </div>
+
+                    <x-ui.card title="Placement Information" description="Placement record unlocked with this ticket.">
+                        @if ($placement)
+                            <dl class="grid gap-4 md:grid-cols-3">
+                                <x-profile.detail label="Company" :value="$placement->company_name ?: 'N/A'" />
+                                <x-profile.detail label="SIWES Year" :value="$placement->siwes_year ?: 'N/A'" />
+                                <x-profile.detail label="Session" :value="$placement->academicSession?->name ?? 'N/A'" />
+                                <x-profile.detail label="Level" :value="$placement->academicLevel?->name ?? 'N/A'" />
+                                <x-profile.detail label="State" :value="$placement->company_state ?: 'N/A'" />
+                                <x-profile.detail label="LGA" :value="$placement->company_lga ?: 'N/A'" />
+                                <x-profile.detail label="Supervisor Phone" :value="$placement->company_supervisor_phone ?: 'N/A'" />
+                                <x-profile.detail label="Period" :value="$placement->attachment_period ?: 'N/A'" />
+                                <div class="md:col-span-3">
+                                    <x-profile.detail label="Company Address" :value="$placement->company_address ?: 'N/A'" />
+                                </div>
+                            </dl>
+                        @else
+                            <p class="text-sm text-[var(--text-soft)]">No placement record is linked to this used ticket yet.</p>
+                        @endif
+                    </x-ui.card>
+
+                    <div class="flex justify-end border-t border-[var(--line)] pt-4">
+                        <x-ui.button type="button" variant="ghost" data-modal-close>Close</x-ui.button>
+                    </div>
+                </div>
+            </x-ui.modal>
+        @endif
+    @endforeach
 </x-layouts.app-shell>

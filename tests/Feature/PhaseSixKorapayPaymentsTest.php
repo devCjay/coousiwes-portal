@@ -74,6 +74,65 @@ class PhaseSixKorapayPaymentsTest extends TestCase
         $this->assertMatchesRegularExpression('/^\d{6}$/', (string) $ticket->pin);
     }
 
+    public function test_admin_can_view_complete_used_ticket_details_from_ticket_list(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $student = $this->student();
+        $usedTicket = $student->tickets()->create([
+            'serial_number' => 'SIWES-896051760345',
+            'pin' => '123456',
+            'code_hash' => 'used-ticket-code',
+            'amount' => 5000,
+            'currency' => 'NGN',
+            'status' => Ticket::STATUS_USED,
+            'used_at' => now(),
+            'expires_at' => now()->addDays(10),
+        ]);
+        $student->payments()->create([
+            'ticket_id' => $usedTicket->id,
+            'provider' => 'korapay',
+            'reference' => 'KORA-USED-001',
+            'amount' => 5000,
+            'currency' => 'NGN',
+            'status' => Payment::STATUS_SUCCESSFUL,
+            'verified_at' => now(),
+            'paid_at' => now(),
+        ]);
+        $student->placement()->create([
+            'ticket_id' => $usedTicket->id,
+            'academic_level_id' => $student->academic_level_id,
+            'academic_session_id' => $student->academic_session_id,
+            'siwes_year' => 2026,
+            'attachment_period' => 'April to October',
+            'company_name' => 'Ticket Detail Works Ltd',
+            'company_address' => '10 Industrial Road',
+            'company_state' => 'Anambra',
+            'company_lga' => 'Awka South',
+            'company_supervisor_phone' => '08030000000',
+        ]);
+        Ticket::query()->create([
+            'serial_number' => 'SIWES-242197974414',
+            'pin' => '654321',
+            'code_hash' => 'unused-ticket-code',
+            'amount' => 5000,
+            'currency' => 'NGN',
+            'status' => Ticket::STATUS_UNUSED,
+            'expires_at' => now()->addDays(10),
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.tickets.index'))
+            ->assertOk()
+            ->assertSee('View Details')
+            ->assertSee('SIWES-896051760345')
+            ->assertSee($student->user->name)
+            ->assertSee($student->matric_no)
+            ->assertSee('KORA-USED-001')
+            ->assertSee('Ticket Detail Works Ltd')
+            ->assertDontSee('ticket-details-'.Ticket::where('serial_number', 'SIWES-242197974414')->firstOrFail()->id);
+    }
+
     public function test_student_can_initialize_korapay_checkout_for_payable_ticket(): void
     {
         Http::fake([
@@ -177,6 +236,29 @@ class PhaseSixKorapayPaymentsTest extends TestCase
         $this->assertSame(Payment::STATUS_SUCCESSFUL, $payment->fresh()->status);
         $this->assertSame(Ticket::STATUS_USED, $ticket->fresh()->status);
         $this->assertSame(Student::STATUS_ACTIVE, $student->fresh()->activation_status);
+    }
+
+    public function test_student_payment_page_shows_used_ticket_serial_number(): void
+    {
+        $student = $this->student();
+        $ticket = new Ticket([
+            'serial_number' => 'SIWES-656484753637',
+            'code_hash' => 'used-ticket-code',
+            'amount' => 5000,
+            'currency' => 'NGN',
+            'status' => Ticket::STATUS_USED,
+            'used_at' => now(),
+            'expires_at' => now()->addDays(10),
+        ]);
+        $student->tickets()->save($ticket);
+
+        $this->actingAs($student->user)
+            ->withSession(['otp.verified' => true])
+            ->get(route('student.payments.index'))
+            ->assertOk()
+            ->assertSee('SIWES-656484753637')
+            ->assertSee('Used Ticket')
+            ->assertDontSee('Pay With Korapay');
     }
 
     public function test_korapay_webhook_is_signature_checked_and_idempotent(): void
