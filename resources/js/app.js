@@ -699,7 +699,10 @@ if (profileWizard) {
 
         activeStep = targetIndex;
         stepPanels.forEach((panel) => {
-            panel.classList.toggle('hidden', Number(panel.dataset.profileStepPanel) !== targetIndex);
+            const isHidden = Number(panel.dataset.profileStepPanel) !== targetIndex;
+
+            panel.classList.toggle('hidden', isHidden);
+            panel.hidden = isHidden;
         });
         stepButtons.forEach((button) => {
             const buttonIndex = Number(button.dataset.profileStepButton);

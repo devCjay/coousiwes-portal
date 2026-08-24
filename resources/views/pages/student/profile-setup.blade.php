@@ -108,7 +108,7 @@
                     </x-ui.card>
                 </div>
 
-                <div data-profile-step-panel="1" class="profile-step-panel hidden min-w-0">
+                <div data-profile-step-panel="1" class="profile-step-panel hidden min-w-0" hidden>
                     <x-ui.card title="Contact Information" description="Choose your current state and local government area with live filtering.">
                         <form method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-step-index="1" data-ajax-reset="false" class="grid min-w-0 gap-5">
                             @csrf
@@ -140,7 +140,7 @@
                     </x-ui.card>
                 </div>
 
-                <div data-profile-step-panel="2" class="profile-step-panel hidden min-w-0">
+                <div data-profile-step-panel="2" class="profile-step-panel hidden min-w-0" hidden>
                     <x-ui.card title="Academic Information" description="Select the faculty and department linked to your SIWES record.">
                         <form method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-step-index="2" data-ajax-reset="false" class="grid min-w-0 gap-5">
                             @csrf
@@ -177,7 +177,7 @@
                     </x-ui.card>
                 </div>
 
-                <div data-profile-step-panel="3" class="profile-step-panel hidden min-w-0">
+                <div data-profile-step-panel="3" class="profile-step-panel hidden min-w-0" hidden>
                     <x-ui.card title="Bank Information" description="Select your bank and confirm your student account details.">
                         <form method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-step-index="3" data-ajax-reset="false" class="grid min-w-0 gap-5">
                             @csrf
@@ -202,7 +202,7 @@
                     </x-ui.card>
                 </div>
 
-                <div data-profile-step-panel="4" class="profile-step-panel hidden min-w-0">
+                <div data-profile-step-panel="4" class="profile-step-panel hidden min-w-0" hidden>
                     <x-ui.card title="Milestone Completion" description="Your final celebration unlocks after every required profile field is saved.">
                         <div class="rounded-2xl bg-brand-600 p-6 text-center text-white sm:p-8">
                             <span class="mx-auto grid size-16 place-items-center rounded-2xl bg-white/15 text-white ring-1 ring-white/20">
