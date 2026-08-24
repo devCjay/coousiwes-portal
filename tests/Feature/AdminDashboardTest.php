@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Faculty;
 use App\Models\Student;
 use App\Models\StudentPlacement;
 use App\Models\User;
@@ -56,6 +57,28 @@ class AdminDashboardTest extends TestCase
                 && $stats['submittedForms'] === StudentPlacement::query()->count())
             ->assertSee('Students yet to add placement')
             ->assertSee('Placement forms submitted');
+    }
+
+    public function test_student_distribution_groups_students_by_their_current_faculty_records(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin->assignRole('student-manager');
+
+        $student = Student::query()->firstOrFail();
+        $student->faculty->update(['code' => 'UPDATED']);
+        Faculty::query()->create([
+            'name' => 'Faculty of Applied Zero Count',
+            'code' => 'ZERO',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Student Distribution by Faculty')
+            ->assertSee('UPDATED')
+            ->assertDontSee('ZERO');
     }
 
     public function test_dashboard_and_navigation_follow_assigned_admin_module_permissions(): void

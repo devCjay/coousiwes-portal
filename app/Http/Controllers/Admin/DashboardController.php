@@ -72,9 +72,10 @@ class DashboardController extends Controller
             ->join('faculties', 'faculties.id', '=', 'students.faculty_id')
             ->whereNull('students.deleted_at')
             ->whereNull('faculties.deleted_at')
+            ->where('faculties.is_active', true)
             ->groupBy('faculties.id', 'faculties.name', 'faculties.code')
             ->orderByDesc('students_count')
-            ->limit(10)
+            ->orderBy('faculties.name')
             ->get([
                 'faculties.name',
                 'faculties.code',

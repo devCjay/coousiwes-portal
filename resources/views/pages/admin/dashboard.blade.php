@@ -59,14 +59,16 @@
         @if ($can('students.view'))
         <x-ui.card title="Student Distribution by Faculty" description="Live count grouped by faculty records.">
             @if ($facultyDistribution->isNotEmpty())
-                <div class="flex h-72 items-end gap-3 border-b border-l border-[var(--line)] px-2 pt-4">
-                    @foreach ($facultyDistribution as $faculty)
-                        @php($height = max(8, (int) round(($faculty->students_count / $maxFacultyStudents) * 100)))
-                        <div class="flex flex-1 flex-col items-center gap-2" title="{{ $faculty->name }}: {{ number_format($faculty->students_count) }}">
-                            <span class="w-full rounded-t-md bg-brand-500/75 shadow-[0_0_14px_rgb(0_81_54_/_0.24)]" style="height: {{ $height }}%"></span>
-                            <span class="max-w-full truncate text-[10px] font-semibold text-[var(--text-soft)]">{{ $faculty->code }}</span>
-                        </div>
-                    @endforeach
+                <div class="overflow-x-auto pb-2">
+                    <div class="flex h-72 min-w-[42rem] items-end gap-3 border-b border-l border-[var(--line)] px-2 pt-4">
+                        @foreach ($facultyDistribution as $faculty)
+                            @php($height = $faculty->students_count > 0 ? max(8, (int) round(($faculty->students_count / $maxFacultyStudents) * 100)) : 2)
+                            <div class="flex min-w-14 flex-1 flex-col items-center gap-2" title="{{ $faculty->name }}: {{ number_format($faculty->students_count) }}">
+                                <span class="w-full rounded-t-md bg-brand-500/75 shadow-[0_0_14px_rgb(0_81_54_/_0.24)]" style="height: {{ $height }}%"></span>
+                                <span class="max-w-full truncate text-[10px] font-semibold text-[var(--text-soft)]">{{ $faculty->code }}</span>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
             @else
                 <div class="grid h-72 place-items-center rounded-lg border border-dashed border-[var(--line)] text-sm text-[var(--text-soft)]">
