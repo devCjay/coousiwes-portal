@@ -112,6 +112,29 @@ class AdminDashboardTest extends TestCase
             ->get(route('admin.students.index'))
             ->assertForbidden();
     }
+
+    public function test_generate_list_module_permission_is_independent_from_student_management(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin->assignRole('generate-list-manager');
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee(route('admin.generate-list.index'))
+            ->assertDontSee(route('admin.students.index'));
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.generate-list.index'))
+            ->assertOk();
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.students.index'))
+            ->assertForbidden();
+    }
 }
 
 

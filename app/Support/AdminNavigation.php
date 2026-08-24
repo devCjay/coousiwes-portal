@@ -32,7 +32,7 @@ class AdminNavigation
     {
         return match ($label) {
             'Dashboard' => 'dashboard.view',
-            'Generate List' => 'students.view',
+            'Generate List' => 'generate-list.view',
             'Students' => 'students.view',
             'Bulk Upload' => 'students.import',
             'Tickets' => 'tickets.view',

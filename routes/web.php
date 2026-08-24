@@ -99,13 +99,13 @@ Route::middleware('auth:web,admin')->group(function () {
 
     Route::middleware(['otp.verified', 'role.portal:super-admin,admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/generate-list', [GenerateListController::class, 'index'])
-            ->middleware('permission:students.view')
+            ->middleware('permission:generate-list.view')
             ->name('generate-list.index');
         Route::get('/generate-list/master', [GenerateListController::class, 'master'])
-            ->middleware(['permission:students.export', 'throttle:exports'])
+            ->middleware(['permission:generate-list.export', 'throttle:exports'])
             ->name('generate-list.master');
         Route::get('/generate-list/placement', [GenerateListController::class, 'placement'])
-            ->middleware(['permission:students.export', 'throttle:exports'])
+            ->middleware(['permission:generate-list.export', 'throttle:exports'])
             ->name('generate-list.placement');
 
         Route::get('/academics', [AcademicStructureController::class, 'index'])

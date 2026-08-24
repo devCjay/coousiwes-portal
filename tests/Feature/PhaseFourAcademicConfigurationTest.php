@@ -28,7 +28,7 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
         Admin::where('email', 'admin@coousiwes.test')
             ->firstOrFail()
-            ->assignRole(['academic-manager', 'student-manager', 'settings-manager']);
+            ->assignRole(['academic-manager', 'generate-list-manager', 'settings-manager']);
     }
 
     public function test_permitted_admins_can_open_academic_and_settings_configuration_pages(): void

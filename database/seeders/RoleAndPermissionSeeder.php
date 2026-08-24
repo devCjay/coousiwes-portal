@@ -36,6 +36,8 @@ class RoleAndPermissionSeeder extends Seeder
             'students.suspend',
             'students.import',
             'students.export',
+            'generate-list.view',
+            'generate-list.export',
             'tickets.view',
             'tickets.generate',
             'tickets.revoke',
@@ -71,6 +73,7 @@ class RoleAndPermissionSeeder extends Seeder
         $supervisor = Role::findOrCreate('supervisor', self::GUARD);
         $student = Role::findOrCreate('student', self::GUARD);
         $studentManager = Role::findOrCreate('student-manager', self::GUARD);
+        $generateListManager = Role::findOrCreate('generate-list-manager', self::GUARD);
         $ticketManager = Role::findOrCreate('ticket-manager', self::GUARD);
         $supervisorManager = Role::findOrCreate('supervisor-manager', self::GUARD);
         $paymentManager = Role::findOrCreate('payment-manager', self::GUARD);
@@ -92,6 +95,12 @@ class RoleAndPermissionSeeder extends Seeder
             'students.suspend',
             'students.import',
             'students.export',
+        ]));
+
+        $generateListManager->syncPermissions($permissionModels([
+            'dashboard.view',
+            'generate-list.view',
+            'generate-list.export',
         ]));
 
         $ticketManager->syncPermissions($permissionModels([

@@ -31,7 +31,7 @@ class GenerateListController extends Controller
 
     public function master(Request $request): Response
     {
-        abort_unless($request->user()?->can('students.export'), 403);
+        abort_unless($request->user()?->can('generate-list.export'), 403);
         $filters = $this->validatedFilters($request);
 
         $students = Student::query()
@@ -67,7 +67,7 @@ class GenerateListController extends Controller
 
     public function placement(Request $request): Response
     {
-        abort_unless($request->user()?->can('students.export'), 403);
+        abort_unless($request->user()?->can('generate-list.export'), 403);
         $filters = $this->validatedFilters($request);
 
         $placements = StudentPlacement::query()
