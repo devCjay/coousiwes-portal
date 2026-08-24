@@ -30,10 +30,10 @@
             ['group' => 'korapay', 'key' => 'korapay.redirect_url', 'label' => 'Korapay Redirect URL', 'type' => 'string', 'input' => 'url', 'value' => $settingValue('korapay.redirect_url', config('siwes.korapay.redirect_url')), 'description' => 'Callback URL after Korapay checkout.'],
         ];
         $emailFields = [
-            ['group' => 'mail', 'key' => 'mail.mailer', 'label' => 'Mailer', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('mail.mailer', config('mail.default', 'smtp')), 'description' => 'Default Laravel mailer. Use smtp for live delivery.'],
+            ['group' => 'mail', 'key' => 'mail.mailer', 'label' => 'Mailer', 'type' => 'string', 'input' => 'select', 'options' => ['smtp' => 'SMTP', 'sendmail' => 'Sendmail', 'log' => 'Log', 'array' => 'Array'], 'value' => $settingValue('mail.mailer', config('mail.default', 'smtp')), 'description' => 'Default Laravel mailer. Use smtp for live delivery.'],
             ['group' => 'mail', 'key' => 'mail.host', 'label' => 'SMTP Host', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('mail.host', config('mail.mailers.smtp.host')), 'description' => 'SMTP server hostname.'],
             ['group' => 'mail', 'key' => 'mail.port', 'label' => 'SMTP Port', 'type' => 'integer', 'input' => 'number', 'value' => $settingValue('mail.port', config('mail.mailers.smtp.port')), 'description' => 'SMTP server port.'],
-            ['group' => 'mail', 'key' => 'mail.scheme', 'label' => 'SMTP Scheme', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('mail.scheme', config('mail.mailers.smtp.scheme')), 'description' => 'Use smtp, smtps, tls, or leave empty depending on provider.'],
+            ['group' => 'mail', 'key' => 'mail.scheme', 'label' => 'SMTP Scheme', 'type' => 'string', 'input' => 'select', 'options' => ['' => 'None', 'tls' => 'TLS', 'ssl' => 'SSL', 'smtps' => 'SMTPS'], 'value' => $settingValue('mail.scheme', config('mail.mailers.smtp.scheme')), 'description' => 'Select the encryption scheme required by your SMTP provider.'],
             ['group' => 'mail', 'key' => 'mail.username', 'label' => 'SMTP Username', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('mail.username', config('mail.mailers.smtp.username')), 'description' => 'SMTP account username.'],
             ['group' => 'mail', 'key' => 'mail.password', 'label' => 'SMTP Password', 'type' => 'string', 'input' => 'password', 'value' => $settingValue('mail.password', config('mail.mailers.smtp.password')), 'description' => 'SMTP account password or app password.'],
             ['group' => 'mail', 'key' => 'mail.from_address', 'label' => 'From Address', 'type' => 'string', 'input' => 'email', 'value' => $settingValue('mail.from_address', config('mail.from.address')), 'description' => 'Default sender email address.'],
@@ -326,12 +326,20 @@
                 @foreach ($paymentFields as $index => $field)
                     <label class="block">
                         <span class="text-sm font-medium text-[var(--text-strong)]">{{ $field['label'] }}</span>
-                        <input
-                            type="{{ $field['input'] }}"
-                            name="settings[{{ $index }}][value]"
-                            value="{{ $field['value'] }}"
-                            class="siwes-form-control mt-2 theme-transition placeholder:text-[var(--text-soft)]"
-                        >
+                        @if (($field['input'] ?? 'text') === 'select')
+                            <select name="settings[{{ $index }}][value]" class="siwes-form-control mt-2 theme-transition">
+                                @foreach ($field['options'] as $optionValue => $optionLabel)
+                                    <option value="{{ $optionValue }}" @selected((string) $field['value'] === (string) $optionValue)>{{ $optionLabel }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <input
+                                type="{{ $field['input'] }}"
+                                name="settings[{{ $index }}][value]"
+                                value="{{ $field['value'] }}"
+                                class="siwes-form-control mt-2 theme-transition placeholder:text-[var(--text-soft)]"
+                            >
+                        @endif
                         <span class="mt-1 block text-xs text-[var(--text-soft)]">{{ $field['description'] }}</span>
                         <input type="hidden" name="settings[{{ $index }}][group]" value="{{ $field['group'] }}">
                         <input type="hidden" name="settings[{{ $index }}][key]" value="{{ $field['key'] }}">

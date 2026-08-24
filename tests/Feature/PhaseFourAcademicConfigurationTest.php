@@ -409,6 +409,7 @@ class PhaseFourAcademicConfigurationTest extends TestCase
         Mail::shouldReceive('raw')
             ->once()
             ->withArgs(fn (string $body, callable $callback): bool => str_contains($body, 'COOU SIWES Portal email configuration test'));
+        Mail::shouldReceive('purge')->zeroOrMoreTimes();
 
         $this->actingAs($superAdmin, 'admin')
             ->withSession(['otp.verified' => true])
@@ -418,6 +419,36 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             ->assertJsonPath('reload', false);
 
         $this->assertTrue(AuditLog::where('event', 'settings.email_test_sent')->exists());
+    }
+
+    public function test_email_connection_test_falls_back_to_smtp_when_saved_mailer_is_invalid(): void
+    {
+        $superAdmin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.mailer'],
+            ['group' => 'mail', 'value' => 'transport9[]', 'type' => 'string']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.host'],
+            ['group' => 'mail', 'value' => 'smtp.example.com', 'type' => 'string']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.port'],
+            ['group' => 'mail', 'value' => 587, 'type' => 'integer']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'mail.from_address'],
+            ['group' => 'mail', 'value' => 'portal@example.com', 'type' => 'string']
+        );
+
+        Mail::shouldReceive('purge')->with('smtp')->once();
+        Mail::shouldReceive('raw')->once();
+
+        $this->actingAs($superAdmin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.settings.email.test'), ['test_email' => 'recipient@example.com'])
+            ->assertOk()
+            ->assertJsonPath('message', 'Test email sent to recipient@example.com. Check the inbox and spam folder to confirm delivery.');
     }
 
     public function test_permitted_admin_can_clear_system_cache_from_settings(): void
