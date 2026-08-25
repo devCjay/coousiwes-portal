@@ -23,6 +23,7 @@ use App\Http\Controllers\Auth\OtpChallengeController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationCenterController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProfilePhotoController;
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
 use App\Http\Controllers\Student\FeedbackController;
 use App\Http\Controllers\Student\PaymentController;
@@ -86,6 +87,9 @@ Route::middleware('auth:web,admin')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])
         ->middleware('otp.verified')
         ->name('profile.show');
+    Route::get('/profile/photo/{user}', ProfilePhotoController::class)
+        ->middleware('otp.verified')
+        ->name('profile.photo');
     Route::get('/account/password', [AccountPasswordController::class, 'edit'])
         ->middleware('otp.verified')
         ->name('account.password.edit');

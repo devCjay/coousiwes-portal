@@ -167,6 +167,12 @@ class PhaseEightPortalsTest extends TestCase
 
         $this->assertNotNull($photoPath);
         Storage::disk('public')->assertExists($photoPath);
+
+        $this->actingAs($student->user)
+            ->withSession(['otp.verified' => true])
+            ->get($student->user->fresh()->profilePhotoUrl())
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/png');
     }
 
     public function test_student_can_update_only_their_own_profile(): void
