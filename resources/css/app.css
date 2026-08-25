@@ -236,6 +236,44 @@
         transform: translateY(-1px);
     }
 
+    .filepond--root {
+        margin-top: 0.5rem;
+        margin-bottom: 0;
+        font-family: inherit;
+    }
+
+    .filepond--panel-root {
+        border: 1px solid var(--line);
+        border-radius: 0.9rem;
+        background: var(--field-bg);
+        box-shadow: 0 10px 24px rgb(8 15 12 / 0.045);
+    }
+
+    .filepond--drop-label {
+        color: var(--text-soft);
+        min-height: 4.1rem;
+    }
+
+    .filepond--label-action {
+        color: var(--brand);
+        font-weight: 800;
+        text-decoration-color: color-mix(in srgb, var(--brand) 55%, transparent);
+    }
+
+    .filepond--item-panel {
+        background: var(--brand);
+    }
+
+    .filepond--file,
+    .filepond--file-action-button {
+        color: #fff;
+    }
+
+    .filepond--image-preview-wrapper,
+    .filepond--image-preview {
+        border-radius: 0.85rem;
+    }
+
     .academic-tab,
     .settings-tab {
         color: var(--text-soft);

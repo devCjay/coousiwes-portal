@@ -1,5 +1,17 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import * as FilePond from 'filepond';
+import FilePondPluginFileValidateSize from 'filepond-plugin-file-validate-size';
+import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
+import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
+import 'filepond/dist/filepond.min.css';
+import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
+
+FilePond.registerPlugin(
+    FilePondPluginFileValidateSize,
+    FilePondPluginFileValidateType,
+    FilePondPluginImagePreview,
+);
 
 const applyTheme = (theme) => {
     const shouldUseDark =
@@ -46,6 +58,44 @@ const showToast = ({ title = 'Notification', message = '', tone = 'info' } = {})
 };
 
 window.SiwesToast = showToast;
+
+document.querySelectorAll('[data-profile-photo-input]').forEach((input) => {
+    const form = input.closest('form');
+    const preview = form?.querySelector('[data-profile-photo-preview]');
+
+    FilePond.create(input, {
+        storeAsFile: true,
+        instantUpload: false,
+        allowMultiple: false,
+        allowImagePreview: true,
+        allowFileTypeValidation: true,
+        allowFileSizeValidation: true,
+        acceptedFileTypes: ['image/png', 'image/jpeg', 'image/webp'],
+        maxFileSize: '2MB',
+        credits: false,
+        labelIdle: 'Drag & Drop your picture or <span class="filepond--label-action">Browse / Use Camera</span>',
+        labelFileTypeNotAllowed: 'Only JPG, PNG, or WEBP images are allowed.',
+        fileValidateTypeLabelExpectedTypes: 'Upload JPG, PNG, or WEBP only.',
+        onaddfile: (error, file) => {
+            if (error || !preview || !file?.file) {
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                const image = document.createElement('img');
+                image.src = reader.result;
+                image.alt = 'Selected profile photo preview';
+                image.className = 'h-full w-full object-cover';
+                image.dataset.profilePhotoImage = 'true';
+                preview.replaceChildren(image);
+            };
+
+            reader.readAsDataURL(file.file);
+        },
+    });
+});
 
 const flashToast = document.querySelector('[data-toast]');
 
@@ -493,26 +543,6 @@ document.addEventListener('submit', async (event) => {
 });
 
 document.addEventListener('change', (event) => {
-    const photoInput = event.target.closest('[data-profile-photo-input]');
-
-    if (photoInput) {
-        const file = photoInput.files?.[0];
-        const form = photoInput.closest('form');
-        const preview = form?.querySelector('[data-profile-photo-preview]');
-
-        if (file && preview) {
-            const image = preview.querySelector('[data-profile-photo-image]') || document.createElement('img');
-
-            image.src = URL.createObjectURL(file);
-            image.alt = 'Selected profile photo preview';
-            image.className = 'h-full w-full object-cover';
-            image.dataset.profilePhotoImage = 'true';
-            preview.replaceChildren(image);
-        }
-
-        return;
-    }
-
     const toggle = event.target.closest('[data-check-all]');
 
     if (!toggle) {

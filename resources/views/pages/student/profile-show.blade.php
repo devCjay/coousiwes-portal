@@ -142,7 +142,13 @@
                                 </div>
                                 <label class="block min-w-0 flex-1">
                                     <span class="siwes-form-label">Profile Picture</span>
-                                    <input type="file" name="profile_photo" accept="image/png,image/jpeg,image/webp" class="siwes-form-control mt-2 theme-transition file:mr-4 file:rounded-lg file:border-0 file:bg-brand-600 file:px-3 file:py-2 file:text-sm file:font-bold file:text-white" data-profile-photo-input>
+                                    <input
+                                        type="file"
+                                        name="profile_photo"
+                                        accept="image/png,image/jpeg,image/webp"
+                                        capture="environment"
+                                        data-profile-photo-input
+                                    >
                                     <span class="mt-2 block text-xs leading-5 text-[var(--text-soft)]">Optional. Upload JPG, PNG, or WEBP, max 2MB.</span>
                                 </label>
                             </div>
@@ -254,7 +260,13 @@
                     </div>
                     <label class="block min-w-0">
                         <span class="siwes-form-label">Profile Picture</span>
-                        <input type="file" name="profile_photo" accept="image/png,image/jpeg,image/webp" class="siwes-form-control mt-2 theme-transition file:mr-4 file:rounded-lg file:border-0 file:bg-brand-600 file:px-3 file:py-2 file:text-sm file:font-bold file:text-white" data-profile-photo-input>
+                        <input
+                            type="file"
+                            name="profile_photo"
+                            accept="image/png,image/jpeg,image/webp"
+                            capture="environment"
+                            data-profile-photo-input
+                        >
                     </label>
                 </div>
                 <x-ui.input label="Email Address" name="email" type="email" value="{{ $student->user->email }}" required />
