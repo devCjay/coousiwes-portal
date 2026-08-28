@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\TicketController;
 use App\Http\Controllers\AccountPasswordController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\OtpChallengeController;
+use App\Http\Controllers\Cron\StudentImportCronController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationCenterController;
 use App\Http\Controllers\ProfileController;
@@ -37,6 +38,10 @@ use App\Http\Controllers\Webhooks\KorapayWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+
+Route::get('/cron/student-imports/process', StudentImportCronController::class)
+    ->middleware('throttle:cron')
+    ->name('cron.student-imports.process');
 
 Route::post('/webhooks/korapay', KorapayWebhookController::class)->middleware('throttle:webhooks')->name('webhooks.korapay');
 

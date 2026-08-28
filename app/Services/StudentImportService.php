@@ -99,6 +99,90 @@ class StudentImportService
         return $import->refresh();
     }
 
+    public function processChunk(StudentImport $import, int $limit): StudentImport
+    {
+        $limit = max(500, min($limit, 2000));
+
+        $import->update([
+            'status' => StudentImport::STATUS_PROCESSING,
+            'started_at' => $import->started_at ?: now(),
+        ]);
+
+        $path = storage_path('app/private/'.$import->stored_path);
+        if (! file_exists($path)) {
+            $path = storage_path('app/'.$import->stored_path);
+        }
+
+        $extension = pathinfo($import->original_filename, PATHINFO_EXTENSION);
+        $rows = $this->parse($path, $extension);
+        $start = (int) $import->processed_rows;
+        $chunk = array_slice($rows, $start, $limit);
+        $preview = $this->validateRows($chunk, $start);
+        $created = 0;
+        $errors = $import->error_report ?? [];
+
+        foreach ($preview['rows'] as $index => $row) {
+            $globalIndex = $start + $index;
+
+            if (isset($preview['errors'][$globalIndex]) || isset($errors[$globalIndex])) {
+                continue;
+            }
+
+            try {
+                $this->studentManager->create($this->resolveRow($row, true, $import->auto_activate_students));
+                $created++;
+            } catch (\Throwable $throwable) {
+                $errors[$globalIndex] = [
+                    'row' => $globalIndex + 2,
+                    'messages' => [$throwable->getMessage()],
+                ];
+            }
+        }
+
+        $errors = array_replace($errors, $preview['errors']);
+        $processedRows = min($start + count($chunk), count($rows));
+
+        $import->update([
+            'status' => $processedRows >= count($rows) ? StudentImport::STATUS_COMPLETED : StudentImport::STATUS_QUEUED,
+            'total_rows' => count($rows),
+            'processed_rows' => $processedRows,
+            'successful_rows' => (int) $import->successful_rows + $created,
+            'failed_rows' => count($errors),
+            'error_report' => $errors,
+            'finished_at' => $processedRows >= count($rows) ? now() : null,
+        ]);
+
+        return $import->refresh();
+    }
+
+    /**
+     * @return array{processed_imports: int, processed_rows: int, completed_imports: int, remaining_imports: int}
+     */
+    public function processQueued(int $limit): array
+    {
+        $limit = max(500, min($limit, 2000));
+        $import = StudentImport::query()
+            ->whereIn('status', [StudentImport::STATUS_QUEUED, StudentImport::STATUS_PROCESSING])
+            ->oldest()
+            ->first();
+
+        if ($import) {
+            $before = (int) $import->processed_rows;
+            $processed = $this->processChunk($import, $limit);
+            $processedRows = max(0, (int) $processed->processed_rows - $before);
+        } else {
+            $processed = null;
+            $processedRows = 0;
+        }
+
+        return [
+            'processed_imports' => $processed ? 1 : 0,
+            'processed_rows' => $processedRows,
+            'completed_imports' => $processed?->status === StudentImport::STATUS_COMPLETED ? 1 : 0,
+            'remaining_imports' => StudentImport::query()->whereIn('status', [StudentImport::STATUS_QUEUED, StudentImport::STATUS_PROCESSING])->count(),
+        ];
+    }
+
     public function template(string $format): string
     {
         $sample = [
@@ -194,7 +278,7 @@ class StudentImportService
      * @param  array<int, array<string, mixed>>  $rows
      * @return array{rows: array<int, array<string, mixed>>, errors: array<int, array<string, mixed>>, total: int}
      */
-    private function validateRows(array $rows): array
+    private function validateRows(array $rows, int $rowOffset = 0): array
     {
         $errors = [];
         $emails = [];
@@ -243,7 +327,7 @@ class StudentImportService
             $matricNumbers[] = strtolower((string) ($row['matric_no'] ?? ''));
 
             if ($messages !== []) {
-                $errors[$index] = ['row' => $index + 2, 'messages' => $messages];
+                $errors[$rowOffset + $index] = ['row' => $rowOffset + $index + 2, 'messages' => $messages];
             }
         }
 

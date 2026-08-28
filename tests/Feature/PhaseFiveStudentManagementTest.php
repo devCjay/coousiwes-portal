@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\ProcessStudentImportJob;
 use App\Models\AcademicLevel;
 use App\Models\AcademicSession;
 use App\Models\AuditLog;
@@ -396,25 +395,73 @@ class PhaseFiveStudentManagementTest extends TestCase
         $this->assertGreaterThan(0, StudentImport::firstOrFail()->failed_rows);
     }
 
-    public function test_import_processing_is_queued(): void
+    public function test_import_processing_auto_queues_large_files(): void
     {
         Queue::fake();
+        config(['siwes.imports.immediate_threshold' => 1]);
 
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
-        $import = StudentImport::query()->create([
-            'uploaded_by' => $admin->id,
-            'original_filename' => 'students.csv',
-            'status' => StudentImport::STATUS_PREVIEWED,
-        ]);
+        $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
+            ['Large', '', 'Student One', '2026/CSC/101'],
+            ['Large', '', 'Student Two', '2026/CSC/102'],
+        ]));
+        $import = app(StudentImportService::class)->createImport($file, $admin->id);
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.students.imports.process', $import))
             ->assertOk()
-            ->assertJsonPath('message', 'Student import queued for processing.');
+            ->assertJsonPath('message', 'Large import detected (2 rows). It has been queued for cron processing.');
 
-        Queue::assertPushed(ProcessStudentImportJob::class);
+        Queue::assertNothingPushed();
         $this->assertSame(StudentImport::STATUS_QUEUED, $import->fresh()->status);
+        $this->assertDatabaseMissing('students', ['matric_no' => '2026/CSC/101']);
+    }
+
+    public function test_import_processing_runs_immediately_by_default(): void
+    {
+        Queue::fake();
+
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
+            ['Immediate', '', 'Student', '2026/CSC/008'],
+        ]));
+        $import = app(StudentImportService::class)->createImport($file, $admin->id);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.students.imports.process', $import))
+            ->assertOk()
+            ->assertJsonPath('message', 'Student import completed. 1 students created, 0 failed.');
+
+        Queue::assertNothingPushed();
+        $this->assertSame(StudentImport::STATUS_COMPLETED, $import->fresh()->status);
+        $this->assertDatabaseHas('students', ['matric_no' => '2026/CSC/008']);
+    }
+
+    public function test_cron_endpoint_processes_queued_student_imports_in_batches(): void
+    {
+        config(['siwes.imports.cron_token' => 'test-cron-token']);
+
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
+            ['Cron', '', 'Student One', '2026/CSC/201'],
+            ['Cron', '', 'Student Two', '2026/CSC/202'],
+            ['Cron', '', 'Student Three', '2026/CSC/203'],
+        ]));
+        $import = app(StudentImportService::class)->createImport($file, $admin->id);
+        $import->update(['status' => StudentImport::STATUS_QUEUED]);
+
+        $this->getJson(route('cron.student-imports.process', ['token' => 'test-cron-token', 'limit' => 500]))
+            ->assertOk()
+            ->assertJsonPath('processed_imports', 1)
+            ->assertJsonPath('processed_rows', 3)
+            ->assertJsonPath('completed_imports', 1);
+
+        $this->assertSame(StudentImport::STATUS_COMPLETED, $import->fresh()->status);
+        $this->assertDatabaseHas('students', ['matric_no' => '2026/CSC/201']);
+        $this->assertDatabaseHas('students', ['matric_no' => '2026/CSC/202']);
+        $this->assertDatabaseHas('students', ['matric_no' => '2026/CSC/203']);
     }
 
     public function test_valid_import_rows_are_processed_into_students(): void

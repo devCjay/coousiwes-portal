@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PreviewStudentImportRequest;
-use App\Jobs\ProcessStudentImportJob;
 use App\Models\StudentImport;
 use App\Models\User;
 use App\Services\AuditLogger;
@@ -69,11 +68,33 @@ class StudentImportController extends Controller
     {
         abort_unless($request->user()?->can('students.import'), 403);
 
-        $studentImport->update(['status' => StudentImport::STATUS_QUEUED]);
-        ProcessStudentImportJob::dispatch($studentImport->id);
+        if ($studentImport->status === StudentImport::STATUS_COMPLETED) {
+            return AjaxResponse::error($request, 'This student import has already been processed.');
+        }
 
-        $this->auditLogger->record('students.import_queued', $request->user(), $request, $studentImport);
+        $threshold = (int) config('siwes.imports.immediate_threshold', 2000);
 
-        return AjaxResponse::success($request, 'Student import queued for processing.');
+        if ($studentImport->total_rows > $threshold) {
+            $studentImport->update(['status' => StudentImport::STATUS_QUEUED]);
+
+            $this->auditLogger->record('students.import_queued', $request->user(), $request, $studentImport);
+
+            return AjaxResponse::success(
+                $request,
+                "Large import detected ({$studentImport->total_rows} rows). It has been queued for cron processing.",
+            );
+        }
+
+        $processedImport = $this->studentImportService->process($studentImport);
+
+        $this->auditLogger->record('students.import_processed', $request->user(), $request, $processedImport, [
+            'successful_rows' => $processedImport->successful_rows,
+            'failed_rows' => $processedImport->failed_rows,
+        ]);
+
+        return AjaxResponse::success(
+            $request,
+            "Student import completed. {$processedImport->successful_rows} students created, {$processedImport->failed_rows} failed.",
+        );
     }
 }

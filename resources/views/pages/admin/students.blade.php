@@ -157,7 +157,7 @@
         </div>
     </x-ui.card>
 
-    <x-ui.card id="bulk-upload" class="mt-6" title="Import History" description="Recent upload attempts and queued processing results.">
+    <x-ui.card id="bulk-upload" class="mt-6" title="Import History" description="Recent upload attempts, immediate imports, and queued processing results.">
         <x-ui.data-table
             id="student-imports-table"
             :headers="['File', 'Status', 'Rows', 'Success', 'Failed']"
@@ -192,7 +192,7 @@
     @if ($can('students.import'))
         <x-ui.modal id="bulk-upload-modal" title="Bulk Upload" class="w-[min(52rem,calc(100vw-2rem))]">
             <div class="max-h-[75vh] overflow-y-auto pr-1">
-                <p class="mb-4 text-sm text-[var(--text-soft)]">Upload CSV or XLSX files for preview, duplicate detection, and queued processing.</p>
+                <p class="mb-4 text-sm text-[var(--text-soft)]">Upload CSV or XLSX files for preview, duplicate detection, immediate import, or queued processing for larger files.</p>
                 <div class="mb-4 flex flex-wrap gap-2">
                     <x-ui.button :href="route('admin.students.template', 'csv')" variant="secondary">CSV Template</x-ui.button>
                     <x-ui.button :href="route('admin.students.template', 'xlsx')" variant="secondary">XLSX Template</x-ui.button>

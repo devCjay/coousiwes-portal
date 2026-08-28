@@ -594,7 +594,7 @@ const renderPreview = (form, payload) => {
         <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] p-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <p class="text-sm font-semibold">${payload.total || rows.length} rows scanned</p>
-                <p class="text-xs text-[var(--text-soft)]">${errors.length} row issues found · Auto activate: ${payload.auto_activate ? 'ON' : 'OFF'}</p>
+                <p class="text-xs text-[var(--text-soft)]">${errors.length} row issues found - Auto activate: ${payload.auto_activate ? 'ON' : 'OFF'}</p>
             </div>
             <div class="mt-4 overflow-x-auto">
                 <table class="min-w-full text-left text-xs">
@@ -603,7 +603,15 @@ const renderPreview = (form, payload) => {
                 </table>
             </div>
             ${errorMarkup ? `<ul class="mt-4 list-disc space-y-1 pl-5 text-xs text-rose-600 dark:text-rose-200">${errorMarkup}</ul>` : ''}
-            ${payload.process_url ? `<form method="POST" action="${payload.process_url}" class="mt-4"><input type="hidden" name="_token" value="${document.querySelector('input[name=_token]')?.value || ''}"><button type="submit" class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-glow">Queue Import</button></form>` : ''}
+            ${payload.process_url ? `
+                <div class="mt-4">
+                    <form method="POST" action="${payload.process_url}">
+                        <input type="hidden" name="_token" value="${document.querySelector('input[name=_token]')?.value || ''}">
+                        <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-glow">Import Now</button>
+                    </form>
+                    <p class="mt-2 text-xs text-[var(--text-soft)]">Files above 2,000 rows are queued automatically and processed by cron in batches.</p>
+                </div>
+            ` : ''}
         </div>
     `;
 };

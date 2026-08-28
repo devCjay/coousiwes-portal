@@ -19,4 +19,9 @@ return [
         'webhook_secret' => env('KORAPAY_WEBHOOK_SECRET', env('KORAPAY_SECRET_KEY')),
         'redirect_url' => env('KORAPAY_REDIRECT_URL'),
     ],
+    'imports' => [
+        'immediate_threshold' => (int) env('SIWES_IMPORT_IMMEDIATE_THRESHOLD', 2000),
+        'cron_batch_size' => (int) env('SIWES_IMPORT_CRON_BATCH_SIZE', 1000),
+        'cron_token' => env('SIWES_IMPORT_CRON_TOKEN'),
+    ],
 ];

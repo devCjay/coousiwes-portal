@@ -53,6 +53,8 @@ class FortifyServiceProvider extends ServiceProvider
 
         RateLimiter::for('webhooks', fn (Request $request) => Limit::perMinute(120)->by($request->ip().'|webhooks'));
 
+        RateLimiter::for('cron', fn (Request $request) => Limit::perMinute(12)->by($request->ip().'|cron'));
+
         RateLimiter::for('passkeys', function (Request $request) {
             $credentialId = $request->input('credential.id');
 
