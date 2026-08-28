@@ -18,15 +18,10 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class StudentImportService
 {
     public const array HEADERS = [
-        'name',
-        'email',
-        'phone',
+        'first_name',
+        'middle_name',
+        'last_name',
         'matric_no',
-        'faculty_code',
-        'department_code',
-        'level',
-        'academic_session',
-        'activation_status',
     ];
 
     public function __construct(private readonly StudentManager $studentManager) {}
@@ -41,7 +36,7 @@ class StudentImportService
         return $this->validateRows($rows);
     }
 
-    public function createImport(UploadedFile $file, ?int $uploadedBy): StudentImport
+    public function createImport(UploadedFile $file, ?int $uploadedBy, bool $autoActivate = true): StudentImport
     {
         $storedPath = $file->store('student-imports');
         $preview = $this->preview($file);
@@ -55,6 +50,7 @@ class StudentImportService
             'preview_rows' => array_slice($preview['rows'], 0, 10),
             'error_report' => $preview['errors'],
             'failed_rows' => count($preview['errors']),
+            'auto_activate_students' => $autoActivate,
         ]);
     }
 
@@ -81,7 +77,7 @@ class StudentImportService
             }
 
             try {
-                $this->studentManager->create($this->resolveRow($row));
+                $this->studentManager->create($this->resolveRow($row, true, $import->auto_activate_students));
                 $created++;
             } catch (\Throwable $throwable) {
                 $errors[$index] = [
@@ -107,12 +103,19 @@ class StudentImportService
     {
         $sample = [
             self::HEADERS,
-            ['Ada Okoye', 'ada.okoye@example.test', '08030000000', '2026/CSC/001', 'AGRIC', 'AGE', '300', '2026/2027', 'inactive'],
+            ['Ada', 'Nkechi', 'Okoye', '2026/AGRIC/001'],
+            ['Chinedu', '', 'Nwankwo', '2026/ENG/002'],
         ];
 
         if ($format === 'xlsx') {
             $spreadsheet = new Spreadsheet;
-            $spreadsheet->getActiveSheet()->fromArray($sample);
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->fromArray($sample);
+
+            foreach (range('A', 'D') as $column) {
+                $sheet->getColumnDimension($column)->setAutoSize(true);
+            }
+
             $writer = new Xlsx($spreadsheet);
             ob_start();
             $writer->save('php://output');
@@ -122,7 +125,7 @@ class StudentImportService
 
         $handle = fopen('php://temp', 'w+');
         foreach ($sample as $row) {
-            fputcsv($handle, $row);
+            fputcsv($handle, $row, ',', '"', '\\');
         }
         rewind($handle);
 
@@ -137,13 +140,13 @@ class StudentImportService
         if (strtolower($extension) === 'xlsx') {
             $sheet = IOFactory::load($path)->getActiveSheet();
             $rows = $sheet->toArray(null, true, true, true);
-            $headers = array_map(fn (mixed $value): string => strtolower(trim((string) $value)), array_values(array_shift($rows) ?? []));
+            $headers = array_map(fn (mixed $value): string => $this->normalizeHeader((string) $value), array_values(array_shift($rows) ?? []));
 
             return array_values(array_filter(array_map(fn (array $row): array => $this->combine($headers, array_values($row)), $rows)));
         }
 
         $handle = fopen($path, 'r');
-        $headers = array_map(fn (string $value): string => strtolower(trim($value)), fgetcsv($handle) ?: []);
+        $headers = array_map(fn (string $value): string => $this->normalizeHeader($value), fgetcsv($handle) ?: []);
         $rows = [];
         while (($row = fgetcsv($handle)) !== false) {
             $rows[] = $this->combine($headers, $row);
@@ -170,6 +173,23 @@ class StudentImportService
         return array_filter($combined, fn (mixed $value): bool => $value !== null && $value !== '');
     }
 
+    private function normalizeHeader(string $header): string
+    {
+        $normalized = strtolower(trim($header));
+        $normalized = str_replace([' ', '-', '.'], '_', $normalized);
+
+        return match ($normalized) {
+            'matric', 'matric_number', 'matric_no', 'matriculation_number' => 'matric_no',
+            'surname', 'last' => 'last_name',
+            'firstname', 'first' => 'first_name',
+            'middlename', 'middle' => 'middle_name',
+            'faculty_name', 'faculty_code' => 'faculty',
+            'department_name', 'department_code', 'course', 'course_name', 'course_code' => 'department',
+            'session' => 'academic_session',
+            default => $normalized,
+        };
+    }
+
     /**
      * @param  array<int, array<string, mixed>>  $rows
      * @return array{rows: array<int, array<string, mixed>>, errors: array<int, array<string, mixed>>, total: int}
@@ -182,25 +202,30 @@ class StudentImportService
 
         foreach ($rows as $index => $row) {
             $validator = Validator::make($row, [
-                'name' => ['required', 'string', 'max:160'],
-                'email' => ['required', 'email', 'max:160'],
+                'first_name' => ['required_without:name', 'string', 'max:80'],
+                'middle_name' => ['nullable', 'string', 'max:80'],
+                'last_name' => ['required_without:name', 'string', 'max:80'],
+                'name' => ['required_without:first_name', 'string', 'max:160'],
+                'email' => ['nullable', 'email', 'max:160'],
+                'phone' => ['nullable', 'string', 'max:40'],
                 'matric_no' => ['required', 'string', 'max:40'],
-                'faculty_code' => ['required', 'string'],
-                'department_code' => ['required', 'string'],
-                'level' => ['required', 'integer'],
-                'academic_session' => ['required', 'string'],
+                'faculty' => ['nullable', 'string'],
+                'department' => ['nullable', 'string'],
+                'level' => ['nullable', 'integer'],
+                'academic_session' => ['nullable', 'string'],
                 'activation_status' => ['nullable', 'in:inactive,active,suspended'],
             ]);
 
             $messages = $validator->errors()->all();
 
-            if (in_array(strtolower((string) ($row['email'] ?? '')), $emails, true)) {
+            $email = strtolower((string) ($row['email'] ?? ''));
+            if ($email !== '' && in_array($email, $emails, true)) {
                 $messages[] = 'Duplicate email inside import file.';
             }
             if (in_array(strtolower((string) ($row['matric_no'] ?? '')), $matricNumbers, true)) {
                 $messages[] = 'Duplicate matric number inside import file.';
             }
-            if (User::query()->where('email', $row['email'] ?? null)->exists()) {
+            if ($email !== '' && User::query()->where('email', $row['email'] ?? null)->exists()) {
                 $messages[] = 'Email already exists.';
             }
             if (Student::query()->where('matric_no', $row['matric_no'] ?? null)->exists()) {
@@ -212,7 +237,9 @@ class StudentImportService
                 $messages[] = 'Academic mapping could not be resolved.';
             }
 
-            $emails[] = strtolower((string) ($row['email'] ?? ''));
+            if ($email !== '') {
+                $emails[] = $email;
+            }
             $matricNumbers[] = strtolower((string) ($row['matric_no'] ?? ''));
 
             if ($messages !== []) {
@@ -227,14 +254,33 @@ class StudentImportService
      * @param  array<string, mixed>  $row
      * @return array<string, mixed>|null
      */
-    private function resolveRow(array $row, bool $throw = true): ?array
+    private function resolveRow(array $row, bool $throw = true, ?bool $autoActivate = null): ?array
     {
-        $faculty = Faculty::query()->where('code', $row['faculty_code'] ?? null)->first();
-        $department = Department::query()->where('faculty_id', $faculty?->id)->where('code', $row['department_code'] ?? null)->first();
-        $level = AcademicLevel::query()->where('level', $row['level'] ?? null)->first();
-        $session = AcademicSession::query()->where('name', $row['academic_session'] ?? null)->first();
+        $facultyValue = $row['faculty'] ?? null;
+        $departmentValue = $row['department'] ?? null;
+        $faculty = filled($facultyValue)
+            ? Faculty::query()
+                ->where('code', $facultyValue)
+                ->orWhere('name', $facultyValue)
+                ->first()
+            : null;
+        $department = filled($departmentValue) && $faculty
+            ? Department::query()
+                ->where('faculty_id', $faculty->id)
+                ->where(function ($query) use ($departmentValue): void {
+                    $query->where('code', $departmentValue)->orWhere('name', $departmentValue);
+                })
+                ->first()
+            : null;
+        $level = filled($row['level'] ?? null) ? AcademicLevel::query()->where('level', $row['level'])->first() : null;
+        $session = filled($row['academic_session'] ?? null) ? AcademicSession::query()->where('name', $row['academic_session'])->first() : null;
 
-        if (! $faculty || ! $department || ! $level || ! $session) {
+        if (
+            (filled($facultyValue) && ! $faculty)
+            || (filled($departmentValue) && ! $department)
+            || (filled($row['level'] ?? null) && ! $level)
+            || (filled($row['academic_session'] ?? null) && ! $session)
+        ) {
             if ($throw) {
                 throw new \RuntimeException('Academic mapping could not be resolved.');
             }
@@ -242,16 +288,24 @@ class StudentImportService
             return null;
         }
 
+        $activationStatus = match ($autoActivate) {
+            true => Student::STATUS_ACTIVE,
+            false => Student::STATUS_INACTIVE,
+            default => $row['activation_status'] ?? Student::STATUS_INACTIVE,
+        };
+
         return [
-            'name' => $row['name'],
-            'email' => $row['email'],
+            'name' => $row['name'] ?? collect([$row['first_name'] ?? null, $row['middle_name'] ?? null, $row['last_name'] ?? null])
+                ->filter(fn (mixed $value): bool => filled($value))
+                ->implode(' '),
+            'email' => $row['email'] ?? null,
             'phone' => $row['phone'] ?? null,
             'matric_no' => $row['matric_no'],
-            'faculty_id' => $faculty->id,
-            'department_id' => $department->id,
-            'academic_level_id' => $level->id,
-            'academic_session_id' => $session->id,
-            'activation_status' => $row['activation_status'] ?? Student::STATUS_INACTIVE,
+            'faculty_id' => $faculty?->id,
+            'department_id' => $department?->id,
+            'academic_level_id' => $level?->id,
+            'academic_session_id' => $session?->id,
+            'activation_status' => $activationStatus,
         ];
     }
 }

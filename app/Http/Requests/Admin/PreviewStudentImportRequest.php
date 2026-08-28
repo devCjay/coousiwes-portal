@@ -24,6 +24,7 @@ class PreviewStudentImportRequest extends FormRequest
     {
         return [
             'students_file' => ['required', 'file', 'max:10240', 'mimes:csv,txt,xlsx'],
+            'auto_activate' => ['nullable', 'boolean'],
         ];
     }
 }

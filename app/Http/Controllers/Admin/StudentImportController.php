@@ -24,7 +24,11 @@ class StudentImportController extends Controller
     public function preview(PreviewStudentImportRequest $request): JsonResponse
     {
         $file = $request->file('students_file');
-        $import = $this->studentImportService->createImport($file, $request->user() instanceof User ? (int) $request->user()->id : null);
+        $import = $this->studentImportService->createImport(
+            $file,
+            $request->user() instanceof User ? (int) $request->user()->id : null,
+            $request->boolean('auto_activate', true),
+        );
 
         $this->auditLogger->record('students.import_previewed', $request->user(), $request, $import, [
             'filename' => $import->original_filename,
@@ -37,6 +41,7 @@ class StudentImportController extends Controller
             'total' => $import->total_rows,
             'preview' => $import->preview_rows,
             'errors' => $import->error_report,
+            'auto_activate' => $import->auto_activate_students,
             'import_id' => $import->id,
             'process_url' => route('admin.students.imports.process', $import),
         ]);
@@ -45,7 +50,11 @@ class StudentImportController extends Controller
     public function store(PreviewStudentImportRequest $request): JsonResponse|RedirectResponse
     {
         $file = $request->file('students_file');
-        $import = $this->studentImportService->createImport($file, $request->user() instanceof User ? (int) $request->user()->id : null);
+        $import = $this->studentImportService->createImport(
+            $file,
+            $request->user() instanceof User ? (int) $request->user()->id : null,
+            $request->boolean('auto_activate', true),
+        );
 
         $this->auditLogger->record('students.import_previewed', $request->user(), $request, $import, [
             'filename' => $import->original_filename,

@@ -26,6 +26,7 @@ class StudentImport extends Model
         'processed_rows',
         'successful_rows',
         'failed_rows',
+        'auto_activate_students',
         'preview_rows',
         'error_report',
         'started_at',
@@ -38,6 +39,7 @@ class StudentImport extends Model
         return [
             'preview_rows' => 'array',
             'error_report' => 'array',
+            'auto_activate_students' => 'boolean',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
         ];

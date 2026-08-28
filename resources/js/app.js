@@ -582,7 +582,7 @@ const renderPreview = (form, payload) => {
     const rows = payload.preview || [];
     const errors = payload.errors ? Object.values(payload.errors) : [];
     const rowMarkup = rows
-        .map((row) => `<tr>${['name', 'email', 'matric_no', 'faculty_code', 'department_code', 'level', 'academic_session']
+        .map((row) => `<tr>${['first_name', 'middle_name', 'last_name', 'matric_no']
             .map((key) => `<td class="whitespace-nowrap px-3 py-2">${row[key] || ''}</td>`)
             .join('')}</tr>`)
         .join('');
@@ -594,11 +594,11 @@ const renderPreview = (form, payload) => {
         <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] p-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <p class="text-sm font-semibold">${payload.total || rows.length} rows scanned</p>
-                <p class="text-xs text-[var(--text-soft)]">${errors.length} row issues found</p>
+                <p class="text-xs text-[var(--text-soft)]">${errors.length} row issues found · Auto activate: ${payload.auto_activate ? 'ON' : 'OFF'}</p>
             </div>
             <div class="mt-4 overflow-x-auto">
                 <table class="min-w-full text-left text-xs">
-                    <thead class="text-[var(--text-soft)]"><tr><th class="px-3 py-2">Name</th><th class="px-3 py-2">Email</th><th class="px-3 py-2">Matric</th><th class="px-3 py-2">Faculty</th><th class="px-3 py-2">Department</th><th class="px-3 py-2">Level</th><th class="px-3 py-2">Session</th></tr></thead>
+                    <thead class="text-[var(--text-soft)]"><tr><th class="px-3 py-2">First Name</th><th class="px-3 py-2">Middle Name</th><th class="px-3 py-2">Last Name</th><th class="px-3 py-2">Matric Number</th></tr></thead>
                     <tbody>${rowMarkup}</tbody>
                 </table>
             </div>

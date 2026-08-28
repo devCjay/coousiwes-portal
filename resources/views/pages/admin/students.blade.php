@@ -199,6 +199,20 @@
                 </div>
                 <form method="POST" action="{{ route('admin.students.imports.preview') }}" enctype="multipart/form-data" class="grid gap-4" data-preview-target="#student-import-preview" data-ajax-reset="false">
                     @csrf
+                    <fieldset class="rounded-2xl border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                        <legend class="px-1 text-sm font-semibold text-[var(--text-strong)]">Auto Activate Uploaded Students</legend>
+                        <p class="mt-1 text-xs text-[var(--text-soft)]">Choose whether students in this file become active immediately after the import is processed.</p>
+                        <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                            <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-strong)] transition hover:border-brand-400">
+                                <input type="radio" name="auto_activate" value="1" class="h-4 w-4 accent-brand-600" checked>
+                                <span>ON - Activate students</span>
+                            </label>
+                            <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-strong)] transition hover:border-brand-400">
+                                <input type="radio" name="auto_activate" value="0" class="h-4 w-4 accent-brand-600">
+                                <span>OFF - Keep inactive</span>
+                            </label>
+                        </div>
+                    </fieldset>
                     <x-ui.input label="Student File" name="students_file" type="file" accept=".csv,.txt,.xlsx" required />
                     <x-ui.button type="submit">Preview Import</x-ui.button>
                 </form>

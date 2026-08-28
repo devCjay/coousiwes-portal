@@ -319,6 +319,15 @@ class PhaseFiveStudentManagementTest extends TestCase
             ->get(route('admin.students.template', 'xlsx'))
             ->assertOk()
             ->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.students.template', 'csv'))
+            ->assertOk()
+            ->assertSee('first_name,middle_name,last_name,matric_no', false)
+            ->assertDontSee('faculty')
+            ->assertDontSee('department')
+            ->assertDontSee('student_id');
     }
 
     public function test_student_posting_list_download_matches_reference_xls_structure_and_filters(): void
@@ -371,15 +380,16 @@ class PhaseFiveStudentManagementTest extends TestCase
     {
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
-            ['Ada Okoye', 'dup@example.test', '08030000000', '2026/CSC/005', 'AGRIC', 'AGE', '300', '2026/2027', 'inactive'],
-            ['Ada Duplicate', 'dup@example.test', '08030000001', '2026/CSC/005', 'AGRIC', 'AGE', '300', '2026/2027', 'inactive'],
+            ['Ada', 'Nkechi', 'Okoye', '2026/CSC/005'],
+            ['Ada', 'Duplicate', 'Okoye', '2026/CSC/005'],
         ]));
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
-            ->postJson(route('admin.students.imports.preview'), ['students_file' => $file])
+            ->postJson(route('admin.students.imports.preview'), ['students_file' => $file, 'auto_activate' => '0'])
             ->assertOk()
             ->assertJsonPath('total', 2)
+            ->assertJsonPath('auto_activate', false)
             ->assertJsonStructure(['import_id', 'process_url', 'errors']);
 
         $this->assertSame(1, StudentImport::count());
@@ -411,7 +421,7 @@ class PhaseFiveStudentManagementTest extends TestCase
     {
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
-            ['Ngozi Eze', 'ngozi@example.test', '08030000002', '2026/CSC/006', 'AGRIC', 'AGE', '300', '2026/2027', 'active'],
+            ['Ngozi', '', 'Eze', '2026/CSC/006'],
         ]));
 
         $import = app(StudentImportService::class)->createImport($file, $admin->id);
@@ -420,6 +430,25 @@ class PhaseFiveStudentManagementTest extends TestCase
         $this->assertDatabaseHas('students', ['matric_no' => '2026/CSC/006', 'activation_status' => Student::STATUS_ACTIVE]);
         $this->assertSame(StudentImport::STATUS_COMPLETED, $import->fresh()->status);
         $this->assertSame(1, $import->fresh()->successful_rows);
+    }
+
+    public function test_import_toggle_can_keep_minimal_uploads_inactive(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
+            ['Chidinma', '', 'Ilo', '2026/CSC/007'],
+        ]));
+
+        $import = app(StudentImportService::class)->createImport($file, $admin->id, false);
+        app(StudentImportService::class)->process($import);
+
+        $student = Student::where('matric_no', '2026/CSC/007')->firstOrFail();
+
+        $this->assertSame('Chidinma Ilo', $student->user->name);
+        $this->assertSame(Student::STATUS_INACTIVE, $student->activation_status);
+        $this->assertNull($student->user->email);
+        $this->assertNull($student->faculty_id);
+        $this->assertNull($student->department_id);
     }
 
     /**
