@@ -383,23 +383,29 @@ Route::middleware('auth:web,admin')->group(function () {
     Route::get('/student/payments/callback', [PaymentController::class, 'callback'])
         ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete'])
         ->name('student.payments.callback');
+    Route::get('/student/workshop-fee', [PaymentController::class, 'workshop'])
+        ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete'])
+        ->name('student.workshop.checkout');
+    Route::post('/student/workshop-fee/initialize', [PaymentController::class, 'initializeWorkshop'])
+        ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete', 'throttle:10,1'])
+        ->name('student.workshop.initialize');
     Route::get('/student/tickets', [StudentTicketController::class, 'index'])
         ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete'])
         ->name('student.tickets.index');
     Route::get('/student/placements/ticket', [PlacementController::class, 'ticket'])
-        ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete'])
+        ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete', 'student.workshop.paid'])
         ->name('student.placements.ticket');
     Route::post('/student/placements/ticket', [PlacementController::class, 'confirmTicket'])
-        ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete', 'throttle:10,1'])
+        ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete', 'student.workshop.paid', 'throttle:10,1'])
         ->name('student.placements.ticket.confirm');
     Route::post('/student/placements/pay-online', [PlacementController::class, 'payOnline'])
-        ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete', 'throttle:10,1'])
+        ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete', 'student.workshop.paid', 'throttle:10,1'])
         ->name('student.placements.pay-online');
     Route::get('/student/placements/create', [PlacementController::class, 'create'])
-        ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete'])
+        ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete', 'student.workshop.paid'])
         ->name('student.placements.create');
     Route::post('/student/placements/create', [PlacementController::class, 'storeStep'])
-        ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete'])
+        ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete', 'student.workshop.paid'])
         ->name('student.placements.store-step');
     Route::get('/student/placements/complete', [PlacementController::class, 'complete'])
         ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete'])

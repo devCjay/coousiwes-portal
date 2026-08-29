@@ -26,6 +26,8 @@
             ['group' => 'payment', 'key' => 'payment.currency', 'label' => 'Currency', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('payment.currency', config('siwes.payments.currency', 'NGN')), 'description' => 'Currency code used for ticket payments.'],
             ['group' => 'payment', 'key' => 'payment.ticket_amount', 'label' => 'Ticket Amount', 'type' => 'integer', 'input' => 'number', 'value' => $settingValue('payment.ticket_amount', config('siwes.payments.ticket_amount', 5000)), 'description' => 'SIWES activation ticket fee.'],
             ['group' => 'payment', 'key' => 'payment.ticket_valid_days', 'label' => 'Ticket Valid Days', 'type' => 'integer', 'input' => 'number', 'value' => $settingValue('payment.ticket_valid_days', config('siwes.payments.ticket_valid_days', 30)), 'description' => 'Number of days before an unused ticket expires.'],
+            ['group' => 'payment', 'key' => 'payment.workshop_fee_enabled', 'label' => 'Workshop Fee Module', 'type' => 'boolean', 'input' => 'select', 'options' => ['true' => 'Active', 'false' => 'Inactive'], 'value' => $settingValue('payment.workshop_fee_enabled', false) ? 'true' : 'false', 'description' => 'Show workshop fee card and require payment before placement access.'],
+            ['group' => 'payment', 'key' => 'payment.workshop_fee_amount', 'label' => 'Workshop Fee Amount', 'type' => 'integer', 'input' => 'number', 'value' => $settingValue('payment.workshop_fee_amount', config('siwes.payments.workshop_fee_amount', 0)), 'description' => 'Online workshop fee charged before placement access when the module is active.'],
             ['group' => 'korapay', 'key' => 'korapay.base_url', 'label' => 'Korapay Base URL', 'type' => 'string', 'input' => 'url', 'value' => $settingValue('korapay.base_url', config('siwes.korapay.base_url')), 'description' => 'Korapay merchant API base URL.'],
             ['group' => 'korapay', 'key' => 'korapay.public_key', 'label' => 'Korapay Public Key', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('korapay.public_key', config('siwes.korapay.public_key')), 'description' => 'Korapay public API key.'],
             ['group' => 'korapay', 'key' => 'korapay.secret_key', 'label' => 'Korapay Secret Key', 'type' => 'string', 'input' => 'password', 'value' => $settingValue('korapay.secret_key', config('siwes.korapay.secret_key')), 'description' => 'Korapay private API key.'],
@@ -109,10 +111,23 @@
                     <p class="mt-1 text-sm text-[var(--text-soft)]">Korapay credentials, ticket pricing, currency, and payment callback configuration.</p>
                 </div>
                 @if ($canUpdateSettings)
-                    <x-ui.button type="button" data-modal-target="#payment-settings-modal">Configure Payment</x-ui.button>
+                    <div class="flex flex-wrap gap-2">
+                        <form method="POST" action="{{ route('admin.settings.bulk') }}">
+                            @csrf
+                            <input type="hidden" name="settings[0][group]" value="payment">
+                            <input type="hidden" name="settings[0][key]" value="payment.workshop_fee_enabled">
+                            <input type="hidden" name="settings[0][type]" value="boolean">
+                            <input type="hidden" name="settings[0][description]" value="Show workshop fee card and require payment before placement access.">
+                            <input type="hidden" name="settings[0][value]" value="{{ $settingValue('payment.workshop_fee_enabled', false) ? 'false' : 'true' }}">
+                            <x-ui.button type="submit" variant="secondary">
+                                {{ $settingValue('payment.workshop_fee_enabled', false) ? 'Deactivate Workshop Fee' : 'Activate Workshop Fee' }}
+                            </x-ui.button>
+                        </form>
+                        <x-ui.button type="button" data-modal-target="#payment-settings-modal">Configure Payment</x-ui.button>
+                    </div>
                 @endif
             </div>
-            <div class="mt-5 grid gap-4 md:grid-cols-3">
+            <div class="mt-5 grid gap-4 md:grid-cols-4">
                 <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
                     <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Provider</p>
                     <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">{{ $settingValue('payment.provider', config('siwes.payments.provider', 'korapay')) }}</p>
@@ -120,6 +135,11 @@
                 <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
                     <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Ticket Fee</p>
                     <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">{{ $settingValue('payment.currency', config('siwes.payments.currency', 'NGN')) }} {{ number_format((int) $settingValue('payment.ticket_amount', config('siwes.payments.ticket_amount', 5000))) }}</p>
+                </div>
+                <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Workshop Fee</p>
+                    <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">{{ $settingValue('payment.workshop_fee_enabled', false) ? 'Active' : 'Inactive' }}</p>
+                    <p class="mt-1 text-xs text-[var(--text-soft)]">{{ $settingValue('payment.currency', config('siwes.payments.currency', 'NGN')) }} {{ number_format((int) $settingValue('payment.workshop_fee_amount', config('siwes.payments.workshop_fee_amount', 0))) }}</p>
                 </div>
                 <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
                     <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Korapay Public Key</p>

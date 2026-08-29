@@ -19,9 +19,14 @@ class Payment extends Model
 
     public const string STATUS_ABANDONED = 'abandoned';
 
+    public const string PURPOSE_ACTIVATION_TICKET = 'activation_ticket';
+
+    public const string PURPOSE_WORKSHOP_FEE = 'workshop_fee';
+
     protected $fillable = [
         'student_id',
         'ticket_id',
+        'purpose',
         'provider',
         'reference',
         'amount',
@@ -55,5 +60,10 @@ class Payment extends Model
     public function ticket(): BelongsTo
     {
         return $this->belongsTo(Ticket::class);
+    }
+
+    public function isWorkshopFee(): bool
+    {
+        return $this->purpose === self::PURPOSE_WORKSHOP_FEE;
     }
 }

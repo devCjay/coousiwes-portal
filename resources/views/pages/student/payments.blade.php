@@ -88,9 +88,10 @@
         <x-ui.card title="Payment History" description="References are verified server-side after checkout and webhooks.">
             <x-ui.data-table
                 id="student-payments-table"
-                :headers="['Reference', 'Amount', 'Status', 'Verified']"
+                :headers="['Reference', 'Purpose', 'Amount', 'Status', 'Verified']"
                 :rows="$payments->map(fn ($payment) => [
                     e($payment->reference),
+                    e($payment->purpose === \App\Models\Payment::PURPOSE_WORKSHOP_FEE ? 'Workshop Fee' : 'Activation Ticket'),
                     e($payment->currency.' '.number_format($payment->amount)),
                     e(ucfirst($payment->status)),
                     e($payment->verified_at?->toDateTimeString() ?? 'Pending'),

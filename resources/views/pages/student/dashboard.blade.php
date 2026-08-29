@@ -11,6 +11,10 @@
     $placementSession = $placement?->academicSession?->name ?? 'N/A';
     $placementYear = $placement?->siwes_year ?? 'N/A';
     $placementStatus = $placement ? 'Submitted' : 'Not started';
+    $workshopEnabled = \App\Support\PaymentSettings::workshopEnabled();
+    $workshopPaid = \App\Support\PaymentSettings::studentHasPaidWorkshop($student);
+    $workshopAmount = \App\Support\PaymentSettings::workshopAmount();
+    $workshopCurrency = \App\Support\PaymentSettings::currency();
     $placementRows = [[
         e($placementCompany),
         e($placementLocation),
@@ -28,6 +32,7 @@
         ['label' => 'Dashboard', 'href' => route('student.dashboard'), 'active' => true, 'icon' => 'D'],
         ['label' => 'Profile', 'href' => route('student.profile.show'), 'icon' => 'user-circle'],
         ['label' => 'My Ticket', 'href' => route('student.tickets.index'), 'icon' => 'ticket'],
+        ...($workshopEnabled ? [['label' => 'Workshop Fee', 'href' => route('student.workshop.checkout'), 'icon' => 'credit-card']] : []),
         ['label' => 'Placement', 'href' => route('student.placements.ticket'), 'icon' => 'briefcase'],
         ['label' => 'Payment', 'href' => route('student.payments.index'), 'icon' => 'K'],
         ['label' => 'Feedback', 'href' => route('student.feedback.index'), 'icon' => 'F'],
@@ -100,7 +105,7 @@
 
             <div id="profile-actions" class="mt-8">
                 <p class="mb-3 text-base font-bold">Continue</p>
-                <div class="grid gap-4 lg:grid-cols-2">
+                <div class="grid gap-4 {{ $workshopEnabled ? 'xl:grid-cols-3' : 'lg:grid-cols-2' }}">
                     <a href="{{ route('student.profile.show') }}" class="group min-w-0 overflow-hidden rounded-2xl bg-white text-left text-[#18304f] shadow-[0_18px_45px_rgba(15,23,42,0.16)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(15,23,42,0.22)]">
                         <span class="block p-4 sm:p-5">
                             <span class="flex items-start gap-4">
@@ -122,6 +127,30 @@
                             <span class="inline-flex items-center gap-1 text-brand-600">Continue <x-ui.icon name="open" class="size-3.5" /></span>
                         </span>
                     </a>
+
+                    @if ($workshopEnabled)
+                        <a href="{{ route('student.workshop.checkout') }}" class="group min-w-0 overflow-hidden rounded-2xl bg-white text-left text-[#18304f] shadow-[0_18px_45px_rgba(15,23,42,0.16)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(15,23,42,0.22)]">
+                            <span class="block p-4 sm:p-5">
+                                <span class="flex items-start gap-4">
+                                    <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-slate-100 text-slate-500">
+                                        <x-ui.icon name="credit-card" class="size-5" />
+                                    </span>
+                                    <span class="min-w-0 flex-1">
+                                        <span class="block truncate text-sm font-bold">Workshop Fee</span>
+                                        <span class="mt-1 block text-xs text-slate-500">{{ $workshopPaid ? 'Payment verified.' : $workshopCurrency.' '.number_format($workshopAmount).' payment required.' }}</span>
+                                    </span>
+                                </span>
+                                <span class="mt-5 block h-2 overflow-hidden rounded-full bg-slate-100">
+                                    <span class="block h-full rounded-full bg-brand-600" style="width: {{ $workshopPaid ? 100 : 0 }}%"></span>
+                                </span>
+                                <span class="mt-2 block text-xs font-semibold text-[#18304f]">{{ $workshopPaid ? '100' : '0' }}% <span class="font-medium text-slate-400">Completed</span></span>
+                            </span>
+                            <span class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-4 py-3 text-xs font-bold text-slate-500 sm:px-5">
+                                <span>{{ $workshopPaid ? 'Paid' : 'Payment pending' }}</span>
+                                <span class="inline-flex items-center gap-1 text-brand-600">Continue <x-ui.icon name="open" class="size-3.5" /></span>
+                            </span>
+                        </a>
+                    @endif
 
                     <a href="{{ $placement ? route('student.placements.create') : route('student.placements.ticket') }}" class="group min-w-0 overflow-hidden rounded-2xl bg-white text-left text-[#18304f] shadow-[0_18px_45px_rgba(15,23,42,0.16)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(15,23,42,0.22)]">
                         <span class="block p-4 sm:p-5">

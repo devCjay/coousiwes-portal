@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Student;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Support\PaymentSettings;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -18,10 +19,10 @@ class TicketService
             'serial_number' => $this->serialNumber(),
             'pin' => $pin = $this->pin(),
             'code_hash' => Hash::make($pin),
-            'amount' => (int) config('siwes.payments.ticket_amount'),
-            'currency' => (string) config('siwes.payments.currency'),
+            'amount' => PaymentSettings::ticketAmount(),
+            'currency' => PaymentSettings::currency(),
             'status' => Ticket::STATUS_GENERATED,
-            'expires_at' => now()->addDays((int) config('siwes.payments.ticket_valid_days')),
+            'expires_at' => now()->addDays(PaymentSettings::ticketValidDays()),
         ]);
     }
 
@@ -38,11 +39,11 @@ class TicketService
                 'serial_number' => $this->serialNumber(),
                 'pin' => $pin = $this->pin(),
                 'code_hash' => Hash::make($pin),
-                'amount' => (int) config('siwes.payments.ticket_amount'),
-                'currency' => (string) config('siwes.payments.currency'),
+                'amount' => PaymentSettings::ticketAmount(),
+                'currency' => PaymentSettings::currency(),
                 'status' => Ticket::STATUS_UNUSED,
                 'assigned_at' => now(),
-                'expires_at' => now()->addDays((int) config('siwes.payments.ticket_valid_days')),
+                'expires_at' => now()->addDays(PaymentSettings::ticketValidDays()),
             ]);
             $student->tickets()->save($ticket);
 

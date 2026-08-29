@@ -11,6 +11,7 @@ return [
         'currency' => env('SIWES_PAYMENT_CURRENCY', 'NGN'),
         'ticket_amount' => (int) env('SIWES_TICKET_AMOUNT', 5000),
         'ticket_valid_days' => (int) env('SIWES_TICKET_VALID_DAYS', 30),
+        'workshop_fee_amount' => (int) env('SIWES_WORKSHOP_FEE_AMOUNT', 0),
     ],
     'korapay' => [
         'base_url' => env('KORAPAY_BASE_URL', 'https://api.korapay.com/merchant/api/v1'),

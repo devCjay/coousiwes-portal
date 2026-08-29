@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AcademicLevel;
 use App\Models\AcademicSession;
+use App\Models\AppSetting;
 use App\Models\Course;
 use App\Models\Department;
 use App\Models\Faculty;
@@ -167,6 +168,42 @@ class PhaseSixKorapayPaymentsTest extends TestCase
         ]);
     }
 
+    public function test_student_can_initialize_workshop_fee_checkout_when_module_is_active(): void
+    {
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'payment.workshop_fee_enabled'],
+            ['group' => 'payment', 'value' => true, 'type' => 'boolean']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'payment.workshop_fee_amount'],
+            ['group' => 'payment', 'value' => 2500, 'type' => 'integer']
+        );
+
+        Http::fake([
+            '*' => Http::response([
+                'status' => true,
+                'data' => ['checkout_url' => 'https://checkout.korapay.com/pay/workshop'],
+            ]),
+        ]);
+
+        $student = $this->student();
+
+        $this->actingAs($student->user)
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('student.workshop.initialize'))
+            ->assertOk()
+            ->assertJsonPath('message', 'Workshop fee checkout initialized.')
+            ->assertJsonPath('redirect', 'https://checkout.korapay.com/pay/workshop');
+
+        $this->assertDatabaseHas('payments', [
+            'student_id' => $student->id,
+            'ticket_id' => null,
+            'purpose' => Payment::PURPOSE_WORKSHOP_FEE,
+            'amount' => 2500,
+            'status' => Payment::STATUS_PENDING,
+        ]);
+    }
+
     public function test_student_claims_unassigned_ticket_when_initializing_payment(): void
     {
         Http::fake([
@@ -236,6 +273,33 @@ class PhaseSixKorapayPaymentsTest extends TestCase
         $this->assertSame(Payment::STATUS_SUCCESSFUL, $payment->fresh()->status);
         $this->assertSame(Ticket::STATUS_USED, $ticket->fresh()->status);
         $this->assertSame(Student::STATUS_ACTIVE, $student->fresh()->activation_status);
+    }
+
+    public function test_workshop_payment_callback_marks_fee_successful_without_ticket(): void
+    {
+        Http::fake([
+            '*' => Http::response([
+                'status' => true,
+                'data' => ['status' => 'success'],
+            ]),
+        ]);
+
+        $student = $this->student();
+        $payment = Payment::query()->create([
+            'student_id' => $student->id,
+            'ticket_id' => null,
+            'purpose' => Payment::PURPOSE_WORKSHOP_FEE,
+            'reference' => 'WORKSHOP-CALLBACK',
+            'amount' => 2500,
+            'currency' => 'NGN',
+        ]);
+
+        $this->actingAs($student->user)
+            ->withSession(['otp.verified' => true])
+            ->get(route('student.payments.callback', ['reference' => $payment->reference]))
+            ->assertRedirect(route('student.workshop.checkout'));
+
+        $this->assertSame(Payment::STATUS_SUCCESSFUL, $payment->fresh()->status);
     }
 
     public function test_student_payment_page_shows_used_ticket_serial_number(): void

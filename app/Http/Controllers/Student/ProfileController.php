@@ -11,6 +11,7 @@ use App\Models\Faculty;
 use App\Models\Student;
 use App\Services\AuditLogger;
 use App\Support\AjaxResponse;
+use App\Support\PaymentSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
@@ -99,6 +100,13 @@ class ProfileController extends Controller
         $student->refresh()->load('user');
         $completion = $student->profileCompletionPercent();
         $shouldRedirectToMilestone = $completion >= 100 && $request->input('source') !== 'profile';
+        $redirect = null;
+
+        if ($shouldRedirectToMilestone) {
+            $redirect = PaymentSettings::workshopEnabled() && ! PaymentSettings::studentHasPaidWorkshop($student)
+                ? route('student.workshop.checkout', absolute: false)
+                : route('student.profile.complete', absolute: false);
+        }
 
         $auditLogger->record('students.profile_step_updated', $request->user(), $request, $student, [
             'step' => $validated['step'],
@@ -108,7 +116,7 @@ class ProfileController extends Controller
         return AjaxResponse::success(
             $request,
             $completion >= 100 ? 'Profile completed. Welcome to your dashboard.' : 'Step saved successfully.',
-            $shouldRedirectToMilestone ? route('student.profile.complete', absolute: false) : null,
+            $redirect,
             reload: false,
             data: [
                 'step' => $validated['step'],

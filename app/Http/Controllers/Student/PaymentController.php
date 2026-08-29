@@ -12,6 +12,7 @@ use App\Services\KorapayService;
 use App\Services\PaymentService;
 use App\Services\TicketService;
 use App\Support\AjaxResponse;
+use App\Support\PaymentSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,6 +38,29 @@ class PaymentController extends Controller
         ]);
     }
 
+    public function workshop(Request $request): View|RedirectResponse
+    {
+        $student = $request->user()?->student;
+        abort_unless($student instanceof Student, 403);
+
+        if (! PaymentSettings::workshopEnabled()) {
+            return redirect()->route('student.dashboard')->with('status', 'Workshop fee payment is not currently required.');
+        }
+
+        return view('pages.student.workshop-checkout', [
+            'student' => $student->load('payments'),
+            'amount' => PaymentSettings::workshopAmount(),
+            'currency' => PaymentSettings::currency(),
+            'onlinePaymentAvailable' => PaymentSettings::onlinePaymentAvailable(),
+            'hasPaidWorkshop' => PaymentSettings::studentHasPaidWorkshop($student),
+            'pendingPayment' => $student->payments()
+                ->where('purpose', Payment::PURPOSE_WORKSHOP_FEE)
+                ->where('status', Payment::STATUS_PENDING)
+                ->latest()
+                ->first(),
+        ]);
+    }
+
     public function initialize(InitializePaymentRequest $request, KorapayService $korapayService, AuditLogger $auditLogger, TicketService $ticketService): JsonResponse|RedirectResponse
     {
         $student = $request->user()?->student;
@@ -58,6 +82,37 @@ class PaymentController extends Controller
         return AjaxResponse::success($request, 'Korapay checkout initialized.', $payment->checkout_url);
     }
 
+    public function initializeWorkshop(Request $request, KorapayService $korapayService, AuditLogger $auditLogger): JsonResponse|RedirectResponse
+    {
+        $student = $request->user()?->student;
+        abort_unless($student instanceof Student, 403);
+
+        if (! PaymentSettings::workshopEnabled()) {
+            return AjaxResponse::error($request, 'Workshop fee payment is not currently required.', key: 'workshop');
+        }
+
+        if (PaymentSettings::studentHasPaidWorkshop($student)) {
+            return AjaxResponse::success($request, 'Workshop fee already verified.', route('student.dashboard', absolute: false));
+        }
+
+        if (! PaymentSettings::onlinePaymentAvailable()) {
+            return AjaxResponse::error($request, 'Sorry online payment is currently not available.', key: 'payment');
+        }
+
+        try {
+            $payment = $korapayService->initializeWorkshopFee($student);
+        } catch (\RuntimeException $exception) {
+            return AjaxResponse::error($request, $exception->getMessage(), key: 'workshop');
+        }
+
+        $auditLogger->record('payments.workshop_initialized', $request->user(), $request, $payment, [
+            'reference' => $payment->reference,
+            'amount' => $payment->amount,
+        ]);
+
+        return AjaxResponse::success($request, 'Workshop fee checkout initialized.', $payment->checkout_url);
+    }
+
     public function callback(Request $request, KorapayService $korapayService, PaymentService $paymentService): RedirectResponse
     {
         $reference = $request->string('reference')->toString();
@@ -65,6 +120,8 @@ class PaymentController extends Controller
         $payload = $korapayService->verify($reference);
         $paymentService->markFromProviderPayload($payment, $payload);
 
-        return redirect()->route('student.payments.index')->with('status', 'Payment verification completed.');
+        $route = $payment->isWorkshopFee() ? 'student.workshop.checkout' : 'student.payments.index';
+
+        return redirect()->route($route)->with('status', 'Payment verification completed.');
     }
 }

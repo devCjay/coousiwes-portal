@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureOtpIsVerified;
+use App\Http\Middleware\EnsureWorkshopFeeIsPaid;
 use App\Http\Middleware\EnsureUserHasPermission;
 use App\Http\Middleware\EnsureStudentProfileIsComplete;
 use App\Http\Middleware\EnsureUserHasRole;
@@ -43,6 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role.portal' => EnsureUserHasRole::class,
             'otp.verified' => EnsureOtpIsVerified::class,
             'student.profile.complete' => EnsureStudentProfileIsComplete::class,
+            'student.workshop.paid' => EnsureWorkshopFeeIsPaid::class,
             'otp.unverified' => RedirectIfOtpVerified::class,
             'permission' => EnsureUserHasPermission::class,
         ]);

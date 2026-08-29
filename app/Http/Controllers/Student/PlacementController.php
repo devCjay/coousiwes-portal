@@ -13,6 +13,7 @@ use App\Models\Ticket;
 use App\Services\AuditLogger;
 use App\Services\TicketService;
 use App\Support\AjaxResponse;
+use App\Support\PaymentSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -210,9 +211,7 @@ class PlacementController extends Controller
 
     private function onlinePaymentAvailable(): bool
     {
-        return (string) config('siwes.payments.provider') === 'korapay'
-            && filled(config('siwes.korapay.secret_key'))
-            && filled(config('siwes.korapay.base_url'))
+        return PaymentSettings::onlinePaymentAvailable()
             && Ticket::query()
                 ->whereNull('student_id')
                 ->whereIn('status', Ticket::unusedStatuses())

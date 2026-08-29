@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\AcademicLevel;
 use App\Models\AcademicSession;
+use App\Models\AppSetting;
 use App\Models\Course;
 use App\Models\Department;
 use App\Models\Faculty;
+use App\Models\Payment;
 use App\Models\Student;
 use App\Models\Supervisor;
 use App\Models\User;
@@ -45,6 +47,50 @@ class PhaseEightPortalsTest extends TestCase
             ->assertSee('Student Placement')
             ->assertSee('Not started')
             ->assertSee('Activation status');
+    }
+
+    public function test_workshop_fee_card_and_gate_apply_when_module_is_active(): void
+    {
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'payment.workshop_fee_enabled'],
+            ['group' => 'payment', 'value' => true, 'type' => 'boolean']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'payment.workshop_fee_amount'],
+            ['group' => 'payment', 'value' => 2500, 'type' => 'integer']
+        );
+
+        $student = $this->student('workshop-gate@example.test', '2026/PORTAL/015');
+
+        $this->actingAs($student->user)
+            ->withSession(['otp.verified' => true])
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertSee('Update Profile')
+            ->assertSee('Workshop Fee')
+            ->assertSee('Add Placement');
+
+        $this->actingAs($student->user)
+            ->withSession(['otp.verified' => true])
+            ->get(route('student.placements.ticket'))
+            ->assertRedirect(route('student.workshop.checkout'));
+
+        $student->payments()->create([
+            'purpose' => Payment::PURPOSE_WORKSHOP_FEE,
+            'provider' => 'korapay',
+            'reference' => 'WORKSHOP-PAID-001',
+            'amount' => 2500,
+            'currency' => 'NGN',
+            'status' => Payment::STATUS_SUCCESSFUL,
+            'verified_at' => now(),
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($student->user)
+            ->withSession(['otp.verified' => true])
+            ->get(route('student.placements.ticket'))
+            ->assertOk()
+            ->assertSee('Confirm Placement Ticket');
     }
 
     public function test_incomplete_student_profile_redirects_to_setup_page(): void
