@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PreviewStudentImportRequest;
+use App\Models\AppSetting;
 use App\Models\StudentImport;
 use App\Models\User;
 use App\Services\AuditLogger;
@@ -72,7 +73,7 @@ class StudentImportController extends Controller
             return AjaxResponse::error($request, 'This student import has already been processed.');
         }
 
-        $threshold = (int) config('siwes.imports.immediate_threshold', 2000);
+        $threshold = (int) AppSetting::value('imports.immediate_threshold', config('siwes.imports.immediate_threshold', 2000));
 
         if ($studentImport->total_rows > $threshold) {
             $studentImport->update(['status' => StudentImport::STATUS_QUEUED]);

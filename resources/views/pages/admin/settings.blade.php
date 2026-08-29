@@ -41,6 +41,11 @@
             ['group' => 'mail', 'key' => 'mail.from_address', 'label' => 'From Address', 'type' => 'string', 'input' => 'email', 'value' => $settingValue('mail.from_address', config('mail.from.address')), 'description' => 'Default sender email address.'],
             ['group' => 'mail', 'key' => 'mail.from_name', 'label' => 'From Name', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('mail.from_name', config('mail.from.name')), 'description' => 'Default sender display name.'],
         ];
+        $importFields = [
+            ['group' => 'imports', 'key' => 'imports.immediate_threshold', 'label' => 'Immediate Import Threshold', 'type' => 'integer', 'input' => 'number', 'value' => $settingValue('imports.immediate_threshold', config('siwes.imports.immediate_threshold', 2000)), 'description' => 'Rows up to this number import immediately. Higher uploads are queued.'],
+            ['group' => 'imports', 'key' => 'imports.cron_batch_size', 'label' => 'Cron Batch Size', 'type' => 'integer', 'input' => 'number', 'value' => $settingValue('imports.cron_batch_size', config('siwes.imports.cron_batch_size', 1000)), 'description' => 'Rows processed per cron hit. Keep between 500 and 2000 on cPanel.'],
+            ['group' => 'imports', 'key' => 'imports.cron_token', 'label' => 'Cron URL Token', 'type' => 'string', 'input' => 'password', 'value' => $settingValue('imports.cron_token', config('siwes.imports.cron_token')), 'description' => 'Required token for the cPanel cron URL. Use a long random value.'],
+        ];
     @endphp
 
     @if (session('status'))
@@ -57,6 +62,7 @@
                 <button type="button" class="settings-tab is-active rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#welcome-settings-panel" aria-selected="true">Welcome Message</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#payment-settings-panel" aria-selected="false">Payment Settings</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#email-settings-panel" aria-selected="false">Email Settings</button>
+                <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#import-settings-panel" aria-selected="false">Import Settings</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#system-settings-panel" aria-selected="false">System Settings</button>
                 @if ($canUpdateSettings)
                     <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#create-settings-panel" aria-selected="false">Create Setting</button>
@@ -151,6 +157,36 @@
                     <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">From</p>
                     <p class="mt-2 truncate text-sm font-semibold text-[var(--text-strong)]">{{ $settingValue('mail.from_address', config('mail.from.address')) }}</p>
                 </div>
+            </div>
+        </section>
+
+        <section id="import-settings-panel" class="settings-panel mt-5 hidden" data-settings-panel>
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 class="text-base font-semibold text-[var(--text-strong)]">Import Settings</h2>
+                    <p class="mt-1 text-sm text-[var(--text-soft)]">Student bulk import thresholds, cPanel cron batch size, and secure cron token.</p>
+                </div>
+                @if ($canUpdateSettings)
+                    <x-ui.button type="button" data-modal-target="#import-settings-modal">Configure Import</x-ui.button>
+                @endif
+            </div>
+            <div class="mt-5 grid gap-4 md:grid-cols-3">
+                <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Immediate Threshold</p>
+                    <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">{{ number_format((int) $settingValue('imports.immediate_threshold', config('siwes.imports.immediate_threshold', 2000))) }} rows</p>
+                </div>
+                <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Cron Batch Size</p>
+                    <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">{{ number_format((int) $settingValue('imports.cron_batch_size', config('siwes.imports.cron_batch_size', 1000))) }} rows</p>
+                </div>
+                <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Cron Token</p>
+                    <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">{{ filled($settingValue('imports.cron_token', config('siwes.imports.cron_token'))) ? 'Configured' : 'Not configured' }}</p>
+                </div>
+            </div>
+            <div class="mt-4 rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] p-4">
+                <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">cPanel Cron URL</p>
+                <p class="mt-2 break-all font-mono text-xs text-[var(--text-strong)]">{{ url('/cron/student-imports/process') }}?token=YOUR_TOKEN&limit={{ (int) $settingValue('imports.cron_batch_size', config('siwes.imports.cron_batch_size', 1000)) }}</p>
             </div>
         </section>
 
@@ -406,6 +442,28 @@
                 <x-ui.button type="submit" icon="mail" data-loading-text="Sending...">Send Test Email</x-ui.button>
             </div>
         </form>
+        </x-ui.modal>
+
+        <x-ui.modal id="import-settings-modal" title="Import Settings" class="w-[min(58rem,calc(100vw-2rem))]">
+            <form method="POST" action="{{ route('admin.settings.bulk') }}" class="grid gap-4">
+                @csrf
+                @foreach ($importFields as $index => $field)
+                    <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                        <input type="hidden" name="settings[{{ $index }}][group]" value="{{ $field['group'] }}">
+                        <input type="hidden" name="settings[{{ $index }}][key]" value="{{ $field['key'] }}">
+                        <input type="hidden" name="settings[{{ $index }}][type]" value="{{ $field['type'] }}">
+                        <label class="block">
+                            <span class="text-sm font-medium text-[var(--text-strong)]">{{ $field['label'] }}</span>
+                            <input name="settings[{{ $index }}][value]" type="{{ $field['input'] }}" value="{{ $field['value'] }}" class="siwes-form-control mt-2" @if (($field['input'] ?? null) === 'number') min="1" @endif>
+                        </label>
+                        <p class="mt-2 text-xs text-[var(--text-soft)]">{{ $field['description'] }}</p>
+                    </div>
+                @endforeach
+                <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
+                    <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
+                    <x-ui.button type="submit">Save Import Settings</x-ui.button>
+                </div>
+            </form>
         </x-ui.modal>
 
         <x-ui.modal id="create-setting-modal" title="Create Setting" class="w-[min(42rem,calc(100vw-2rem))]">

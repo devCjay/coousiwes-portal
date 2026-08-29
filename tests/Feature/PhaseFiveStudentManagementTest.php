@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AcademicLevel;
 use App\Models\AcademicSession;
+use App\Models\AppSetting;
 use App\Models\AuditLog;
 use App\Models\Admin;
 use App\Models\Department;
@@ -398,7 +399,10 @@ class PhaseFiveStudentManagementTest extends TestCase
     public function test_import_processing_auto_queues_large_files(): void
     {
         Queue::fake();
-        config(['siwes.imports.immediate_threshold' => 1]);
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'imports.immediate_threshold'],
+            ['group' => 'imports', 'value' => 1, 'type' => 'integer']
+        );
 
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
@@ -441,7 +445,10 @@ class PhaseFiveStudentManagementTest extends TestCase
 
     public function test_cron_endpoint_processes_queued_student_imports_in_batches(): void
     {
-        config(['siwes.imports.cron_token' => 'test-cron-token']);
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'imports.cron_token'],
+            ['group' => 'imports', 'value' => 'test-cron-token', 'type' => 'string']
+        );
 
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
