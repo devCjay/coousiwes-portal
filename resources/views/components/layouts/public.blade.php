@@ -51,10 +51,11 @@
             data-flash-title="{{ session('toast_title', 'Notification') }}"
             data-flash-message="{{ session('status') }}"
             data-flash-tone="{{ session('toast_tone', 'success') }}"
-            class="pointer-events-none fixed right-5 top-5 z-50 w-[min(24rem,calc(100vw-2rem))] -translate-y-6 rounded-lg border border-cyan-400/30 bg-graphite-900 p-4 text-white opacity-0 shadow-glow transition duration-200"
+            style="--toast-title: #064e3b; --toast-body: #047857;"
+            class="pointer-events-none fixed right-5 top-5 z-50 w-[min(24rem,calc(100vw-2rem))] -translate-y-6 rounded-lg border border-brand-400/30 bg-emerald-50 p-4 opacity-0 shadow-glow transition duration-200 dark:bg-graphite-900"
         >
-            <p data-toast-title class="text-sm font-semibold">Notification</p>
-            <p data-toast-message class="mt-1 text-xs text-white/62">Action completed.</p>
+            <p data-toast-title class="text-sm font-semibold text-[var(--toast-title)]">Notification</p>
+            <p data-toast-message class="mt-1 text-xs font-medium text-[var(--toast-body)]">Action completed.</p>
         </div>
         @if (request()->routeIs('home') && $welcomeEnabled && $welcomeMessage !== '')
             <div

@@ -38,14 +38,37 @@ const showToast = ({ title = 'Notification', message = '', tone = 'info' } = {})
     }
 
     const toneClasses = {
-        info: 'border-cyan-400/30',
-        success: 'border-brand-400/30',
-        warning: 'border-amber-400/35',
-        danger: 'border-rose-400/30',
+        info: {
+            classes: ['border-cyan-400/40', 'bg-cyan-50', 'dark:bg-cyan-950'],
+            title: '#155e75',
+            body: '#0e7490',
+        },
+        success: {
+            classes: ['border-brand-400/40', 'bg-emerald-50', 'dark:bg-brand-900'],
+            title: '#064e3b',
+            body: '#047857',
+        },
+        warning: {
+            classes: ['border-amber-400/50', 'bg-amber-50', 'dark:bg-amber-950'],
+            title: '#78350f',
+            body: '#a16207',
+        },
+        danger: {
+            classes: ['border-rose-400/40', 'bg-rose-50', 'dark:bg-rose-950'],
+            title: '#881337',
+            body: '#be123c',
+        },
+        error: {
+            classes: ['border-rose-400/40', 'bg-rose-50', 'dark:bg-rose-950'],
+            title: '#881337',
+            body: '#be123c',
+        },
     };
 
-    Object.values(toneClasses).forEach((className) => toast.classList.remove(className));
-    toast.classList.add(toneClasses[tone] || toneClasses.info);
+    Object.values(toneClasses).forEach(({ classes }) => toast.classList.remove(...classes));
+    toast.classList.add(...(toneClasses[tone]?.classes || toneClasses.info.classes));
+    toast.style.setProperty('--toast-title', toneClasses[tone]?.title || toneClasses.info.title);
+    toast.style.setProperty('--toast-body', toneClasses[tone]?.body || toneClasses.info.body);
 
     toast.querySelector('[data-toast-title]').textContent = title;
     toast.querySelector('[data-toast-message]').textContent = message;

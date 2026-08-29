@@ -138,11 +138,12 @@ class PhaseFiveStudentManagementTest extends TestCase
         $student = Student::where('matric_no', '2026/CSC/001')->firstOrFail();
 
         $this->assertSame('Ada Okoye', $student->user->name);
+        $this->assertSame(Student::STATUS_INACTIVE, $student->activation_status);
         $this->assertTrue($student->user->hasRole('student'));
         $this->assertTrue(AuditLog::where('event', 'students.created')->where('auditable_id', $student->id)->exists());
     }
 
-    public function test_admin_can_create_active_student_from_minimal_name_and_matric_fields(): void
+    public function test_admin_can_create_inactive_student_by_default_from_minimal_name_and_matric_fields(): void
     {
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
 
@@ -160,7 +161,7 @@ class PhaseFiveStudentManagementTest extends TestCase
         $student = Student::where('matric_no', '2026/CSC/010')->firstOrFail();
 
         $this->assertSame('Ada Nneka Okoye', $student->user->name);
-        $this->assertSame(Student::STATUS_ACTIVE, $student->activation_status);
+        $this->assertSame(Student::STATUS_INACTIVE, $student->activation_status);
         $this->assertNull($student->user->email);
         $this->assertTrue(Hash::check('2026/CSC/010', $student->user->password));
         $this->assertNull($student->faculty_id);
@@ -168,6 +169,27 @@ class PhaseFiveStudentManagementTest extends TestCase
         $this->assertNull($student->course_id);
         $this->assertNull($student->academic_level_id);
         $this->assertNull($student->academic_session_id);
+        $this->assertSame(0, $student->tickets()->count());
+    }
+
+    public function test_admin_can_explicitly_create_active_student_with_auto_ticket(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.students.store'), [
+                'first_name' => 'Active',
+                'last_name' => 'Student',
+                'matric_no' => '2026/CSC/012',
+                'activation_status' => Student::STATUS_ACTIVE,
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Student created.');
+
+        $student = Student::where('matric_no', '2026/CSC/012')->firstOrFail();
+
+        $this->assertSame(Student::STATUS_ACTIVE, $student->activation_status);
         $this->assertSame(1, $student->tickets()->count());
         $this->assertSame(Ticket::STATUS_UNUSED, $student->tickets()->firstOrFail()->status);
     }
@@ -243,6 +265,16 @@ class PhaseFiveStudentManagementTest extends TestCase
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $student = $this->createStudent('profile-actions@example.test', '2026/CSC/030');
         $student->user->forceFill(['password' => Hash::make('old-password')])->save();
+        $ticket = $student->tickets()->create([
+            'serial_number' => 'SIWES-303030303030',
+            'pin' => '303030',
+            'code_hash' => 'profile-action-ticket',
+            'amount' => 2000,
+            'currency' => 'NGN',
+            'status' => Ticket::STATUS_UNUSED,
+            'assigned_at' => now(),
+            'expires_at' => now()->addDays(10),
+        ]);
 
         $student->placement()->create([
             'academic_level_id' => AcademicLevel::where('level', 400)->firstOrFail()->id,
@@ -283,6 +315,7 @@ class PhaseFiveStudentManagementTest extends TestCase
 
         $this->assertDatabaseMissing('students', ['id' => $student->id]);
         $this->assertDatabaseMissing('users', ['id' => $student->user_id]);
+        $this->assertDatabaseMissing('tickets', ['id' => $ticket->id]);
     }
 
     public function test_admin_can_bulk_delete_selected_students_permanently(): void
@@ -487,7 +520,7 @@ class PhaseFiveStudentManagementTest extends TestCase
             ['Large', '', 'Student One', '2026/CSC/101'],
             ['Large', '', 'Student Two', '2026/CSC/102'],
         ]));
-        $import = app(StudentImportService::class)->createImport($file, $admin->id);
+        $import = app(StudentImportService::class)->createImport($file, $admin->id, true);
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
@@ -508,7 +541,7 @@ class PhaseFiveStudentManagementTest extends TestCase
         $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
             ['Immediate', '', 'Student', '2026/CSC/008'],
         ]));
-        $import = app(StudentImportService::class)->createImport($file, $admin->id);
+        $import = app(StudentImportService::class)->createImport($file, $admin->id, true);
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
@@ -534,7 +567,7 @@ class PhaseFiveStudentManagementTest extends TestCase
             ['Cron', '', 'Student Two', '2026/CSC/202'],
             ['Cron', '', 'Student Three', '2026/CSC/203'],
         ]));
-        $import = app(StudentImportService::class)->createImport($file, $admin->id);
+        $import = app(StudentImportService::class)->createImport($file, $admin->id, true);
         $import->update(['status' => StudentImport::STATUS_QUEUED]);
 
         $this->getJson(route('cron.student-imports.process', ['token' => 'test-cron-token', 'limit' => 500]))
@@ -556,7 +589,7 @@ class PhaseFiveStudentManagementTest extends TestCase
             ['Panel', '', 'Student One', '2026/CSC/301'],
             ['Panel', '', 'Student Two', '2026/CSC/302'],
         ]));
-        $import = app(StudentImportService::class)->createImport($file, $admin->id);
+        $import = app(StudentImportService::class)->createImport($file, $admin->id, true);
         $import->update(['status' => StudentImport::STATUS_QUEUED]);
 
         $this->actingAs($admin, 'admin')
@@ -585,9 +618,8 @@ class PhaseFiveStudentManagementTest extends TestCase
 
         $student = Student::where('matric_no', '2026/CSC/006')->firstOrFail();
 
-        $this->assertSame(Student::STATUS_ACTIVE, $student->activation_status);
-        $this->assertSame(1, $student->tickets()->count());
-        $this->assertSame(Ticket::STATUS_UNUSED, $student->tickets()->firstOrFail()->status);
+        $this->assertSame(Student::STATUS_INACTIVE, $student->activation_status);
+        $this->assertSame(0, $student->tickets()->count());
         $this->assertSame(StudentImport::STATUS_COMPLETED, $import->fresh()->status);
         $this->assertSame(1, $import->fresh()->successful_rows);
     }

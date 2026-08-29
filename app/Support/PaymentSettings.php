@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\AppSetting;
 use App\Models\Payment;
 use App\Models\Student;
+use App\Models\Ticket;
 
 class PaymentSettings
 {
@@ -60,5 +61,24 @@ class PaymentSettings
             ->where('purpose', Payment::PURPOSE_WORKSHOP_FEE)
             ->where('status', Payment::STATUS_SUCCESSFUL)
             ->exists();
+    }
+
+    public static function syncUnusedTicketPricing(): void
+    {
+        $amount = self::ticketAmount();
+        $currency = self::currency();
+
+        if ($amount <= 0 || $currency === '') {
+            return;
+        }
+
+        Ticket::query()
+            ->whereIn('status', Ticket::unusedStatuses())
+            ->whereNull('paid_at')
+            ->whereNull('used_at')
+            ->update([
+                'amount' => $amount,
+                'currency' => $currency,
+            ]);
     }
 }

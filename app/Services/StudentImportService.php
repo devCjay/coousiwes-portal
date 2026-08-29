@@ -39,7 +39,7 @@ class StudentImportService
         return $this->validateRows($rows);
     }
 
-    public function createImport(UploadedFile $file, ?int $uploadedBy, bool $autoActivate = true): StudentImport
+    public function createImport(UploadedFile $file, ?int $uploadedBy, bool $autoActivate = false): StudentImport
     {
         $storedPath = $file->store('student-imports');
         $preview = $this->preview($file);

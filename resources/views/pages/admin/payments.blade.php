@@ -20,7 +20,7 @@
     <div class="grid gap-4 md:grid-cols-3">
         <x-ui.stat-card label="Payments" :value="number_format($paymentTotal)" meta="Korapay attempts" />
         <x-ui.stat-card label="Verified Payments" :value="number_format($verifiedTotal)" meta="Successful activations" tone="cyan" />
-        <x-ui.stat-card label="Ticket Fee" :value="'NGN '.number_format(config('siwes.payments.ticket_amount'))" meta="Configured activation amount" tone="amber" />
+        <x-ui.stat-card label="Ticket Fee" :value="\App\Support\PaymentSettings::currency().' '.number_format(\App\Support\PaymentSettings::ticketAmount())" meta="Configured activation amount" tone="amber" />
     </div>
 
     <x-ui.card class="mt-6" title="Korapay Payment History" description="Payment references, checkout status, and verification state.">

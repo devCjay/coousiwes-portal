@@ -19,7 +19,7 @@
     <div class="grid gap-4 md:grid-cols-3">
         <x-ui.stat-card label="Tickets" :value="number_format($ticketTotal)" meta="Total generated records" />
         <x-ui.stat-card label="Available Tickets" :value="number_format($availableTickets)" meta="Unassigned activation stock" tone="amber" />
-        <x-ui.stat-card label="Ticket Fee" :value="'NGN '.number_format(config('siwes.payments.ticket_amount'))" meta="Paid through Korapay" tone="cyan" />
+        <x-ui.stat-card label="Ticket Fee" :value="\App\Support\PaymentSettings::currency().' '.number_format(\App\Support\PaymentSettings::ticketAmount())" meta="Paid through Korapay" tone="cyan" />
     </div>
 
     @if ($can('tickets.generate'))

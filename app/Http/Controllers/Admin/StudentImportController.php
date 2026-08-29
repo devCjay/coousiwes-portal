@@ -27,7 +27,7 @@ class StudentImportController extends Controller
         $import = $this->studentImportService->createImport(
             $file,
             $request->user() instanceof User ? (int) $request->user()->id : null,
-            $request->boolean('auto_activate', true),
+            $request->boolean('auto_activate', false),
         );
 
         $this->auditLogger->record('students.import_previewed', $request->user(), $request, $import, [
@@ -53,7 +53,7 @@ class StudentImportController extends Controller
         $import = $this->studentImportService->createImport(
             $file,
             $request->user() instanceof User ? (int) $request->user()->id : null,
-            $request->boolean('auto_activate', true),
+            $request->boolean('auto_activate', false),
         );
 
         $this->auditLogger->record('students.import_previewed', $request->user(), $request, $import, [

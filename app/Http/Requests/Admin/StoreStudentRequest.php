@@ -34,7 +34,7 @@ class StoreStudentRequest extends FormRequest
             'department_id' => $this->filled('department_id') ? $this->input('department_id') : null,
             'academic_level_id' => $this->filled('academic_level_id') ? $this->input('academic_level_id') : null,
             'academic_session_id' => $this->filled('academic_session_id') ? $this->input('academic_session_id') : null,
-            'activation_status' => $this->input('activation_status') ?: Student::STATUS_ACTIVE,
+            'activation_status' => $this->input('activation_status') ?: Student::STATUS_INACTIVE,
         ]);
     }
 

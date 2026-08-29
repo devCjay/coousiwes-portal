@@ -24,6 +24,7 @@ class PaymentController extends Controller
     {
         $student = $request->user()?->student;
         abort_unless($student instanceof Student, 403);
+        PaymentSettings::syncUnusedTicketPricing();
 
         return view('pages.student.payments', [
             'student' => $student->load(['tickets', 'payments']),
@@ -65,6 +66,7 @@ class PaymentController extends Controller
     {
         $student = $request->user()?->student;
         abort_unless($student instanceof Student, 403);
+        PaymentSettings::syncUnusedTicketPricing();
 
         $ticket = Ticket::query()
             ->where(function ($query) use ($student): void {

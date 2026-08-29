@@ -217,11 +217,11 @@
                     <p class="mt-1 text-xs text-[var(--text-soft)]">Active students receive an assigned unused ticket immediately. Inactive students can be activated later.</p>
                     <div class="mt-3 grid gap-3 sm:grid-cols-2">
                         <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-strong)] transition hover:border-brand-400">
-                            <input type="radio" name="activation_status" value="active" class="h-4 w-4 accent-brand-600" checked>
+                            <input type="radio" name="activation_status" value="active" class="h-4 w-4 accent-brand-600">
                             <span>Active</span>
                         </label>
                         <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-strong)] transition hover:border-brand-400">
-                            <input type="radio" name="activation_status" value="inactive" class="h-4 w-4 accent-brand-600">
+                            <input type="radio" name="activation_status" value="inactive" class="h-4 w-4 accent-brand-600" checked>
                             <span>Inactive</span>
                         </label>
                     </div>
@@ -249,11 +249,11 @@
                         <p class="mt-1 text-xs text-[var(--text-soft)]">Choose whether students in this file become active immediately after the import is processed.</p>
                         <div class="mt-3 grid gap-3 sm:grid-cols-2">
                             <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-strong)] transition hover:border-brand-400">
-                                <input type="radio" name="auto_activate" value="1" class="h-4 w-4 accent-brand-600" checked>
+                                <input type="radio" name="auto_activate" value="1" class="h-4 w-4 accent-brand-600">
                                 <span>ON - Activate students</span>
                             </label>
                             <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-strong)] transition hover:border-brand-400">
-                                <input type="radio" name="auto_activate" value="0" class="h-4 w-4 accent-brand-600">
+                                <input type="radio" name="auto_activate" value="0" class="h-4 w-4 accent-brand-600" checked>
                                 <span>OFF - Keep inactive</span>
                             </label>
                         </div>

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AcademicSession;
 use App\Models\AppSetting;
+use App\Models\Ticket;
 use App\Models\AuditLog;
 use App\Models\AcademicLevel;
 use App\Models\Department;
@@ -339,6 +340,24 @@ class PhaseFourAcademicConfigurationTest extends TestCase
     public function test_bulk_settings_update_saves_grouped_payment_configuration(): void
     {
         $superAdmin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        $unusedTicket = Ticket::query()->create([
+            'serial_number' => 'SIWES-111111111111',
+            'pin' => '111111',
+            'code_hash' => 'hash',
+            'amount' => 5000,
+            'currency' => 'NGN',
+            'status' => Ticket::STATUS_UNUSED,
+        ]);
+        $usedTicket = Ticket::query()->create([
+            'serial_number' => 'SIWES-222222222222',
+            'pin' => '222222',
+            'code_hash' => 'hash-used',
+            'amount' => 5000,
+            'currency' => 'NGN',
+            'status' => Ticket::STATUS_USED,
+            'used_at' => now(),
+            'paid_at' => now(),
+        ]);
 
         $this->actingAs($superAdmin, 'admin')
             ->withSession(['otp.verified' => true])
@@ -363,6 +382,8 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
         $this->assertSame('korapay', AppSetting::where('key', 'payment.provider')->firstOrFail()->value);
         $this->assertSame(7500, AppSetting::where('key', 'payment.ticket_amount')->firstOrFail()->value);
+        $this->assertSame(7500, $unusedTicket->fresh()->amount);
+        $this->assertSame(5000, $usedTicket->fresh()->amount);
     }
 
     public function test_settings_page_shows_email_test_modal_with_recipient_input(): void

@@ -320,6 +320,11 @@
         color: var(--alert-dark-body) !important;
     }
 
+    .dark [data-toast] {
+        --toast-title: #d9fbe5 !important;
+        --toast-body: #b6f5cf !important;
+    }
+
     .siwes-hero {
         border-bottom: 0.38rem solid #005136;
     }

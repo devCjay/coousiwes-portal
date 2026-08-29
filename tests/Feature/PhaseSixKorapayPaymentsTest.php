@@ -136,6 +136,11 @@ class PhaseSixKorapayPaymentsTest extends TestCase
 
     public function test_student_can_initialize_korapay_checkout_for_payable_ticket(): void
     {
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'payment.ticket_amount'],
+            ['group' => 'payment', 'value' => 2000, 'type' => 'integer']
+        );
+
         Http::fake([
             '*' => Http::response([
                 'status' => true,
@@ -164,8 +169,10 @@ class PhaseSixKorapayPaymentsTest extends TestCase
             'student_id' => $student->id,
             'ticket_id' => $ticket->id,
             'provider' => 'korapay',
+            'amount' => 2000,
             'status' => Payment::STATUS_PENDING,
         ]);
+        $this->assertSame(2000, $ticket->fresh()->amount);
     }
 
     public function test_student_can_initialize_workshop_fee_checkout_when_module_is_active(): void

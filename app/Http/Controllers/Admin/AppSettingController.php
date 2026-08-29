@@ -8,6 +8,7 @@ use App\Models\AppSetting;
 use App\Services\AuditLogger;
 use App\Services\StudentImportService;
 use App\Support\AjaxResponse;
+use App\Support\PaymentSettings;
 use App\Support\PortalPermission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -44,6 +45,7 @@ class AppSettingController extends Controller
     {
         $before = $appSetting->only(['group', 'key', 'value', 'type', 'is_public']);
         $appSetting->update($this->payload($request));
+        $this->syncTicketPricingIfNeeded($appSetting->key);
 
         $this->auditLogger->record('settings.updated', $request->user(), $request, $appSetting, [
             'before' => $before,
@@ -76,6 +78,7 @@ class AppSettingController extends Controller
 
             if ($setting) {
                 $setting->update($settingPayload);
+                $this->syncTicketPricingIfNeeded($setting->key);
                 $event = 'settings.updated';
                 $metadata = [
                     'before' => $before,
@@ -83,6 +86,7 @@ class AppSettingController extends Controller
                 ];
             } else {
                 $setting = AppSetting::query()->create($settingPayload);
+                $this->syncTicketPricingIfNeeded($setting->key);
                 $event = 'settings.created';
                 $metadata = $setting->only(['group', 'key', 'value', 'type']);
             }
@@ -319,5 +323,14 @@ class AppSettingController extends Controller
         }
 
         return '';
+    }
+
+    private function syncTicketPricingIfNeeded(string $key): void
+    {
+        if (! in_array($key, ['payment.ticket_amount', 'payment.currency'], true)) {
+            return;
+        }
+
+        PaymentSettings::syncUnusedTicketPricing();
     }
 }
