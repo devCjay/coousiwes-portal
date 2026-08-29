@@ -24,7 +24,10 @@ class StudentImportService
         'matric_no',
     ];
 
-    public function __construct(private readonly StudentManager $studentManager) {}
+    public function __construct(
+        private readonly StudentManager $studentManager,
+        private readonly TicketService $ticketService,
+    ) {}
 
     /**
      * @return array{rows: array<int, array<string, mixed>>, errors: array<int, array<string, mixed>>, total: int}
@@ -77,7 +80,8 @@ class StudentImportService
             }
 
             try {
-                $this->studentManager->create($this->resolveRow($row, true, $import->auto_activate_students));
+                $student = $this->studentManager->create($this->resolveRow($row, true, $import->auto_activate_students));
+                $this->generateTicketWhenAutoActivated($student, $import->auto_activate_students);
                 $created++;
             } catch (\Throwable $throwable) {
                 $errors[$index] = [
@@ -129,7 +133,8 @@ class StudentImportService
             }
 
             try {
-                $this->studentManager->create($this->resolveRow($row, true, $import->auto_activate_students));
+                $student = $this->studentManager->create($this->resolveRow($row, true, $import->auto_activate_students));
+                $this->generateTicketWhenAutoActivated($student, $import->auto_activate_students);
                 $created++;
             } catch (\Throwable $throwable) {
                 $errors[$globalIndex] = [
@@ -389,5 +394,14 @@ class StudentImportService
             'academic_session_id' => $session?->id,
             'activation_status' => $activationStatus,
         ];
+    }
+
+    private function generateTicketWhenAutoActivated(Student $student, bool $autoActivate): void
+    {
+        if (! $autoActivate) {
+            return;
+        }
+
+        $this->ticketService->generateFor($student);
     }
 }

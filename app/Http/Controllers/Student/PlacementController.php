@@ -125,6 +125,7 @@ class PlacementController extends Controller
                 'academic_session_id' => $validated['academic_session_id'],
                 'siwes_year' => $validated['siwes_year'],
                 'attachment_period' => $validated['attachment_period'],
+                'metadata' => array_merge($placement->metadata ?? [], ['activation_source' => 'ticket']),
             ])->save();
 
             $student->update(['academic_level_id' => $validated['academic_level_id']]);
@@ -138,6 +139,7 @@ class PlacementController extends Controller
                 'company_state' => $validated['company_state'],
                 'company_lga' => $validated['company_lga'],
                 'company_supervisor_phone' => $validated['company_supervisor_phone'],
+                'metadata' => array_merge($placement->metadata ?? [], ['activation_source' => 'ticket']),
             ])->save();
 
             $ticket = Ticket::query()->find($ticketId);

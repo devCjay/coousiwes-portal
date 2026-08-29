@@ -1,6 +1,8 @@
 @php
     $navigation = [
         ['label' => 'Dashboard', 'href' => route('student.dashboard'), 'icon' => 'D'],
+        ['label' => 'Profile', 'href' => route('student.profile.show'), 'icon' => 'user-circle'],
+        ['label' => 'My Ticket', 'href' => route('student.tickets.index'), 'icon' => 'ticket'],
         ['label' => 'Placement', 'href' => route('student.placements.ticket'), 'icon' => 'briefcase'],
         ['label' => 'Payments', 'href' => route('student.payments.index'), 'active' => true, 'icon' => 'P'],
         ['label' => 'Feedback', 'href' => route('student.feedback.index'), 'icon' => 'F'],

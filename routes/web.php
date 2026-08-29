@@ -31,6 +31,7 @@ use App\Http\Controllers\Student\PaymentController;
 use App\Http\Controllers\Student\PlacementController;
 use App\Http\Controllers\Student\ProfileDataController as StudentProfileDataController;
 use App\Http\Controllers\Student\ProfileController as StudentProfileController;
+use App\Http\Controllers\Student\TicketController as StudentTicketController;
 use App\Http\Controllers\Supervisor\AssessmentController;
 use App\Http\Controllers\Supervisor\AssignedStudentController;
 use App\Http\Controllers\Supervisor\DashboardController as SupervisorDashboardController;
@@ -379,6 +380,9 @@ Route::middleware('auth:web,admin')->group(function () {
     Route::get('/student/payments/callback', [PaymentController::class, 'callback'])
         ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete'])
         ->name('student.payments.callback');
+    Route::get('/student/tickets', [StudentTicketController::class, 'index'])
+        ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete'])
+        ->name('student.tickets.index');
     Route::get('/student/placements/ticket', [PlacementController::class, 'ticket'])
         ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete'])
         ->name('student.placements.ticket');

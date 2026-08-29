@@ -268,6 +268,7 @@ class PhaseEightPortalsTest extends TestCase
     public function test_student_confirms_ticket_before_saving_placement_steps(): void
     {
         $student = $this->student('placement-student@example.test', '2026/PORTAL/010');
+        $student->update(['activation_status' => Student::STATUS_INACTIVE]);
         $ticket = app(TicketService::class)->generate();
 
         $this->actingAs($student->user)
@@ -333,6 +334,43 @@ class PhaseEightPortalsTest extends TestCase
             ])
             ->assertUnprocessable()
             ->assertJsonPath('message', 'This ticket has already been used for a placement.');
+    }
+
+    public function test_active_student_still_confirms_ticket_before_placement(): void
+    {
+        $student = $this->student('manual-cash-placement@example.test', '2026/PORTAL/013');
+        $student->update(['activation_status' => Student::STATUS_ACTIVE]);
+
+        $this->actingAs($student->user)
+            ->withSession(['otp.verified' => true])
+            ->get(route('student.placements.create'))
+            ->assertRedirect(route('student.placements.ticket'));
+
+        $this->actingAs($student->user)
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('student.placements.store-step'), [
+                'step' => 'siwes',
+                'academic_level_id' => AcademicLevel::where('level', 400)->firstOrFail()->id,
+                'siwes_year' => now()->year,
+                'academic_session_id' => AcademicSession::where('name', '2026/2027')->firstOrFail()->id,
+                'attachment_period' => 'April to October',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Confirm your ticket before adding placement details.');
+    }
+
+    public function test_student_can_view_assigned_tickets_on_my_ticket_page(): void
+    {
+        $student = $this->student('my-ticket@example.test', '2026/PORTAL/014');
+        $ticket = app(TicketService::class)->generateFor($student);
+
+        $this->actingAs($student->user)
+            ->withSession(['otp.verified' => true])
+            ->get(route('student.tickets.index'))
+            ->assertOk()
+            ->assertSee('My Ticket')
+            ->assertSee($ticket->serial_number)
+            ->assertSee('******');
     }
 
     public function test_student_can_confirm_ticket_with_displayed_pin_when_hash_is_stale(): void

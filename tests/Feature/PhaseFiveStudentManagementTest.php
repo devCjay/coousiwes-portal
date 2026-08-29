@@ -11,6 +11,7 @@ use App\Models\Department;
 use App\Models\Faculty;
 use App\Models\Student;
 use App\Models\StudentImport;
+use App\Models\Ticket;
 use App\Models\User;
 use App\Services\StudentImportService;
 use Database\Seeders\AcademicStructureSeeder;
@@ -531,7 +532,11 @@ class PhaseFiveStudentManagementTest extends TestCase
         $import = app(StudentImportService::class)->createImport($file, $admin->id);
         app(StudentImportService::class)->process($import);
 
-        $this->assertDatabaseHas('students', ['matric_no' => '2026/CSC/006', 'activation_status' => Student::STATUS_ACTIVE]);
+        $student = Student::where('matric_no', '2026/CSC/006')->firstOrFail();
+
+        $this->assertSame(Student::STATUS_ACTIVE, $student->activation_status);
+        $this->assertSame(1, $student->tickets()->count());
+        $this->assertSame(Ticket::STATUS_UNUSED, $student->tickets()->firstOrFail()->status);
         $this->assertSame(StudentImport::STATUS_COMPLETED, $import->fresh()->status);
         $this->assertSame(1, $import->fresh()->successful_rows);
     }
@@ -553,6 +558,7 @@ class PhaseFiveStudentManagementTest extends TestCase
         $this->assertNull($student->user->email);
         $this->assertNull($student->faculty_id);
         $this->assertNull($student->department_id);
+        $this->assertSame(0, $student->tickets()->count());
     }
 
     /**
