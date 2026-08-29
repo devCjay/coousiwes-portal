@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAppSettingRequest;
 use App\Models\AppSetting;
 use App\Services\AuditLogger;
+use App\Services\StudentImportService;
 use App\Support\AjaxResponse;
 use App\Support\PortalPermission;
 use Illuminate\Http\JsonResponse;
@@ -238,6 +239,26 @@ class AppSettingController extends Controller
         ]);
 
         return AjaxResponse::success($request, 'Database migrations and seeders updated successfully.', reload: true);
+    }
+
+    public function processQueuedImports(Request $request, StudentImportService $studentImportService): JsonResponse|RedirectResponse
+    {
+        abort_unless(PortalPermission::userHas($request->user(), 'students.import'), 403);
+
+        $batchSize = max(500, min((int) $this->settingValue('imports.cron_batch_size', config('siwes.imports.cron_batch_size', 1000)), 2000));
+        $result = $studentImportService->processQueued($batchSize);
+
+        $this->auditLogger->record('settings.student_import_cron_ran', $request->user(), $request, metadata: [
+            'batch_size' => $batchSize,
+            'result' => $result,
+        ]);
+
+        return AjaxResponse::success(
+            $request,
+            "Queued imports processed. {$result['processed_rows']} row(s) handled, {$result['completed_imports']} import(s) completed.",
+            reload: true,
+            data: $result,
+        );
     }
 
     /**

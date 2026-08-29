@@ -17,6 +17,7 @@
         $welcomeEnabled = $allSettings->get('site.welcome.enabled');
         $welcomeDuration = $allSettings->get('site.welcome.duration_seconds');
         $canUpdateSettings = \App\Support\PortalPermission::userHas(auth('admin')->user(), 'settings.update');
+        $canProcessImports = \App\Support\PortalPermission::userHas(auth('admin')->user(), 'students.import');
         $settingValue = fn (string $key, mixed $default = null) => $allSettings->get($key)?->value ?? $default;
         $mailSchemeValue = strtolower((string) $settingValue('mail.scheme', config('mail.mailers.smtp.scheme')));
         $mailSchemeValue = in_array($mailSchemeValue, ['ssl', 'smtps'], true) ? 'smtps' : '';
@@ -166,9 +167,17 @@
                     <h2 class="text-base font-semibold text-[var(--text-strong)]">Import Settings</h2>
                     <p class="mt-1 text-sm text-[var(--text-soft)]">Student bulk import thresholds, cPanel cron batch size, and secure cron token.</p>
                 </div>
-                @if ($canUpdateSettings)
-                    <x-ui.button type="button" data-modal-target="#import-settings-modal">Configure Import</x-ui.button>
-                @endif
+                <div class="flex flex-wrap gap-2">
+                    @if ($canProcessImports)
+                        <form method="POST" action="{{ route('admin.settings.imports.process') }}">
+                            @csrf
+                            <x-ui.button type="submit" icon="refresh-cw">Run Queued Imports</x-ui.button>
+                        </form>
+                    @endif
+                    @if ($canUpdateSettings)
+                        <x-ui.button type="button" variant="secondary" data-modal-target="#import-settings-modal">Configure Import</x-ui.button>
+                    @endif
+                </div>
             </div>
             <div class="mt-5 grid gap-4 md:grid-cols-3">
                 <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">

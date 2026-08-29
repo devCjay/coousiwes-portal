@@ -179,6 +179,9 @@ Route::middleware('auth:web,admin')->group(function () {
         Route::post('/settings/database/seed', [AppSettingController::class, 'seedDatabase'])
             ->middleware(['role.portal:super-admin', 'permission:settings.update', 'throttle:3,1'])
             ->name('settings.database.seed');
+        Route::post('/settings/imports/process', [AppSettingController::class, 'processQueuedImports'])
+            ->middleware(['permission:students.import', 'throttle:6,1'])
+            ->name('settings.imports.process');
         Route::put('/settings/{appSetting}', [AppSettingController::class, 'update'])
             ->middleware('permission:settings.update')
             ->name('settings.update');

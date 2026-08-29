@@ -471,6 +471,30 @@ class PhaseFiveStudentManagementTest extends TestCase
         $this->assertDatabaseHas('students', ['matric_no' => '2026/CSC/203']);
     }
 
+    public function test_admin_can_process_queued_student_imports_without_cron_token(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
+            ['Panel', '', 'Student One', '2026/CSC/301'],
+            ['Panel', '', 'Student Two', '2026/CSC/302'],
+        ]));
+        $import = app(StudentImportService::class)->createImport($file, $admin->id);
+        $import->update(['status' => StudentImport::STATUS_QUEUED]);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.settings.imports.process'))
+            ->assertOk()
+            ->assertJsonPath('message', 'Queued imports processed. 2 row(s) handled, 1 import(s) completed.')
+            ->assertJsonPath('processed_rows', 2)
+            ->assertJsonPath('completed_imports', 1);
+
+        $this->assertSame(StudentImport::STATUS_COMPLETED, $import->fresh()->status);
+        $this->assertDatabaseHas('students', ['matric_no' => '2026/CSC/301']);
+        $this->assertDatabaseHas('students', ['matric_no' => '2026/CSC/302']);
+        $this->assertTrue(AuditLog::where('event', 'settings.student_import_cron_ran')->exists());
+    }
+
     public function test_valid_import_rows_are_processed_into_students(): void
     {
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
