@@ -168,6 +168,29 @@ class PhaseFiveStudentManagementTest extends TestCase
         $this->assertNull($student->course_id);
         $this->assertNull($student->academic_level_id);
         $this->assertNull($student->academic_session_id);
+        $this->assertSame(1, $student->tickets()->count());
+        $this->assertSame(Ticket::STATUS_UNUSED, $student->tickets()->firstOrFail()->status);
+    }
+
+    public function test_admin_can_create_inactive_student_without_auto_ticket(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.students.store'), [
+                'first_name' => 'Inactive',
+                'last_name' => 'Student',
+                'matric_no' => '2026/CSC/011',
+                'activation_status' => Student::STATUS_INACTIVE,
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Student created.');
+
+        $student = Student::where('matric_no', '2026/CSC/011')->firstOrFail();
+
+        $this->assertSame(Student::STATUS_INACTIVE, $student->activation_status);
+        $this->assertSame(0, $student->tickets()->count());
     }
 
     public function test_duplicate_matric_numbers_are_rejected(): void
@@ -262,6 +285,29 @@ class PhaseFiveStudentManagementTest extends TestCase
         $this->assertDatabaseMissing('users', ['id' => $student->user_id]);
     }
 
+    public function test_admin_can_bulk_delete_selected_students_permanently(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $first = $this->createStudent('bulk-delete-one@example.test', '2026/CSC/032');
+        $second = $this->createStudent('bulk-delete-two@example.test', '2026/CSC/033');
+        $untouched = $this->createStudent('bulk-delete-three@example.test', '2026/CSC/034');
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->deleteJson(route('admin.students.destroy-many'), [
+                'student_ids' => [$first->id, $second->id],
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', '2 student(s) permanently deleted.');
+
+        $this->assertDatabaseMissing('students', ['id' => $first->id]);
+        $this->assertDatabaseMissing('students', ['id' => $second->id]);
+        $this->assertDatabaseHas('students', ['id' => $untouched->id]);
+        $this->assertDatabaseMissing('users', ['id' => $first->user_id]);
+        $this->assertDatabaseMissing('users', ['id' => $second->user_id]);
+        $this->assertTrue(AuditLog::where('event', 'students.bulk_deleted')->exists());
+    }
+
     public function test_view_only_student_admin_cannot_see_or_call_student_actions(): void
     {
         $student = $this->createStudent('view-only-student@example.test', '2026/CSC/031');
@@ -324,6 +370,11 @@ class PhaseFiveStudentManagementTest extends TestCase
         $this->actingAs($viewOnlyAdmin, 'admin')
             ->withSession(['otp.verified' => true])
             ->deleteJson(route('admin.students.destroy', $student))
+            ->assertForbidden();
+
+        $this->actingAs($viewOnlyAdmin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->deleteJson(route('admin.students.destroy-many'), ['student_ids' => [$student->id]])
             ->assertForbidden();
     }
 

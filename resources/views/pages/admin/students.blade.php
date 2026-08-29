@@ -47,8 +47,14 @@
                 <p class="text-sm font-semibold text-[var(--text-strong)]">Student actions</p>
                 <p class="mt-1 text-xs text-[var(--text-soft)]">Create a single record or preview a bulk import without leaving the list.</p>
             </div>
-            @if ($can('students.create') || $can('students.import') || $can('students.export'))
+            @if ($can('students.create') || $can('students.import') || $can('students.export') || $can('students.update'))
                 <div class="flex flex-wrap gap-2">
+                    @if ($can('students.update'))
+                        <x-ui.button type="submit" form="bulk-delete-students-form" variant="danger" onclick="return confirm('Permanently delete the selected students and all related records?');">
+                            <x-ui.icon name="trash" class="size-4" />
+                            Delete Selected
+                        </x-ui.button>
+                    @endif
                     @if ($can('students.create'))
                         <x-ui.button type="button" data-modal-target="#add-student-modal">
                             <x-ui.icon name="user-plus" class="size-4" />
@@ -99,11 +105,23 @@
             </div>
         </form>
 
+        @if ($can('students.update'))
+            <form id="bulk-delete-students-form" method="POST" action="{{ route('admin.students.destroy-many') }}">
+                @csrf
+                @method('DELETE')
+            </form>
+        @endif
+
         <div class="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-raised)]">
             <div class="overflow-x-auto">
                 <table id="students-management-table" class="min-w-[68rem] w-full divide-y divide-[var(--line)] text-left text-sm">
                     <thead class="bg-[var(--surface-muted)] text-xs font-extrabold text-[var(--text-strong)]">
                         <tr>
+                            @if ($can('students.update'))
+                                <th class="w-12 whitespace-nowrap px-4 py-3">
+                                    <input type="checkbox" class="rounded border-[var(--line)]" data-check-all="[data-student-checkbox]" aria-label="Select all students">
+                                </th>
+                            @endif
                             <th class="whitespace-nowrap px-4 py-3">Name</th>
                             <th class="whitespace-nowrap px-4 py-3">Matric Number</th>
                             <th class="whitespace-nowrap px-4 py-3">Faculty</th>
@@ -126,6 +144,19 @@
                                 };
                             @endphp
                             <tr class="theme-transition hover:bg-brand-600/5">
+                                @if ($can('students.update'))
+                                    <td class="whitespace-nowrap px-4 py-3">
+                                        <input
+                                            type="checkbox"
+                                            name="student_ids[]"
+                                            value="{{ $student->id }}"
+                                            form="bulk-delete-students-form"
+                                            class="rounded border-[var(--line)]"
+                                            data-student-checkbox
+                                            aria-label="Select {{ $student->user->name }}"
+                                        >
+                                    </td>
+                                @endif
                                 <td class="whitespace-nowrap px-4 py-3">
                                     <a class="font-extrabold text-brand-700 underline-offset-2 hover:text-brand-600 hover:underline dark:text-brand-200 dark:hover:text-brand-100" href="{{ route('admin.students.show', $student) }}">
                                         {{ $student->user->name }}
@@ -144,7 +175,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="px-4 py-8 text-center text-sm text-[var(--text-soft)]">No students found.</td>
+                                <td colspan="{{ $can('students.update') ? 10 : 9 }}" class="px-4 py-8 text-center text-sm text-[var(--text-soft)]">No students found.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -181,6 +212,20 @@
                     <x-ui.input label="LAST NAME" name="last_name" placeholder="Last name" required />
                     <x-ui.input label="MATRIC NUMBER" name="matric_no" placeholder="2026/CSC/001" required />
                 </div>
+                <fieldset class="rounded-2xl border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <legend class="px-1 text-sm font-semibold text-[var(--text-strong)]">Activation Status</legend>
+                    <p class="mt-1 text-xs text-[var(--text-soft)]">Active students receive an assigned unused ticket immediately. Inactive students can be activated later.</p>
+                    <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                        <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-strong)] transition hover:border-brand-400">
+                            <input type="radio" name="activation_status" value="active" class="h-4 w-4 accent-brand-600" checked>
+                            <span>Active</span>
+                        </label>
+                        <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-strong)] transition hover:border-brand-400">
+                            <input type="radio" name="activation_status" value="inactive" class="h-4 w-4 accent-brand-600">
+                            <span>Inactive</span>
+                        </label>
+                    </div>
+                </fieldset>
                 <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
                     <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
                     <x-ui.button type="submit">Create Student</x-ui.button>

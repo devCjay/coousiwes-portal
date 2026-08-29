@@ -370,7 +370,9 @@ class PhaseEightPortalsTest extends TestCase
             ->assertOk()
             ->assertSee('My Ticket')
             ->assertSee($ticket->serial_number)
-            ->assertSee('******');
+            ->assertSee($ticket->pin)
+            ->assertSee('Copy serial number', false)
+            ->assertSee('Copy PIN', false);
     }
 
     public function test_student_can_confirm_ticket_with_displayed_pin_when_hash_is_stale(): void

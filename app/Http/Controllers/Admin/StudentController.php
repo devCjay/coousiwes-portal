@@ -15,6 +15,7 @@ use App\Models\StudentPlacement;
 use App\Services\AuditLogger;
 use App\Services\StudentImportService;
 use App\Services\StudentManager;
+use App\Services\TicketService;
 use App\Support\AjaxResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -31,6 +32,7 @@ class StudentController extends Controller
         private readonly AuditLogger $auditLogger,
         private readonly StudentManager $studentManager,
         private readonly StudentImportService $studentImportService,
+        private readonly TicketService $ticketService,
     ) {}
 
     public function index(Request $request): View
@@ -83,8 +85,11 @@ class StudentController extends Controller
 
     public function store(StoreStudentRequest $request): JsonResponse|RedirectResponse
     {
+        $validated = $request->validated();
+
         try {
-            $student = $this->studentManager->create($request->validated());
+            $student = $this->studentManager->create($validated);
+            $this->generateTicketWhenActive($student, $validated['activation_status'], $request->user());
         } catch (RuntimeException $exception) {
             return AjaxResponse::error($request, $exception->getMessage(), key: 'student');
         }
@@ -171,19 +176,8 @@ class StudentController extends Controller
         abort_unless($request->user()?->can('students.update'), 403);
 
         $matricNo = $student->matric_no;
-        $user = $student->user;
 
-        DB::transaction(function () use ($student, $user): void {
-            $student->assessments()->each(function ($assessment): void {
-                $assessment->delete();
-            });
-            $student->supervisorAssignments()->delete();
-            $student->payments()->delete();
-            $student->placement()->delete();
-            $student->tickets()->withTrashed()->forceDelete();
-            $student->delete();
-            $user?->delete();
-        });
+        DB::transaction(fn () => $this->permanentlyDeleteStudent($student));
 
         $this->auditLogger->record('students.deleted', $request->user(), $request, metadata: [
             'matric_no' => $matricNo,
@@ -191,6 +185,34 @@ class StudentController extends Controller
         ]);
 
         return AjaxResponse::success($request, 'Student permanently deleted.', route('admin.students.index', absolute: false));
+    }
+
+    public function destroyMany(Request $request): JsonResponse|RedirectResponse
+    {
+        abort_unless($request->user()?->can('students.update'), 403);
+
+        $validated = $request->validate([
+            'student_ids' => ['required', 'array', 'min:1'],
+            'student_ids.*' => ['integer', 'distinct', 'exists:students,id'],
+        ]);
+
+        $students = Student::query()
+            ->with('user')
+            ->whereIn('id', $validated['student_ids'])
+            ->get();
+        $matricNumbers = $students->pluck('matric_no')->all();
+
+        DB::transaction(function () use ($students): void {
+            $students->each(fn (Student $student) => $this->permanentlyDeleteStudent($student));
+        });
+
+        $this->auditLogger->record('students.bulk_deleted', $request->user(), $request, metadata: [
+            'count' => count($matricNumbers),
+            'matric_numbers' => $matricNumbers,
+            'deletion' => 'permanent',
+        ]);
+
+        return AjaxResponse::success($request, count($matricNumbers).' student(s) permanently deleted.', route('admin.students.index', absolute: false));
     }
 
     public function template(Request $request, string $format): Response
@@ -280,5 +302,29 @@ class StudentController extends Controller
             'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=students_posting_LIST_{$year}.xls",
         ]);
+    }
+
+    private function generateTicketWhenActive(Student $student, string $activationStatus, mixed $generatedBy): void
+    {
+        if ($activationStatus !== Student::STATUS_ACTIVE) {
+            return;
+        }
+
+        $this->ticketService->generateFor($student, $generatedBy);
+    }
+
+    private function permanentlyDeleteStudent(Student $student): void
+    {
+        $user = $student->user;
+
+        $student->assessments()->each(function ($assessment): void {
+            $assessment->delete();
+        });
+        $student->supervisorAssignments()->delete();
+        $student->payments()->delete();
+        $student->placement()->delete();
+        $student->tickets()->withTrashed()->forceDelete();
+        $student->delete();
+        $user?->delete();
     }
 }

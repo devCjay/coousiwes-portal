@@ -268,6 +268,9 @@ Route::middleware('auth:web,admin')->group(function () {
         Route::post('/students/{student}/reactivate', [StudentController::class, 'reactivate'])
             ->middleware('permission:students.update')
             ->name('students.reactivate');
+        Route::delete('/students/bulk-delete', [StudentController::class, 'destroyMany'])
+            ->middleware('permission:students.update')
+            ->name('students.destroy-many');
         Route::delete('/students/{student}', [StudentController::class, 'destroy'])
             ->middleware('permission:students.update')
             ->name('students.destroy');

@@ -1008,3 +1008,42 @@ document.querySelectorAll('[data-pin-reveal]').forEach((button) => {
         value.textContent = shouldPin ? pin : mask;
     });
 });
+
+document.querySelectorAll('[data-copy-value]').forEach((button) => {
+    button.addEventListener('click', async () => {
+        const value = button.dataset.copyValue || '';
+        const label = button.dataset.copyLabel || 'Value';
+
+        if (!value) {
+            return;
+        }
+
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(value);
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = value;
+                textarea.setAttribute('readonly', 'readonly');
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                textarea.remove();
+            }
+
+            showToast({
+                title: 'Copied',
+                message: `${label} copied to clipboard.`,
+                tone: 'success',
+            });
+        } catch (error) {
+            showToast({
+                title: 'Copy failed',
+                message: 'Please copy the value manually.',
+                tone: 'error',
+            });
+        }
+    });
+});

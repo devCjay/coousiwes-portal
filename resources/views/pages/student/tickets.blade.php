@@ -21,9 +21,14 @@
             @forelse ($tickets as $ticket)
                 <article class="rounded-2xl border border-[var(--line)] bg-[var(--surface-muted)] p-5 shadow-[0_16px_38px_rgb(8_15_12_/_0.06)]">
                     <div class="flex flex-wrap items-start justify-between gap-3">
-                        <div>
+                        <div class="min-w-0 flex-1">
                             <p class="text-xs font-extrabold uppercase text-[var(--text-soft)]">Serial Number</p>
-                            <h2 class="mt-1 break-all text-lg font-black text-[var(--text-strong)]">{{ $ticket->serial_number }}</h2>
+                            <div class="mt-2 flex min-w-0 flex-wrap items-center gap-2">
+                                <h2 class="break-all text-lg font-black text-[var(--text-strong)]">{{ $ticket->serial_number }}</h2>
+                                <button type="button" data-copy-value="{{ $ticket->serial_number }}" data-copy-label="Serial number" class="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] text-[var(--text-soft)] theme-transition hover:border-brand-400 hover:text-brand-600" aria-label="Copy serial number">
+                                    <x-ui.icon name="copy" class="size-4" />
+                                </button>
+                            </div>
                         </div>
                         <span @class([
                             'inline-flex rounded-full px-3 py-1 text-xs font-extrabold uppercase',
@@ -37,10 +42,12 @@
                     <div class="mt-5 grid gap-3 sm:grid-cols-2">
                         <div class="rounded-xl border border-[var(--line)] bg-[var(--surface-raised)] p-3">
                             <p class="text-xs font-bold uppercase text-[var(--text-soft)]">Pin</p>
-                            <button type="button" data-pin-reveal data-pin="{{ $ticket->pin }}" class="mt-2 inline-flex items-center gap-2 rounded-md border border-[var(--line)] bg-[var(--surface-muted)] px-2 py-1 font-mono text-sm font-bold text-[var(--text-strong)] theme-transition hover:border-brand-400">
-                                <span data-pin-value>******</span>
-                                <x-ui.icon name="eye" class="size-4 text-[var(--text-soft)]" />
-                            </button>
+                            <div class="mt-2 flex min-w-0 items-center gap-2">
+                                <span class="min-w-0 break-all rounded-md border border-[var(--line)] bg-[var(--surface-muted)] px-3 py-2 font-mono text-sm font-bold text-[var(--text-strong)]">{{ $ticket->pin }}</span>
+                                <button type="button" data-copy-value="{{ $ticket->pin }}" data-copy-label="PIN" class="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] text-[var(--text-soft)] theme-transition hover:border-brand-400 hover:text-brand-600" aria-label="Copy PIN">
+                                    <x-ui.icon name="copy" class="size-4" />
+                                </button>
+                            </div>
                         </div>
                         <div class="rounded-xl border border-[var(--line)] bg-[var(--surface-raised)] p-3">
                             <p class="text-xs font-bold uppercase text-[var(--text-soft)]">Amount</p>
