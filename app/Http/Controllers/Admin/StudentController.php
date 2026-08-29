@@ -41,8 +41,8 @@ class StudentController extends Controller
             ->with(['user', 'faculty', 'department', 'academicLevel', 'academicSession', 'placement.academicLevel', 'placement.academicSession'])
             ->when($request->filled('status'), function ($query) use ($request): void {
                 match ($request->string('status')->toString()) {
-                    'active' => $query->whereHas('placement')->where('activation_status', '!=', Student::STATUS_SUSPENDED),
-                    'inactive' => $query->whereDoesntHave('placement')->where('activation_status', '!=', Student::STATUS_SUSPENDED),
+                    'active' => $query->where('activation_status', Student::STATUS_ACTIVE),
+                    'inactive' => $query->where('activation_status', Student::STATUS_INACTIVE),
                     'suspended' => $query->where('activation_status', Student::STATUS_SUSPENDED),
                     default => null,
                 };

@@ -9,7 +9,7 @@
         ['label' => 'Settings', 'href' => route('admin.settings.index'), 'icon' => 'G'],
     ];
 
-    $studentStatus = fn ($student): string => $student->activation_status === 'suspended' ? 'suspended' : ($student->placement ? 'active' : 'inactive');
+    $studentStatus = fn ($student): string => $student->activation_status;
     $academicYear = function ($session): string {
         if (! $session?->name) {
             return 'N/A';
@@ -36,8 +36,8 @@
 
     <div class="grid gap-4 md:grid-cols-4">
         <x-ui.stat-card label="Students" :value="$students->total()" meta="Current filtered list" />
-        <x-ui.stat-card label="Active" :value="$students->getCollection()->filter(fn ($student) => $studentStatus($student) === 'active')->count()" meta="Visible with placement" tone="cyan" />
-        <x-ui.stat-card label="Inactive" :value="$students->getCollection()->filter(fn ($student) => $studentStatus($student) === 'inactive')->count()" meta="No placement record" tone="amber" />
+        <x-ui.stat-card label="Active" :value="$students->getCollection()->filter(fn ($student) => $studentStatus($student) === 'active')->count()" meta="Activated accounts" tone="cyan" />
+        <x-ui.stat-card label="Inactive" :value="$students->getCollection()->filter(fn ($student) => $studentStatus($student) === 'inactive')->count()" meta="Inactive accounts" tone="amber" />
         <x-ui.stat-card label="Imports" :value="$imports->count()" meta="Recent upload history" tone="rose" />
     </div>
 

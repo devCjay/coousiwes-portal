@@ -187,8 +187,6 @@ class StudentImportService
     {
         $sample = [
             self::HEADERS,
-            ['Ada', 'Nkechi', 'Okoye', '2026/AGRIC/001'],
-            ['Chinedu', '', 'Nwankwo', '2026/ENG/002'],
         ];
 
         if ($format === 'xlsx') {

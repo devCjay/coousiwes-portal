@@ -64,10 +64,11 @@ class PhaseFiveStudentManagementTest extends TestCase
             ->assertSee('600L');
     }
 
-    public function test_student_list_uses_requested_columns_and_placement_based_status(): void
+    public function test_student_list_uses_requested_columns_and_activation_status(): void
     {
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $inactive = $this->createStudent('inactive-list@example.test', '2026/CSC/020');
+        $inactive->update(['activation_status' => Student::STATUS_INACTIVE]);
         $active = $this->createStudent('active-list@example.test', '2026/CSC/021');
 
         $active->placement()->create([
@@ -94,6 +95,29 @@ class PhaseFiveStudentManagementTest extends TestCase
             ->assertSee($active->department->name)
             ->assertSee('inactive')
             ->assertSee('active');
+    }
+
+    public function test_imported_active_students_show_active_without_placement(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
+            ['Active', '', 'Import', '2026/CSC/009'],
+        ]));
+
+        $import = app(StudentImportService::class)->createImport($file, $admin->id, true);
+        app(StudentImportService::class)->process($import);
+
+        $student = Student::where('matric_no', '2026/CSC/009')->firstOrFail();
+        $this->assertSame(Student::STATUS_ACTIVE, $student->activation_status);
+        $this->assertFalse($student->placement()->exists());
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.students.index', ['search' => '2026/CSC/009']))
+            ->assertOk()
+            ->assertSee('Active Import')
+            ->assertSee('>active</span>', false)
+            ->assertSee('Activated accounts');
     }
 
     public function test_ajax_manual_student_creation_creates_user_profile_and_audit_log(): void
@@ -325,6 +349,8 @@ class PhaseFiveStudentManagementTest extends TestCase
             ->get(route('admin.students.template', 'csv'))
             ->assertOk()
             ->assertSee('first_name,middle_name,last_name,matric_no', false)
+            ->assertDontSee('2026/AGRIC/001')
+            ->assertDontSee('2026/ENG/002')
             ->assertDontSee('faculty')
             ->assertDontSee('department')
             ->assertDontSee('student_id');
