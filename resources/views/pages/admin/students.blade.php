@@ -215,16 +215,34 @@
                 <fieldset class="rounded-2xl border border-[var(--line)] bg-[var(--surface-muted)] p-4">
                     <legend class="px-1 text-sm font-semibold text-[var(--text-strong)]">Activation Status</legend>
                     <p class="mt-1 text-xs text-[var(--text-soft)]">Active students receive an assigned unused ticket immediately. Inactive students can be activated later.</p>
-                    <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                        <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-strong)] transition hover:border-brand-400">
-                            <input type="radio" name="activation_status" value="active" class="h-4 w-4 accent-brand-600">
-                            <span>Active</span>
-                        </label>
-                        <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-strong)] transition hover:border-brand-400">
-                            <input type="radio" name="activation_status" value="inactive" class="h-4 w-4 accent-brand-600" checked>
-                            <span>Inactive</span>
-                        </label>
-                    </div>
+                    <input type="hidden" name="activation_status" value="inactive">
+                    <label class="mt-4 flex w-full cursor-pointer items-center justify-between gap-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-extrabold text-[var(--text-strong)] transition hover:border-brand-400 sm:w-fit sm:min-w-80">
+                        <span>Inactive</span>
+                        <span class="relative inline-flex h-8 w-16 shrink-0 items-center">
+                            <input type="checkbox" name="activation_status" value="active" class="peer sr-only" aria-label="Toggle student activation status">
+                            <span class="absolute inset-0 rounded-full bg-red-100 transition peer-checked:bg-brand-600 dark:bg-red-400/20 dark:peer-checked:bg-brand-500"></span>
+                            <span class="absolute left-1 top-1 grid size-6 place-items-center rounded-full bg-white text-red-600 shadow-sm transition peer-checked:translate-x-8 peer-checked:text-brand-700">
+                                <span class="size-2 rounded-full bg-current"></span>
+                            </span>
+                        </span>
+                        <span>Active</span>
+                    </label>
+                </fieldset>
+                <fieldset class="rounded-2xl border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <legend class="px-1 text-sm font-semibold text-[var(--text-strong)]">Workshop Fee Status</legend>
+                    <p class="mt-1 text-xs text-[var(--text-soft)]">Mark this student as having paid the workshop fee manually. If active, no workshop-fee checkout is required.</p>
+                    <input type="hidden" name="workshop_fee_paid" value="0">
+                    <label class="mt-4 flex w-full cursor-pointer items-center justify-between gap-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-extrabold text-[var(--text-strong)] transition hover:border-brand-400 sm:w-fit sm:min-w-80">
+                        <span>Inactive</span>
+                        <span class="relative inline-flex h-8 w-16 shrink-0 items-center">
+                            <input type="checkbox" name="workshop_fee_paid" value="1" class="peer sr-only" aria-label="Toggle workshop fee paid status">
+                            <span class="absolute inset-0 rounded-full bg-red-100 transition peer-checked:bg-brand-600 dark:bg-red-400/20 dark:peer-checked:bg-brand-500"></span>
+                            <span class="absolute left-1 top-1 grid size-6 place-items-center rounded-full bg-white text-red-600 shadow-sm transition peer-checked:translate-x-8 peer-checked:text-brand-700">
+                                <span class="size-2 rounded-full bg-current"></span>
+                            </span>
+                        </span>
+                        <span>Active</span>
+                    </label>
                 </fieldset>
                 <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
                     <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
@@ -246,17 +264,35 @@
                     @csrf
                     <fieldset class="rounded-2xl border border-[var(--line)] bg-[var(--surface-muted)] p-4">
                         <legend class="px-1 text-sm font-semibold text-[var(--text-strong)]">Auto Activate Uploaded Students</legend>
-                        <p class="mt-1 text-xs text-[var(--text-soft)]">Choose whether students in this file become active immediately after the import is processed.</p>
-                        <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                            <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-strong)] transition hover:border-brand-400">
-                                <input type="radio" name="auto_activate" value="1" class="h-4 w-4 accent-brand-600">
-                                <span>ON - Activate students</span>
-                            </label>
-                            <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-strong)] transition hover:border-brand-400">
-                                <input type="radio" name="auto_activate" value="0" class="h-4 w-4 accent-brand-600" checked>
-                                <span>OFF - Keep inactive</span>
-                            </label>
-                        </div>
+                        <p class="mt-1 text-xs text-[var(--text-soft)]">Active uploaded students receive an assigned unused ticket immediately after import processing.</p>
+                        <input type="hidden" name="auto_activate" value="0">
+                        <label class="mt-4 flex w-full cursor-pointer items-center justify-between gap-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-extrabold text-[var(--text-strong)] transition hover:border-brand-400 sm:w-fit sm:min-w-80">
+                            <span>Inactive</span>
+                            <span class="relative inline-flex h-8 w-16 shrink-0 items-center">
+                                <input type="checkbox" name="auto_activate" value="1" class="peer sr-only" aria-label="Toggle automatic activation for uploaded students">
+                                <span class="absolute inset-0 rounded-full bg-red-100 transition peer-checked:bg-brand-600 dark:bg-red-400/20 dark:peer-checked:bg-brand-500"></span>
+                                <span class="absolute left-1 top-1 grid size-6 place-items-center rounded-full bg-white text-red-600 shadow-sm transition peer-checked:translate-x-8 peer-checked:text-brand-700">
+                                    <span class="size-2 rounded-full bg-current"></span>
+                                </span>
+                            </span>
+                            <span>Active</span>
+                        </label>
+                    </fieldset>
+                    <fieldset class="rounded-2xl border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                        <legend class="px-1 text-sm font-semibold text-[var(--text-strong)]">Workshop Fee Status</legend>
+                        <p class="mt-1 text-xs text-[var(--text-soft)]">Mark uploaded students as having paid the workshop fee manually. If active, no workshop-fee checkout is required.</p>
+                        <input type="hidden" name="workshop_fee_paid" value="0">
+                        <label class="mt-4 flex w-full cursor-pointer items-center justify-between gap-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-extrabold text-[var(--text-strong)] transition hover:border-brand-400 sm:w-fit sm:min-w-80">
+                            <span>Inactive</span>
+                            <span class="relative inline-flex h-8 w-16 shrink-0 items-center">
+                                <input type="checkbox" name="workshop_fee_paid" value="1" class="peer sr-only" aria-label="Toggle workshop fee paid status for uploaded students">
+                                <span class="absolute inset-0 rounded-full bg-red-100 transition peer-checked:bg-brand-600 dark:bg-red-400/20 dark:peer-checked:bg-brand-500"></span>
+                                <span class="absolute left-1 top-1 grid size-6 place-items-center rounded-full bg-white text-red-600 shadow-sm transition peer-checked:translate-x-8 peer-checked:text-brand-700">
+                                    <span class="size-2 rounded-full bg-current"></span>
+                                </span>
+                            </span>
+                            <span>Active</span>
+                        </label>
                     </fieldset>
                     <x-ui.input label="Student File" name="students_file" type="file" accept=".csv,.txt,.xlsx" required />
                     <x-ui.button type="submit">Preview Import</x-ui.button>

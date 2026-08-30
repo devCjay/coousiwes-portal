@@ -28,6 +28,7 @@ class StudentImportController extends Controller
             $file,
             $request->user() instanceof User ? (int) $request->user()->id : null,
             $request->boolean('auto_activate', false),
+            $request->boolean('workshop_fee_paid', false),
         );
 
         $this->auditLogger->record('students.import_previewed', $request->user(), $request, $import, [
@@ -42,6 +43,7 @@ class StudentImportController extends Controller
             'preview' => $import->preview_rows,
             'errors' => $import->error_report,
             'auto_activate' => $import->auto_activate_students,
+            'workshop_fee_paid' => $import->mark_workshop_fee_paid,
             'import_id' => $import->id,
             'process_url' => route('admin.students.imports.process', $import),
         ]);
@@ -54,6 +56,7 @@ class StudentImportController extends Controller
             $file,
             $request->user() instanceof User ? (int) $request->user()->id : null,
             $request->boolean('auto_activate', false),
+            $request->boolean('workshop_fee_paid', false),
         );
 
         $this->auditLogger->record('students.import_previewed', $request->user(), $request, $import, [

@@ -35,6 +35,7 @@ class StoreStudentRequest extends FormRequest
             'academic_level_id' => $this->filled('academic_level_id') ? $this->input('academic_level_id') : null,
             'academic_session_id' => $this->filled('academic_session_id') ? $this->input('academic_session_id') : null,
             'activation_status' => $this->input('activation_status') ?: Student::STATUS_INACTIVE,
+            'workshop_fee_paid' => $this->boolean('workshop_fee_paid'),
         ]);
     }
 
@@ -64,6 +65,7 @@ class StoreStudentRequest extends FormRequest
             'academic_level_id' => ['nullable', 'integer', Rule::exists('academic_levels', 'id')->whereNull('deleted_at')],
             'academic_session_id' => ['nullable', 'integer', Rule::exists('academic_sessions', 'id')->whereNull('deleted_at')],
             'activation_status' => ['required', 'string', Rule::in(['inactive', 'active', 'suspended'])],
+            'workshop_fee_paid' => ['nullable', 'boolean'],
             'gender' => ['nullable', 'string', 'max:20'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'address' => ['nullable', 'string', 'max:1000'],

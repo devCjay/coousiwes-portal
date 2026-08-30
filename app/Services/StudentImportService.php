@@ -6,9 +6,11 @@ use App\Models\AcademicLevel;
 use App\Models\AcademicSession;
 use App\Models\Department;
 use App\Models\Faculty;
+use App\Models\Payment;
 use App\Models\Student;
 use App\Models\StudentImport;
 use App\Models\User;
+use App\Support\PaymentSettings;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -39,7 +41,7 @@ class StudentImportService
         return $this->validateRows($rows);
     }
 
-    public function createImport(UploadedFile $file, ?int $uploadedBy, bool $autoActivate = false): StudentImport
+    public function createImport(UploadedFile $file, ?int $uploadedBy, bool $autoActivate = false, bool $markWorkshopFeePaid = false): StudentImport
     {
         $storedPath = $file->store('student-imports');
         $preview = $this->preview($file);
@@ -54,6 +56,7 @@ class StudentImportService
             'error_report' => $preview['errors'],
             'failed_rows' => count($preview['errors']),
             'auto_activate_students' => $autoActivate,
+            'mark_workshop_fee_paid' => $markWorkshopFeePaid,
         ]);
     }
 
@@ -82,6 +85,7 @@ class StudentImportService
             try {
                 $student = $this->studentManager->create($this->resolveRow($row, true, $import->auto_activate_students));
                 $this->generateTicketWhenAutoActivated($student, $import->auto_activate_students);
+                $this->markWorkshopFeePaid($student, $import->mark_workshop_fee_paid);
                 $created++;
             } catch (\Throwable $throwable) {
                 $errors[$index] = [
@@ -135,6 +139,7 @@ class StudentImportService
             try {
                 $student = $this->studentManager->create($this->resolveRow($row, true, $import->auto_activate_students));
                 $this->generateTicketWhenAutoActivated($student, $import->auto_activate_students);
+                $this->markWorkshopFeePaid($student, $import->mark_workshop_fee_paid);
                 $created++;
             } catch (\Throwable $throwable) {
                 $errors[$globalIndex] = [
@@ -403,5 +408,28 @@ class StudentImportService
         }
 
         $this->ticketService->generateFor($student);
+    }
+
+    private function markWorkshopFeePaid(Student $student, bool $markPaid): void
+    {
+        if (! $markPaid) {
+            return;
+        }
+
+        $student->payments()->firstOrCreate(
+            [
+                'purpose' => Payment::PURPOSE_WORKSHOP_FEE,
+                'status' => Payment::STATUS_SUCCESSFUL,
+            ],
+            [
+                'provider' => 'manual',
+                'reference' => 'WORKSHOP-MANUAL-'.$student->matric_no,
+                'amount' => max(0, PaymentSettings::workshopAmount()),
+                'currency' => PaymentSettings::currency(),
+                'provider_status' => 'manual_verified',
+                'verified_at' => now(),
+                'paid_at' => now(),
+            ]
+        );
     }
 }

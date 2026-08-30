@@ -9,6 +9,7 @@ use App\Models\AuditLog;
 use App\Models\Admin;
 use App\Models\Department;
 use App\Models\Faculty;
+use App\Models\Payment;
 use App\Models\Student;
 use App\Models\StudentImport;
 use App\Models\Ticket;
@@ -192,6 +193,33 @@ class PhaseFiveStudentManagementTest extends TestCase
         $this->assertSame(Student::STATUS_ACTIVE, $student->activation_status);
         $this->assertSame(1, $student->tickets()->count());
         $this->assertSame(Ticket::STATUS_UNUSED, $student->tickets()->firstOrFail()->status);
+    }
+
+    public function test_admin_can_mark_workshop_fee_paid_without_activating_student_or_assigning_ticket(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.students.store'), [
+                'first_name' => 'Workshop',
+                'last_name' => 'Student',
+                'matric_no' => '2026/CSC/013',
+                'workshop_fee_paid' => '1',
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Student created.');
+
+        $student = Student::where('matric_no', '2026/CSC/013')->firstOrFail();
+
+        $this->assertSame(Student::STATUS_INACTIVE, $student->activation_status);
+        $this->assertSame(0, $student->tickets()->count());
+        $this->assertDatabaseHas('payments', [
+            'student_id' => $student->id,
+            'purpose' => Payment::PURPOSE_WORKSHOP_FEE,
+            'provider' => 'manual',
+            'status' => Payment::STATUS_SUCCESSFUL,
+        ]);
     }
 
     public function test_admin_can_create_inactive_student_without_auto_ticket(): void
@@ -497,14 +525,16 @@ class PhaseFiveStudentManagementTest extends TestCase
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
-            ->postJson(route('admin.students.imports.preview'), ['students_file' => $file, 'auto_activate' => '0'])
+            ->postJson(route('admin.students.imports.preview'), ['students_file' => $file, 'auto_activate' => '0', 'workshop_fee_paid' => '1'])
             ->assertOk()
             ->assertJsonPath('total', 2)
             ->assertJsonPath('auto_activate', false)
+            ->assertJsonPath('workshop_fee_paid', true)
             ->assertJsonStructure(['import_id', 'process_url', 'errors']);
 
         $this->assertSame(1, StudentImport::count());
         $this->assertGreaterThan(0, StudentImport::firstOrFail()->failed_rows);
+        $this->assertTrue(StudentImport::firstOrFail()->mark_workshop_fee_paid);
     }
 
     public function test_import_processing_auto_queues_large_files(): void
@@ -622,6 +652,28 @@ class PhaseFiveStudentManagementTest extends TestCase
         $this->assertSame(0, $student->tickets()->count());
         $this->assertSame(StudentImport::STATUS_COMPLETED, $import->fresh()->status);
         $this->assertSame(1, $import->fresh()->successful_rows);
+    }
+
+    public function test_import_can_mark_uploaded_students_as_workshop_fee_paid(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
+            ['Paid', '', 'Workshop', '2026/CSC/014'],
+        ]));
+
+        $import = app(StudentImportService::class)->createImport($file, $admin->id, false, true);
+        app(StudentImportService::class)->process($import);
+
+        $student = Student::where('matric_no', '2026/CSC/014')->firstOrFail();
+
+        $this->assertSame(Student::STATUS_INACTIVE, $student->activation_status);
+        $this->assertSame(0, $student->tickets()->count());
+        $this->assertDatabaseHas('payments', [
+            'student_id' => $student->id,
+            'purpose' => Payment::PURPOSE_WORKSHOP_FEE,
+            'provider' => 'manual',
+            'status' => Payment::STATUS_SUCCESSFUL,
+        ]);
     }
 
     public function test_import_toggle_can_keep_minimal_uploads_inactive(): void

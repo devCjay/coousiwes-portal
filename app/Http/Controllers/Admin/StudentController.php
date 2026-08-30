@@ -9,6 +9,7 @@ use App\Models\AcademicLevel;
 use App\Models\AcademicSession;
 use App\Models\Department;
 use App\Models\Faculty;
+use App\Models\Payment;
 use App\Models\Student;
 use App\Models\StudentImport;
 use App\Models\StudentPlacement;
@@ -17,6 +18,7 @@ use App\Services\StudentImportService;
 use App\Services\StudentManager;
 use App\Services\TicketService;
 use App\Support\AjaxResponse;
+use App\Support\PaymentSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -90,6 +92,7 @@ class StudentController extends Controller
         try {
             $student = $this->studentManager->create($validated);
             $this->generateTicketWhenActive($student, $validated['activation_status'], $request->user());
+            $this->markWorkshopFeePaid($student, (bool) ($validated['workshop_fee_paid'] ?? false));
         } catch (RuntimeException $exception) {
             return AjaxResponse::error($request, $exception->getMessage(), key: 'student');
         }
@@ -311,6 +314,29 @@ class StudentController extends Controller
         }
 
         $this->ticketService->generateFor($student, $generatedBy);
+    }
+
+    private function markWorkshopFeePaid(Student $student, bool $markPaid): void
+    {
+        if (! $markPaid) {
+            return;
+        }
+
+        $student->payments()->firstOrCreate(
+            [
+                'purpose' => Payment::PURPOSE_WORKSHOP_FEE,
+                'status' => Payment::STATUS_SUCCESSFUL,
+            ],
+            [
+                'provider' => 'manual',
+                'reference' => 'WORKSHOP-MANUAL-'.$student->matric_no,
+                'amount' => max(0, PaymentSettings::workshopAmount()),
+                'currency' => PaymentSettings::currency(),
+                'provider_status' => 'manual_verified',
+                'verified_at' => now(),
+                'paid_at' => now(),
+            ]
+        );
     }
 
     private function permanentlyDeleteStudent(Student $student): void

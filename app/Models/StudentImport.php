@@ -27,6 +27,7 @@ class StudentImport extends Model
         'successful_rows',
         'failed_rows',
         'auto_activate_students',
+        'mark_workshop_fee_paid',
         'preview_rows',
         'error_report',
         'started_at',
@@ -40,6 +41,7 @@ class StudentImport extends Model
             'preview_rows' => 'array',
             'error_report' => 'array',
             'auto_activate_students' => 'boolean',
+            'mark_workshop_fee_paid' => 'boolean',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
         ];
