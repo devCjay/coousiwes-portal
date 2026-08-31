@@ -117,6 +117,12 @@ Route::middleware('auth:web,admin')->group(function () {
         Route::get('/generate-list/placement', [GenerateListController::class, 'placement'])
             ->middleware(['permission:generate-list.export', 'throttle:exports'])
             ->name('generate-list.placement');
+        Route::get('/generate-list/ticket-fee-payments', [GenerateListController::class, 'ticketFeePayments'])
+            ->middleware(['permission:generate-list.export', 'throttle:exports'])
+            ->name('generate-list.ticket-fee-payments');
+        Route::get('/generate-list/workshop-fee-payments', [GenerateListController::class, 'workshopFeePayments'])
+            ->middleware(['permission:generate-list.export', 'throttle:exports'])
+            ->name('generate-list.workshop-fee-payments');
 
         Route::get('/academics', [AcademicStructureController::class, 'index'])
             ->middleware('permission:academics.manage')

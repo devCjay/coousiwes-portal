@@ -18,8 +18,8 @@
     </div>
 
     @if ($can('generate-list.export'))
-        <x-ui.card class="mt-6" title="List Generation" description="Prepare master and placement list workflows from this workspace.">
-            <div class="grid gap-4 md:grid-cols-2">
+        <x-ui.card class="mt-6" title="List Generation" description="Prepare master, placement, and payment list workflows from this workspace.">
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <button
                     type="button"
                     data-modal-target="#masters-list-modal"
@@ -45,6 +45,34 @@
                     </span>
                     <span class="grid size-12 shrink-0 place-items-center rounded-lg bg-cyan-500 text-white shadow-glow">
                         <x-ui.icon name="clipboard-check" class="size-5" />
+                    </span>
+                </button>
+
+                <button
+                    type="button"
+                    data-modal-target="#ticket-fee-list-modal"
+                    class="group flex min-h-36 items-center justify-between gap-4 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5 text-left theme-transition hover:-translate-y-1 hover:border-brand-400 hover:bg-[var(--surface-raised)] hover:shadow-glow"
+                >
+                    <span>
+                        <span class="block text-base font-semibold text-[var(--text-strong)]">Ticket Fee Payment List</span>
+                        <span class="mt-2 block text-sm leading-6 text-[var(--text-soft)]">Export students with online or cash ticket fee payment records.</span>
+                    </span>
+                    <span class="grid size-12 shrink-0 place-items-center rounded-lg bg-amber-400 text-slate-950 shadow-glow">
+                        <x-ui.icon name="ticket" class="size-5" />
+                    </span>
+                </button>
+
+                <button
+                    type="button"
+                    data-modal-target="#workshop-fee-list-modal"
+                    class="group flex min-h-36 items-center justify-between gap-4 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5 text-left theme-transition hover:-translate-y-1 hover:border-brand-400 hover:bg-[var(--surface-raised)] hover:shadow-glow"
+                >
+                    <span>
+                        <span class="block text-base font-semibold text-[var(--text-strong)]">Workshop Fee Payment List</span>
+                        <span class="mt-2 block text-sm leading-6 text-[var(--text-soft)]">Export students with verified workshop fee payments.</span>
+                    </span>
+                    <span class="grid size-12 shrink-0 place-items-center rounded-lg bg-brand-600 text-white shadow-glow">
+                        <x-ui.icon name="credit-card" class="size-5" />
                     </span>
                 </button>
             </div>
@@ -149,6 +177,59 @@
             </div>
         </form>
         </x-ui.modal>
+
+        @foreach ([
+            ['id' => 'ticket-fee-list-modal', 'title' => 'Ticket Fee Payment List', 'route' => route('admin.generate-list.ticket-fee-payments'), 'department' => 'ticket-fee-department', 'description' => 'Download an Excel-compatible list of students with ticket fee payments. Online Korapay records and manually assigned tickets are included.'],
+            ['id' => 'workshop-fee-list-modal', 'title' => 'Workshop Fee Payment List', 'route' => route('admin.generate-list.workshop-fee-payments'), 'department' => 'workshop-fee-department', 'description' => 'Download an Excel-compatible list of students with verified workshop fee payments.'],
+        ] as $paymentList)
+            <x-ui.modal id="{{ $paymentList['id'] }}" title="{{ $paymentList['title'] }}" class="w-[min(44rem,calc(100vw-2rem))]">
+                <p class="text-sm leading-6 text-[var(--text-soft)]">{{ $paymentList['description'] }}</p>
+                <form method="GET" action="{{ $paymentList['route'] }}" data-ajax="false" class="mt-5 grid gap-4">
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <label class="block">
+                            <span class="siwes-form-label">Faculty</span>
+                            <select name="faculty_id" class="siwes-form-control mt-2" data-filter-parent="#{{ $paymentList['department'] }}">
+                                <option value="">All</option>
+                                @foreach ($faculties as $faculty)
+                                    <option value="{{ $faculty->id }}">{{ $faculty->name }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label class="block">
+                            <span class="siwes-form-label">Department</span>
+                            <select id="{{ $paymentList['department'] }}" name="department_id" class="siwes-form-control mt-2">
+                                <option value="">All</option>
+                                @foreach ($departments as $department)
+                                    <option value="{{ $department->id }}" data-parent-value="{{ $department->faculty_id }}">{{ $department->name }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label class="block">
+                            <span class="siwes-form-label">Session</span>
+                            <select name="academic_session_id" class="siwes-form-control mt-2">
+                                <option value="">All</option>
+                                @foreach ($sessions as $session)
+                                    <option value="{{ $session->id }}">{{ $session->name }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label class="block">
+                            <span class="siwes-form-label">Level</span>
+                            <select name="academic_level_id" class="siwes-form-control mt-2">
+                                <option value="">All</option>
+                                @foreach ($levels as $level)
+                                    <option value="{{ $level->id }}">{{ $level->name }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                    </div>
+                    <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
+                        <x-ui.button type="button" variant="ghost" data-modal-close>Close</x-ui.button>
+                        <x-ui.button type="submit">Download XLS</x-ui.button>
+                    </div>
+                </form>
+            </x-ui.modal>
+        @endforeach
     @endif
 </x-layouts.app-shell>
 

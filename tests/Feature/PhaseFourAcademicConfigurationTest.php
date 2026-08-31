@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AcademicSession;
 use App\Models\AppSetting;
+use App\Models\Payment;
 use App\Models\Ticket;
 use App\Models\AuditLog;
 use App\Models\AcademicLevel;
@@ -44,6 +45,8 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             ->assertOk()
             ->assertSee('Generate Masters List')
             ->assertSee('Generate Placement List')
+            ->assertSee('Ticket Fee Payment List')
+            ->assertSee('Workshop Fee Payment List')
             ->assertSee('Faculty')
             ->assertSee('Department')
             ->assertSee('Session')
@@ -335,6 +338,148 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             ->assertSee('Future Works Ltd - 12 Industry Avenue', false)
             ->assertSee('Access Bank', false)
             ->assertDontSee('Filtered Works Ltd', false);
+    }
+
+    public function test_generate_list_exports_ticket_and_workshop_fee_payment_lists(): void
+    {
+        $this->seed(\Database\Seeders\AcademicStructureSeeder::class);
+
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $faculty = Faculty::where('code', 'AGRIC')->firstOrFail();
+        $department = Department::where('code', 'AGE')->firstOrFail();
+        $level = AcademicLevel::where('level', 400)->firstOrFail();
+        $session = AcademicSession::where('name', '2026/2027')->firstOrFail();
+
+        $onlineUser = User::factory()->create(['name' => 'Online Ticket Student']);
+        $onlineUser->assignRole('student');
+        $onlineStudent = Student::query()->create([
+            'user_id' => $onlineUser->id,
+            'matric_no' => '2026/PAY/001',
+            'faculty_id' => $faculty->id,
+            'department_id' => $department->id,
+            'academic_level_id' => $level->id,
+            'academic_session_id' => $session->id,
+            'activation_status' => Student::STATUS_ACTIVE,
+        ]);
+
+        $cashUser = User::factory()->create(['name' => 'Cash Ticket Student']);
+        $cashUser->assignRole('student');
+        $cashStudent = Student::query()->create([
+            'user_id' => $cashUser->id,
+            'matric_no' => '2026/PAY/002',
+            'faculty_id' => $faculty->id,
+            'department_id' => $department->id,
+            'academic_level_id' => $level->id,
+            'academic_session_id' => $session->id,
+            'activation_status' => Student::STATUS_ACTIVE,
+        ]);
+
+        $filteredUser = User::factory()->create(['name' => 'Filtered Payment Student']);
+        $filteredUser->assignRole('student');
+        $filteredDepartment = Department::where('code', 'CSC')->firstOrFail();
+        $filteredStudent = Student::query()->create([
+            'user_id' => $filteredUser->id,
+            'matric_no' => '2026/PAY/999',
+            'faculty_id' => $filteredDepartment->faculty_id,
+            'department_id' => $filteredDepartment->id,
+            'academic_level_id' => $level->id,
+            'academic_session_id' => $session->id,
+            'activation_status' => Student::STATUS_ACTIVE,
+        ]);
+
+        $onlineTicket = Ticket::query()->create([
+            'student_id' => $onlineStudent->id,
+            'serial_number' => 'SIWES-900000000001',
+            'pin' => '123456',
+            'code_hash' => 'online-ticket-hash',
+            'amount' => 2000,
+            'currency' => 'NGN',
+            'status' => Ticket::STATUS_USED,
+            'assigned_at' => now(),
+            'paid_at' => now(),
+            'used_at' => now(),
+        ]);
+
+        $onlineStudent->payments()->create([
+            'ticket_id' => $onlineTicket->id,
+            'purpose' => Payment::PURPOSE_ACTIVATION_TICKET,
+            'provider' => 'korapay',
+            'reference' => 'KORA-TICKET-001',
+            'amount' => 2000,
+            'currency' => 'NGN',
+            'status' => Payment::STATUS_SUCCESSFUL,
+            'provider_status' => 'success',
+            'verified_at' => now(),
+            'paid_at' => now(),
+        ]);
+
+        Ticket::query()->create([
+            'student_id' => $cashStudent->id,
+            'serial_number' => 'SIWES-900000000002',
+            'pin' => '654321',
+            'code_hash' => 'cash-ticket-hash',
+            'amount' => 2000,
+            'currency' => 'NGN',
+            'status' => Ticket::STATUS_UNUSED,
+            'assigned_at' => now(),
+        ]);
+
+        $cashStudent->payments()->create([
+            'purpose' => Payment::PURPOSE_WORKSHOP_FEE,
+            'provider' => 'manual',
+            'reference' => 'WORKSHOP-MANUAL-2026-PAY-002',
+            'amount' => 3500,
+            'currency' => 'NGN',
+            'status' => Payment::STATUS_SUCCESSFUL,
+            'provider_status' => 'manual_verified',
+            'verified_at' => now(),
+            'paid_at' => now(),
+        ]);
+
+        $filteredStudent->payments()->create([
+            'purpose' => Payment::PURPOSE_WORKSHOP_FEE,
+            'provider' => 'manual',
+            'reference' => 'WORKSHOP-MANUAL-FILTERED',
+            'amount' => 3500,
+            'currency' => 'NGN',
+            'status' => Payment::STATUS_SUCCESSFUL,
+            'verified_at' => now(),
+            'paid_at' => now(),
+        ]);
+
+        $filters = [
+            'faculty_id' => $faculty->id,
+            'department_id' => $department->id,
+            'academic_session_id' => $session->id,
+            'academic_level_id' => $level->id,
+        ];
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.generate-list.ticket-fee-payments', $filters))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
+            ->assertSee('TICKET FEE PAYMENT LIST', false)
+            ->assertSee('STUDENT NAME', false)
+            ->assertSee('MATRIC NUMBER', false)
+            ->assertSee('PAYMENT METHOD', false)
+            ->assertSee('Online Ticket Student', false)
+            ->assertSee('Online', false)
+            ->assertSee('Cash Ticket Student', false)
+            ->assertSee('Cash', false)
+            ->assertDontSee('Filtered Payment Student', false);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.generate-list.workshop-fee-payments', $filters))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
+            ->assertSee('WORKSHOP FEE PAYMENT LIST', false)
+            ->assertSee('Cash Ticket Student', false)
+            ->assertSee('NGN 3,500', false)
+            ->assertSee('Cash', false)
+            ->assertDontSee('Online Ticket Student', false)
+            ->assertDontSee('Filtered Payment Student', false);
     }
 
     public function test_bulk_settings_update_saves_grouped_payment_configuration(): void
