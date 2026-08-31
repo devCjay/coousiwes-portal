@@ -117,6 +117,9 @@ Route::middleware('auth:web,admin')->group(function () {
         Route::get('/generate-list/placement', [GenerateListController::class, 'placement'])
             ->middleware(['permission:generate-list.export', 'throttle:exports'])
             ->name('generate-list.placement');
+        Route::get('/generate-list/payments', [GenerateListController::class, 'payments'])
+            ->middleware(['permission:generate-list.export', 'throttle:exports'])
+            ->name('generate-list.payments');
         Route::get('/generate-list/ticket-fee-payments', [GenerateListController::class, 'ticketFeePayments'])
             ->middleware(['permission:generate-list.export', 'throttle:exports'])
             ->name('generate-list.ticket-fee-payments');

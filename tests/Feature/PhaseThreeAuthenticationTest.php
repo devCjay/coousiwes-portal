@@ -7,6 +7,8 @@ use App\Models\Admin;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Session\DatabaseSessionHandler;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -154,11 +156,55 @@ class PhaseThreeAuthenticationTest extends TestCase
 
     public function test_authenticated_users_are_redirected_from_login_to_their_dashboard(): void
     {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $supervisor = User::where('email', 'supervisor@coousiwes.test')->firstOrFail();
         $student = User::where('email', 'student@coousiwes.test')->firstOrFail();
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('login.admin'))
+            ->assertRedirect(route('admin.dashboard'));
+
+        auth('admin')->logout();
+        $this->flushSession();
+
+        $this->actingAs($supervisor)
+            ->get(route('login.supervisor'))
+            ->assertRedirect(route('supervisor.dashboard'));
+
+        auth()->logout();
+        $this->flushSession();
 
         $this->actingAs($student)
             ->get(route('login.student'))
             ->assertRedirect(route('student.dashboard'));
+    }
+
+    public function test_session_lifetime_defaults_to_twenty_four_hours(): void
+    {
+        $this->assertSame(1440, config('session.lifetime'));
+    }
+
+    public function test_database_session_handler_rejects_sessions_after_twenty_four_hours_of_inactivity(): void
+    {
+        config(['session.driver' => 'database', 'session.lifetime' => 1440]);
+
+        DB::table(config('session.table'))->insert([
+            'id' => 'expired-session-id',
+            'user_id' => Admin::where('email', 'admin@coousiwes.test')->firstOrFail()->id,
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'Feature Test',
+            'payload' => base64_encode(serialize(['_token' => 'token'])),
+            'last_activity' => now()->subMinutes(1441)->getTimestamp(),
+        ]);
+
+        $handler = new DatabaseSessionHandler(
+            DB::connection(),
+            config('session.table'),
+            config('session.lifetime'),
+            app(),
+        );
+
+        $this->assertSame('', $handler->read('expired-session-id'));
     }
 
     public function test_it_prevents_authenticated_users_from_accessing_another_role_dashboard(): void

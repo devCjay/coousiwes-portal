@@ -25,6 +25,7 @@
                     <div class="mt-6 flex flex-wrap gap-3">
                         <x-ui.button href="{{ route('login.student') }}">Student Access</x-ui.button>
                         <x-ui.button variant="secondary" href="{{ route('login.supervisor') }}">Supervisor Access</x-ui.button>
+                        <x-ui.button variant="ghost" href="{{ route('login.admin') }}">Admin Access</x-ui.button>
                     </div>
                 </div>
 

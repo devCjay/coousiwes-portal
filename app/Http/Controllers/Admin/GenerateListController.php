@@ -114,43 +114,9 @@ class GenerateListController extends Controller
         abort_unless($request->user()?->can('generate-list.export'), 403);
         $filters = $this->validatedFilters($request);
 
-        $onlinePayments = $this->paymentQuery($filters, Payment::PURPOSE_ACTIVATION_TICKET)
-            ->with(['student.user', 'student.faculty', 'student.department'])
-            ->get()
-            ->map(fn (Payment $payment): array => $this->paymentRow(
-                $payment->student,
-                (int) $payment->amount,
-                $payment->currency,
-                $payment->provider === 'manual' ? 'Cash' : 'Online',
-                $payment->paid_at ?? $payment->verified_at ?? $payment->created_at,
-            ));
-
-        $paidTicketIds = Payment::query()
-            ->where('purpose', Payment::PURPOSE_ACTIVATION_TICKET)
-            ->where('status', Payment::STATUS_SUCCESSFUL)
-            ->whereNotNull('ticket_id')
-            ->pluck('ticket_id')
-            ->all();
-
-        $cashTickets = Ticket::query()
-            ->with(['student.user', 'student.faculty', 'student.department'])
-            ->whereNotNull('student_id')
-            ->when($paidTicketIds !== [], fn ($query) => $query->whereNotIn('id', $paidTicketIds))
-            ->whereHas('student', fn ($studentQuery) => $this->applyStudentFilters($studentQuery, $filters))
-            ->get()
-            ->map(fn (Ticket $ticket): array => $this->paymentRow(
-                $ticket->student,
-                (int) $ticket->amount,
-                $ticket->currency,
-                'Cash',
-                $ticket->assigned_at ?? $ticket->created_at,
-            ));
-
         return $this->xlsResponse('exports.payment-list', [
             'title' => 'TICKET FEE PAYMENT LIST',
-            'payments' => $onlinePayments->concat($cashTickets)
-                ->sortBy(fn (array $row): string => $row['faculty'].'|'.$row['department'].'|'.$row['name'])
-                ->values(),
+            'payments' => $this->paymentRows($filters, 'ticket_fee'),
         ], 'TICKET FEE PAYMENT LIST.xls');
     }
 
@@ -159,23 +125,30 @@ class GenerateListController extends Controller
         abort_unless($request->user()?->can('generate-list.export'), 403);
         $filters = $this->validatedFilters($request);
 
-        $payments = $this->paymentQuery($filters, Payment::PURPOSE_WORKSHOP_FEE)
-            ->with(['student.user', 'student.faculty', 'student.department'])
-            ->get()
-            ->map(fn (Payment $payment): array => $this->paymentRow(
-                $payment->student,
-                (int) $payment->amount,
-                $payment->currency,
-                $payment->provider === 'manual' ? 'Cash' : 'Online',
-                $payment->paid_at ?? $payment->verified_at ?? $payment->created_at,
-            ))
-            ->sortBy(fn (array $row): string => $row['faculty'].'|'.$row['department'].'|'.$row['name'])
-            ->values();
-
         return $this->xlsResponse('exports.payment-list', [
             'title' => 'WORKSHOP FEE PAYMENT LIST',
-            'payments' => $payments,
+            'payments' => $this->paymentRows($filters, 'workshop_fee'),
         ], 'WORKSHOP FEE PAYMENT LIST.xls');
+    }
+
+    public function payments(Request $request): Response
+    {
+        abort_unless($request->user()?->can('generate-list.export'), 403);
+        $filters = $this->validatedFilters($request);
+        $paymentType = $request->validate([
+            'payment_type' => ['nullable', 'string', Rule::in(['all', 'ticket_fee', 'workshop_fee'])],
+        ])['payment_type'] ?? 'all';
+
+        $title = match ($paymentType) {
+            'ticket_fee' => 'TICKET FEE PAYMENT LIST',
+            'workshop_fee' => 'WORKSHOP FEE PAYMENT LIST',
+            default => 'PAYMENT LIST',
+        };
+
+        return $this->xlsResponse('exports.payment-list', [
+            'title' => $title,
+            'payments' => $this->paymentRows($filters, $paymentType),
+        ], $title.'.xls');
     }
 
     /**
@@ -209,6 +182,86 @@ class GenerateListController extends Controller
     /**
      * @param  array{faculty_id?: int, department_id?: int, academic_session_id?: int, academic_level_id?: int}  $filters
      */
+    private function paymentRows(array $filters, string $paymentType): \Illuminate\Support\Collection
+    {
+        $rows = collect();
+
+        if (in_array($paymentType, ['all', 'ticket_fee'], true)) {
+            $rows = $rows->concat($this->ticketFeeRows($filters));
+        }
+
+        if (in_array($paymentType, ['all', 'workshop_fee'], true)) {
+            $rows = $rows->concat($this->workshopFeeRows($filters));
+        }
+
+        return $rows
+            ->sortBy(fn (array $row): string => $row['type'].'|'.$row['faculty'].'|'.$row['department'].'|'.$row['name'])
+            ->values();
+    }
+
+    /**
+     * @param  array{faculty_id?: int, department_id?: int, academic_session_id?: int, academic_level_id?: int}  $filters
+     */
+    private function ticketFeeRows(array $filters): \Illuminate\Support\Collection
+    {
+        $onlinePayments = $this->paymentQuery($filters, Payment::PURPOSE_ACTIVATION_TICKET)
+            ->with(['student.user', 'student.faculty', 'student.department'])
+            ->get()
+            ->map(fn (Payment $payment): array => $this->paymentRow(
+                'Ticket Fee',
+                $payment->student,
+                (int) $payment->amount,
+                $payment->currency,
+                $payment->provider === 'manual' ? 'Cash' : 'Online',
+                $payment->paid_at ?? $payment->verified_at ?? $payment->created_at,
+            ));
+
+        $paidTicketIds = Payment::query()
+            ->where('purpose', Payment::PURPOSE_ACTIVATION_TICKET)
+            ->where('status', Payment::STATUS_SUCCESSFUL)
+            ->whereNotNull('ticket_id')
+            ->pluck('ticket_id')
+            ->all();
+
+        $cashTickets = Ticket::query()
+            ->with(['student.user', 'student.faculty', 'student.department'])
+            ->whereNotNull('student_id')
+            ->when($paidTicketIds !== [], fn ($query) => $query->whereNotIn('id', $paidTicketIds))
+            ->whereHas('student', fn ($studentQuery) => $this->applyStudentFilters($studentQuery, $filters))
+            ->get()
+            ->map(fn (Ticket $ticket): array => $this->paymentRow(
+                'Ticket Fee',
+                $ticket->student,
+                (int) $ticket->amount,
+                $ticket->currency,
+                'Cash',
+                $ticket->assigned_at ?? $ticket->created_at,
+            ));
+
+        return $onlinePayments->concat($cashTickets);
+    }
+
+    /**
+     * @param  array{faculty_id?: int, department_id?: int, academic_session_id?: int, academic_level_id?: int}  $filters
+     */
+    private function workshopFeeRows(array $filters): \Illuminate\Support\Collection
+    {
+        return $this->paymentQuery($filters, Payment::PURPOSE_WORKSHOP_FEE)
+            ->with(['student.user', 'student.faculty', 'student.department'])
+            ->get()
+            ->map(fn (Payment $payment): array => $this->paymentRow(
+                'Workshop Fee',
+                $payment->student,
+                (int) $payment->amount,
+                $payment->currency,
+                $payment->provider === 'manual' ? 'Cash' : 'Online',
+                $payment->paid_at ?? $payment->verified_at ?? $payment->created_at,
+            ));
+    }
+
+    /**
+     * @param  array{faculty_id?: int, department_id?: int, academic_session_id?: int, academic_level_id?: int}  $filters
+     */
     private function applyStudentFilters(mixed $query, array $filters): mixed
     {
         return $query
@@ -219,11 +272,12 @@ class GenerateListController extends Controller
     }
 
     /**
-     * @return array{name: string, matric_no: string, department: string, faculty: string, amount: string, method: string, payment_date: string}
+     * @return array{type: string, name: string, matric_no: string, department: string, faculty: string, amount: string, method: string, payment_date: string}
      */
-    private function paymentRow(?Student $student, int $amount, string $currency, string $method, mixed $paymentDate): array
+    private function paymentRow(string $type, ?Student $student, int $amount, string $currency, string $method, mixed $paymentDate): array
     {
         return [
+            'type' => $type,
             'name' => $student?->user?->name ?? 'N/A',
             'matric_no' => $student?->matric_no ?? 'N/A',
             'department' => $student?->department?->name ?? 'N/A',

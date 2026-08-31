@@ -8,6 +8,7 @@
             <table width="100%" border="0" cellpadding="1" cellspacing="0" style="border-collapse:collapse">
                 <tr align="left" class="fieldDarkText" style="border:solid 1px;">
                     <td height="22" style="border:solid 1px;">S/NO.</td>
+                    <td width="14%" style="border:solid 1px;">PAYMENT TYPE</td>
                     <td width="24%" style="border:solid 1px;">STUDENT NAME</td>
                     <td width="15%" style="border:solid 1px;">MATRIC NUMBER</td>
                     <td width="20%" style="border:solid 1px;">DEPARTMENT</td>
@@ -19,6 +20,7 @@
                 @forelse ($payments as $payment)
                     <tr align="left" style="border:solid 1px;">
                         <td width="5%" height="30" style="border:solid 1px;">&nbsp;<font size="2" face="Arial, Helvetica, sans-serif">{{ $loop->iteration }}</font></td>
+                        <td style="border:solid 1px;"><font size="2" face="Arial, Helvetica, sans-serif">{{ $payment['type'] }}</font></td>
                         <td style="border:solid 1px;"><font size="2" face="Arial, Helvetica, sans-serif">{{ $payment['name'] }}</font></td>
                         <td style="border:solid 1px;"><font size="2" face="Arial, Helvetica, sans-serif">{{ $payment['matric_no'] }}</font></td>
                         <td style="border:solid 1px;"><font size="2" face="Arial, Helvetica, sans-serif">{{ $payment['department'] }}</font></td>
@@ -29,7 +31,7 @@
                     </tr>
                 @empty
                     <tr align="center" style="border:solid 1px;">
-                        <td colspan="8" height="30" style="border:solid 1px;"><font size="2" face="Arial, Helvetica, sans-serif">No payment records found.</font></td>
+                        <td colspan="9" height="30" style="border:solid 1px;"><font size="2" face="Arial, Helvetica, sans-serif">No payment records found.</font></td>
                     </tr>
                 @endforelse
             </table>

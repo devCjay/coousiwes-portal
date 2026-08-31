@@ -45,8 +45,7 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             ->assertOk()
             ->assertSee('Generate Masters List')
             ->assertSee('Generate Placement List')
-            ->assertSee('Ticket Fee Payment List')
-            ->assertSee('Workshop Fee Payment List')
+            ->assertSee('Generate Payment List')
             ->assertSee('Faculty')
             ->assertSee('Department')
             ->assertSee('Session')
@@ -340,7 +339,7 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             ->assertDontSee('Filtered Works Ltd', false);
     }
 
-    public function test_generate_list_exports_ticket_and_workshop_fee_payment_lists(): void
+    public function test_generate_list_exports_filtered_payment_lists_with_all_option(): void
     {
         $this->seed(\Database\Seeders\AcademicStructureSeeder::class);
 
@@ -456,13 +455,15 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
-            ->get(route('admin.generate-list.ticket-fee-payments', $filters))
+            ->get(route('admin.generate-list.payments', $filters + ['payment_type' => 'ticket_fee']))
             ->assertOk()
             ->assertHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
             ->assertSee('TICKET FEE PAYMENT LIST', false)
+            ->assertSee('PAYMENT TYPE', false)
             ->assertSee('STUDENT NAME', false)
             ->assertSee('MATRIC NUMBER', false)
             ->assertSee('PAYMENT METHOD', false)
+            ->assertSee('Ticket Fee', false)
             ->assertSee('Online Ticket Student', false)
             ->assertSee('Online', false)
             ->assertSee('Cash Ticket Student', false)
@@ -471,14 +472,27 @@ class PhaseFourAcademicConfigurationTest extends TestCase
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
-            ->get(route('admin.generate-list.workshop-fee-payments', $filters))
+            ->get(route('admin.generate-list.payments', $filters + ['payment_type' => 'workshop_fee']))
             ->assertOk()
             ->assertHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
             ->assertSee('WORKSHOP FEE PAYMENT LIST', false)
+            ->assertSee('Workshop Fee', false)
             ->assertSee('Cash Ticket Student', false)
             ->assertSee('NGN 3,500', false)
             ->assertSee('Cash', false)
             ->assertDontSee('Online Ticket Student', false)
+            ->assertDontSee('Filtered Payment Student', false);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.generate-list.payments', $filters + ['payment_type' => 'all']))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
+            ->assertSee('PAYMENT LIST', false)
+            ->assertSee('Ticket Fee', false)
+            ->assertSee('Workshop Fee', false)
+            ->assertSee('Online Ticket Student', false)
+            ->assertSee('Cash Ticket Student', false)
             ->assertDontSee('Filtered Payment Student', false);
     }
 
