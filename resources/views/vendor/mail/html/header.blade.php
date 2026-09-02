@@ -8,6 +8,6 @@
 <img src="{{ $logo }}" class="logo" alt="{{ config('app.name', 'COOU SIWES Portal') }} Logo">
 </a>
 <div class="header-title">{{ config('app.name', 'COOU SIWES Portal') }}</div>
-<div class="header-subtitle">Industrial Training Management Portal</div>
+<div class="header-subtitle">Industrial Training Portal</div>
 </td>
 </tr>

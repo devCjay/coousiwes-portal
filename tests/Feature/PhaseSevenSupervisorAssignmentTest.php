@@ -15,6 +15,7 @@ use App\Models\Supervisor;
 use App\Models\SupervisorStudentAssignment;
 use App\Models\User;
 use App\Notifications\SupervisorAssignmentNotification;
+use App\Notifications\SupervisorBulkAssignmentNotification;
 use App\Notifications\SupervisorLoginDetailsNotification;
 use App\Services\StudentManager;
 use App\Services\SupervisorManager;
@@ -189,6 +190,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
 
     public function test_bulk_assignment_assigns_all_matching_students(): void
     {
+        Notification::fake();
         $admin = $this->admin();
         $supervisor = $this->supervisor('SUP-2003');
         $first = $this->student('bulk-one@example.test', '2026/SUP/004');
@@ -205,6 +207,8 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             ->assertJsonPath('message', '4 assigned, 0 reassigned, 0 skipped.');
 
         $this->assertSame(4, $supervisor->activeAssignments()->count());
+        Notification::assertSentTo($supervisor->user, SupervisorBulkAssignmentNotification::class);
+        Notification::assertNotSentTo($supervisor->user, SupervisorAssignmentNotification::class);
     }
 
     public function test_bulk_assignment_can_filter_by_placement_state_and_lga_and_reassign_existing_students(): void
@@ -252,7 +256,22 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
 
         $this->assertSame($targetSupervisor->id, $lagosMainland->activeSupervisorAssignment()->firstOrFail()->supervisor_id);
         $this->assertNull($lagosIkeja->activeSupervisorAssignment()->first());
-        Notification::assertSentTo($targetSupervisor->user, SupervisorAssignmentNotification::class);
+        Notification::assertSentTo(
+            $targetSupervisor->user,
+            SupervisorBulkAssignmentNotification::class,
+            function (SupervisorBulkAssignmentNotification $notification) use ($targetSupervisor, $lagosMainland): bool {
+                $mail = $notification->toMail($targetSupervisor->user);
+                $content = implode("\n", $mail->introLines);
+
+                return $mail->subject === 'COOU SIWES Bulk Student Assignment Summary'
+                    && str_contains($content, 'Total Students Assigned: 1')
+                    && str_contains($content, 'Placement State: Lagos')
+                    && str_contains($content, 'Placement LGA: Lagos Mainland')
+                    && ! str_contains($content, $lagosMainland->user->name)
+                    && ! str_contains($content, $lagosMainland->matric_no);
+            }
+        );
+        Notification::assertNotSentTo($targetSupervisor->user, SupervisorAssignmentNotification::class);
     }
 
     public function test_supervisor_can_only_see_their_assigned_students(): void

@@ -7,13 +7,14 @@ use App\Models\Supervisor;
 use App\Models\SupervisorStudentAssignment;
 use App\Models\User;
 use App\Notifications\SupervisorAssignmentNotification;
+use App\Notifications\SupervisorBulkAssignmentNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\DB;
 
 class SupervisorAssignmentService
 {
-    public function assign(Supervisor $supervisor, Student $student, ?Authenticatable $assignedBy = null): SupervisorStudentAssignment
+    public function assign(Supervisor $supervisor, Student $student, ?Authenticatable $assignedBy = null, bool $notify = true): SupervisorStudentAssignment
     {
         [$assignment, $created] = DB::transaction(function () use ($supervisor, $student, $assignedBy): array {
             if ($supervisor->status !== Supervisor::STATUS_ACTIVE) {
@@ -46,7 +47,7 @@ class SupervisorAssignmentService
             ]), true];
         });
 
-        if ($created) {
+        if ($created && $notify) {
             $assignment->loadMissing(['supervisor.user', 'student.user', 'student.department', 'student.faculty', 'student.placement']);
             $assignment->supervisor->user?->notify(new SupervisorAssignmentNotification($assignment));
         }
@@ -85,7 +86,7 @@ class SupervisorAssignmentService
                     ->whereNull('revoked_at')
                     ->where('supervisor_id', $supervisor->id)
                     ->exists();
-                $this->assign($supervisor, $student, $assignedBy);
+                $this->assign($supervisor, $student, $assignedBy, notify: false);
                 match (true) {
                     $hadOtherSupervisor => $reassigned++,
                     $hadSameSupervisor => $skipped++,
@@ -96,7 +97,14 @@ class SupervisorAssignmentService
             }
         });
 
-        return ['assigned' => $assigned, 'reassigned' => $reassigned, 'skipped' => $skipped];
+        $result = ['assigned' => $assigned, 'reassigned' => $reassigned, 'skipped' => $skipped];
+
+        if (($assigned + $reassigned) > 0) {
+            $supervisor->loadMissing('user');
+            $supervisor->user?->notify(new SupervisorBulkAssignmentNotification($result, $filters));
+        }
+
+        return $result;
     }
 
     /**
