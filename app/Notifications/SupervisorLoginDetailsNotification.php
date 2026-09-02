@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Support\EmailTemplate;
+use App\Support\MailConfiguration;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -25,6 +26,8 @@ class SupervisorLoginDetailsNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
+        MailConfiguration::apply();
+
         $replacements = [
             'name' => $notifiable->name,
             'email' => $notifiable->email,

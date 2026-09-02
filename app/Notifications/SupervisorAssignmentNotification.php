@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\SupervisorStudentAssignment;
 use App\Support\EmailTemplate;
+use App\Support\MailConfiguration;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -26,6 +27,8 @@ class SupervisorAssignmentNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
+        MailConfiguration::apply();
+
         $assignment = $this->assignment->loadMissing(['student.user', 'student.department', 'student.faculty', 'student.placement']);
         $student = $assignment->student;
         $placement = $student->placement;

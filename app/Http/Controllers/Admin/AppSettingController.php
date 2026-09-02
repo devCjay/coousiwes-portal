@@ -8,13 +8,13 @@ use App\Models\AppSetting;
 use App\Services\AuditLogger;
 use App\Services\StudentImportService;
 use App\Support\AjaxResponse;
+use App\Support\MailConfiguration;
 use App\Support\PaymentSettings;
 use App\Support\PortalPermission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 use Illuminate\Validation\Rule;
@@ -106,18 +106,11 @@ class AppSettingController extends Controller
             'test_email' => ['required', 'email', 'max:190'],
         ]);
 
-        $rawMailer = $this->scalarSettingValue('mail.mailer', config('mail.default', 'smtp'));
-        $mailer = $this->normalizeMailer($rawMailer);
-        $host = $this->scalarSettingValue('mail.host', config('mail.mailers.smtp.host'));
-        $port = (int) $this->scalarSettingValue('mail.port', config('mail.mailers.smtp.port'));
-        $scheme = $this->normalizeMailScheme(
-            $this->scalarSettingValue('mail.scheme', config('mail.mailers.smtp.scheme')),
-            $port
-        );
-        $username = $this->scalarSettingValue('mail.username', config('mail.mailers.smtp.username'));
-        $password = $this->scalarSettingValue('mail.password', config('mail.mailers.smtp.password'));
-        $fromAddress = $this->scalarSettingValue('mail.from_address', config('mail.from.address'));
-        $fromName = $this->scalarSettingValue('mail.from_name', config('mail.from.name', 'COOU SIWES Portal'));
+        $settings = MailConfiguration::apply();
+        $mailer = $settings['mailer'];
+        $host = $settings['host'];
+        $port = $settings['port'];
+        $fromAddress = $settings['from_address'];
 
         if ($mailer === 'smtp' && ($host === '' || $port <= 0)) {
             return AjaxResponse::error($request, 'SMTP host and port are required before testing email connection.');
@@ -126,17 +119,6 @@ class AppSettingController extends Controller
         if ($fromAddress === '') {
             return AjaxResponse::error($request, 'From address is required before sending a test email.');
         }
-
-        Config::set('mail.default', $mailer);
-        Config::set("mail.mailers.{$mailer}.transport", $mailer);
-        Config::set("mail.mailers.{$mailer}.host", $host);
-        Config::set("mail.mailers.{$mailer}.port", $port);
-        Config::set("mail.mailers.{$mailer}.scheme", $scheme ?: null);
-        Config::set("mail.mailers.{$mailer}.username", $username ?: null);
-        Config::set("mail.mailers.{$mailer}.password", $password ?: null);
-        Config::set('mail.from.address', $fromAddress);
-        Config::set('mail.from.name', $fromName ?: 'COOU SIWES Portal');
-        Mail::purge($mailer);
 
         try {
             Mail::raw(
@@ -148,7 +130,6 @@ class AppSettingController extends Controller
         } catch (Throwable $exception) {
             $this->auditLogger->record('settings.email_test_failed', $request->user(), $request, metadata: [
                 'mailer' => $mailer,
-                'raw_mailer' => $rawMailer,
                 'host' => $host,
                 'port' => $port,
                 'test_email' => $validated['test_email'],
@@ -160,7 +141,6 @@ class AppSettingController extends Controller
 
         $this->auditLogger->record('settings.email_test_sent', $request->user(), $request, metadata: [
             'mailer' => $mailer,
-            'raw_mailer' => $rawMailer,
             'host' => $host,
             'port' => $port,
             'test_email' => $validated['test_email'],
@@ -293,36 +273,6 @@ class AppSettingController extends Controller
         $value = AppSetting::value($key, $default);
 
         return $value ?? $default;
-    }
-
-    private function scalarSettingValue(string $key, mixed $default = null): string
-    {
-        $value = $this->settingValue($key, $default);
-
-        if (is_array($value)) {
-            $value = collect($value)->first(fn ($item): bool => is_scalar($item));
-        }
-
-        return trim((string) ($value ?? $default ?? ''));
-    }
-
-    private function normalizeMailer(string $mailer): string
-    {
-        $mailer = strtolower(trim($mailer));
-        $supported = ['smtp', 'sendmail', 'log', 'array'];
-
-        return in_array($mailer, $supported, true) ? $mailer : 'smtp';
-    }
-
-    private function normalizeMailScheme(string $scheme, int $port): string
-    {
-        $scheme = strtolower(trim($scheme));
-
-        if (in_array($scheme, ['ssl', 'smtps'], true) || $port === 465) {
-            return 'smtps';
-        }
-
-        return '';
     }
 
     private function syncTicketPricingIfNeeded(string $key): void

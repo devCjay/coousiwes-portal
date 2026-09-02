@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AcademicLevel;
 use App\Models\AcademicSession;
+use App\Models\AppSetting;
 use App\Models\AuditLog;
 use App\Models\Admin;
 use App\Models\Course;
@@ -39,6 +40,11 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
     {
         $admin = $this->admin();
         Notification::fake();
+        AppSetting::query()->updateOrCreate(['key' => 'mail.mailer'], ['group' => 'mail', 'value' => 'smtp', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'mail.host'], ['group' => 'mail', 'value' => 'smtp.supervisor.test', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'mail.port'], ['group' => 'mail', 'value' => 587, 'type' => 'integer']);
+        AppSetting::query()->updateOrCreate(['key' => 'mail.from_address'], ['group' => 'mail', 'value' => 'noreply@portal.test', 'type' => 'string']);
+        config(['mail.default' => 'log', 'mail.mailers.smtp.host' => '127.0.0.1']);
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
@@ -64,7 +70,10 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
                 return in_array('mail', $channels, true)
                     && $mail->subject === 'COOU SIWES Supervisor Portal Login Details'
                     && str_contains($content, "Email: {$supervisor->user->email}")
-                    && str_contains($content, 'Temporary password: ');
+                    && str_contains($content, 'Temporary password: ')
+                    && config('mail.default') === 'smtp'
+                    && config('mail.mailers.smtp.host') === 'smtp.supervisor.test'
+                    && config('mail.from.address') === 'noreply@portal.test';
             }
         );
         $this->assertTrue(AuditLog::where('event', 'supervisors.created')->where('auditable_id', $supervisor->id)->exists());
@@ -73,6 +82,12 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
     public function test_assignment_can_reassign_students_and_preserves_history_on_revocation(): void
     {
         Notification::fake();
+        AppSetting::query()->updateOrCreate(['key' => 'mail.mailer'], ['group' => 'mail', 'value' => 'smtp', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'mail.host'], ['group' => 'mail', 'value' => 'smtp.portal.test', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'mail.port'], ['group' => 'mail', 'value' => 465, 'type' => 'integer']);
+        AppSetting::query()->updateOrCreate(['key' => 'mail.scheme'], ['group' => 'mail', 'value' => 'ssl', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'mail.from_address'], ['group' => 'mail', 'value' => 'noreply@portal.test', 'type' => 'string']);
+        config(['mail.default' => 'log', 'mail.mailers.smtp.host' => '127.0.0.1']);
         $admin = $this->admin();
         $student = $this->student('assigned@example.test', '2026/SUP/001');
         $supervisor = $this->supervisor('SUP-2001');
@@ -100,7 +115,19 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         $activeAssignment = SupervisorStudentAssignment::where('student_id', $student->id)->whereNull('revoked_at')->firstOrFail();
         $this->assertNotNull($assignment->fresh()->revoked_at);
         $this->assertSame($newSupervisor->id, $activeAssignment->supervisor_id);
-        Notification::assertSentTo($newSupervisor->user, SupervisorAssignmentNotification::class);
+        Notification::assertSentTo(
+            $newSupervisor->user,
+            SupervisorAssignmentNotification::class,
+            function (SupervisorAssignmentNotification $notification) use ($newSupervisor): bool {
+                $notification->toMail($newSupervisor->user);
+
+                return config('mail.default') === 'smtp'
+                    && config('mail.mailers.smtp.host') === 'smtp.portal.test'
+                    && config('mail.mailers.smtp.port') === 465
+                    && config('mail.mailers.smtp.scheme') === 'smtps'
+                    && config('mail.from.address') === 'noreply@portal.test';
+            }
+        );
 
         $student->placement()->create([
             'academic_level_id' => $student->academic_level_id,

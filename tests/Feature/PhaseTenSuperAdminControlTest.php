@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AuditLog;
 use App\Models\Admin;
+use App\Models\AppSetting;
 use App\Notifications\AdminLoginDetailsNotification;
 use Database\Seeders\AcademicStructureSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
@@ -71,6 +72,11 @@ class PhaseTenSuperAdminControlTest extends TestCase
     public function test_super_admin_can_create_admin_with_roles_and_permissions(): void
     {
         Notification::fake();
+        AppSetting::query()->updateOrCreate(['key' => 'mail.mailer'], ['group' => 'mail', 'value' => 'smtp', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'mail.host'], ['group' => 'mail', 'value' => 'smtp.portal.test', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'mail.port'], ['group' => 'mail', 'value' => 587, 'type' => 'integer']);
+        AppSetting::query()->updateOrCreate(['key' => 'mail.from_address'], ['group' => 'mail', 'value' => 'noreply@portal.test', 'type' => 'string']);
+        config(['mail.default' => 'log', 'mail.mailers.smtp.host' => '127.0.0.1']);
         $superAdmin = $this->superAdmin();
 
         $this->actingAs($superAdmin, 'admin')
@@ -107,7 +113,10 @@ class PhaseTenSuperAdminControlTest extends TestCase
                 return in_array('mail', $channels, true)
                     && $mail->subject === 'COOU SIWES Admin Portal Login Details'
                     && str_contains($content, "Email: {$admin->email}")
-                    && str_contains($content, 'Temporary password: Password123!');
+                    && str_contains($content, 'Temporary password: Password123!')
+                    && config('mail.default') === 'smtp'
+                    && config('mail.mailers.smtp.host') === 'smtp.portal.test'
+                    && config('mail.from.address') === 'noreply@portal.test';
             }
         );
         $this->assertTrue(AuditLog::where('event', 'admins.created')->where('auditable_id', $admin->id)->exists());
