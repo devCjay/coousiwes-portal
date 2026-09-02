@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\AuditLog;
 use App\Models\Admin;
+use App\Notifications\AdminLoginDetailsNotification;
 use Database\Seeders\AcademicStructureSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -68,6 +70,7 @@ class PhaseTenSuperAdminControlTest extends TestCase
 
     public function test_super_admin_can_create_admin_with_roles_and_permissions(): void
     {
+        Notification::fake();
         $superAdmin = $this->superAdmin();
 
         $this->actingAs($superAdmin, 'admin')
@@ -94,6 +97,19 @@ class PhaseTenSuperAdminControlTest extends TestCase
             'email' => 'finance.admin@example.test',
             'status' => 'active',
         ]);
+        Notification::assertSentTo(
+            $admin,
+            AdminLoginDetailsNotification::class,
+            function (AdminLoginDetailsNotification $notification, array $channels) use ($admin): bool {
+                $mail = $notification->toMail($admin);
+                $content = implode("\n", $mail->introLines);
+
+                return in_array('mail', $channels, true)
+                    && $mail->subject === 'COOU SIWES Admin Portal Login Details'
+                    && str_contains($content, "Email: {$admin->email}")
+                    && str_contains($content, 'Temporary password: Password123!');
+            }
+        );
         $this->assertTrue(AuditLog::where('event', 'admins.created')->where('auditable_id', $admin->id)->exists());
     }
 

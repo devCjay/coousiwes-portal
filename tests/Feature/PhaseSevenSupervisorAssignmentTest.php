@@ -13,6 +13,7 @@ use App\Models\Student;
 use App\Models\Supervisor;
 use App\Models\SupervisorStudentAssignment;
 use App\Models\User;
+use App\Notifications\SupervisorAssignmentNotification;
 use App\Notifications\SupervisorLoginDetailsNotification;
 use App\Services\StudentManager;
 use App\Services\SupervisorManager;
@@ -69,11 +70,13 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         $this->assertTrue(AuditLog::where('event', 'supervisors.created')->where('auditable_id', $supervisor->id)->exists());
     }
 
-    public function test_assignment_prevents_conflicts_and_preserves_history_on_revocation(): void
+    public function test_assignment_can_reassign_students_and_preserves_history_on_revocation(): void
     {
+        Notification::fake();
         $admin = $this->admin();
         $student = $this->student('assigned@example.test', '2026/SUP/001');
         $supervisor = $this->supervisor('SUP-2001');
+        $newSupervisor = $this->supervisor('SUP-2099');
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
@@ -87,13 +90,18 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.supervisor-assignments.store'), [
-                'supervisor_id' => $supervisor->id,
+                'supervisor_id' => $newSupervisor->id,
                 'student_id' => $student->id,
             ])
-            ->assertUnprocessable()
-            ->assertJsonPath('message', 'Student already has an active supervisor assignment.');
+            ->assertOk()
+            ->assertJsonPath('message', 'Student assigned to supervisor.');
 
-        $assignment = SupervisorStudentAssignment::where('student_id', $student->id)->firstOrFail();
+        $assignment = SupervisorStudentAssignment::where('student_id', $student->id)->where('supervisor_id', $supervisor->id)->firstOrFail();
+        $activeAssignment = SupervisorStudentAssignment::where('student_id', $student->id)->whereNull('revoked_at')->firstOrFail();
+        $this->assertNotNull($assignment->fresh()->revoked_at);
+        $this->assertSame($newSupervisor->id, $activeAssignment->supervisor_id);
+        Notification::assertSentTo($newSupervisor->user, SupervisorAssignmentNotification::class);
+
         $student->placement()->create([
             'academic_level_id' => $student->academic_level_id,
             'academic_session_id' => $student->academic_session_id,
@@ -117,12 +125,12 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
-            ->postJson(route('admin.supervisor-assignments.revoke', $assignment), ['reason' => 'Rebalanced'])
+            ->postJson(route('admin.supervisor-assignments.revoke', $activeAssignment), ['reason' => 'Rebalanced'])
             ->assertOk()
             ->assertJsonPath('message', 'Supervisor assignment revoked.');
 
-        $this->assertNotNull($assignment->fresh()->revoked_at);
-        $this->assertSame(1, SupervisorStudentAssignment::where('student_id', $student->id)->count());
+        $this->assertNotNull($activeAssignment->fresh()->revoked_at);
+        $this->assertSame(2, SupervisorStudentAssignment::where('student_id', $student->id)->count());
     }
 
     public function test_supervisor_can_receive_multiple_assignments(): void
@@ -167,9 +175,57 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
                 'faculty_id' => $first->faculty_id,
             ])
             ->assertOk()
-            ->assertJsonPath('message', '4 assigned, 0 skipped.');
+            ->assertJsonPath('message', '4 assigned, 0 reassigned, 0 skipped.');
 
         $this->assertSame(4, $supervisor->activeAssignments()->count());
+    }
+
+    public function test_bulk_assignment_can_filter_by_placement_state_and_lga_and_reassign_existing_students(): void
+    {
+        Notification::fake();
+        $admin = $this->admin();
+        $targetSupervisor = $this->supervisor('SUP-2010');
+        $previousSupervisor = $this->supervisor('SUP-2011');
+        $lagosMainland = $this->student('lagos-mainland@example.test', '2026/SUP/040');
+        $lagosIkeja = $this->student('lagos-ikeja@example.test', '2026/SUP/041');
+        $this->student('anambra@example.test', '2026/SUP/042');
+
+        $lagosMainland->placement()->create([
+            'academic_level_id' => $lagosMainland->academic_level_id,
+            'academic_session_id' => $lagosMainland->academic_session_id,
+            'siwes_year' => 2026,
+            'attachment_period' => 'April to October',
+            'company_name' => 'Mainland Works',
+            'company_state' => 'Lagos',
+            'company_lga' => 'Lagos Mainland',
+        ]);
+        $lagosIkeja->placement()->create([
+            'academic_level_id' => $lagosIkeja->academic_level_id,
+            'academic_session_id' => $lagosIkeja->academic_session_id,
+            'siwes_year' => 2026,
+            'attachment_period' => 'April to October',
+            'company_name' => 'Ikeja Works',
+            'company_state' => 'Lagos',
+            'company_lga' => 'Ikeja',
+        ]);
+        $previousSupervisor->assignments()->create([
+            'student_id' => $lagosMainland->id,
+            'assigned_at' => now(),
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.supervisor-assignments.bulk'), [
+                'supervisor_id' => $targetSupervisor->id,
+                'company_state' => 'Lagos',
+                'company_lga' => 'Lagos Mainland',
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', '0 assigned, 1 reassigned, 0 skipped.');
+
+        $this->assertSame($targetSupervisor->id, $lagosMainland->activeSupervisorAssignment()->firstOrFail()->supervisor_id);
+        $this->assertNull($lagosIkeja->activeSupervisorAssignment()->first());
+        Notification::assertSentTo($targetSupervisor->user, SupervisorAssignmentNotification::class);
     }
 
     public function test_supervisor_can_only_see_their_assigned_students(): void

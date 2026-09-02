@@ -6,6 +6,7 @@ use App\Models\Student;
 use App\Models\Supervisor;
 use App\Models\SupervisorStudentAssignment;
 use App\Models\User;
+use App\Notifications\SupervisorAssignmentNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\DB;
@@ -14,22 +15,43 @@ class SupervisorAssignmentService
 {
     public function assign(Supervisor $supervisor, Student $student, ?Authenticatable $assignedBy = null): SupervisorStudentAssignment
     {
-        return DB::transaction(function () use ($supervisor, $student, $assignedBy): SupervisorStudentAssignment {
+        [$assignment, $created] = DB::transaction(function () use ($supervisor, $student, $assignedBy): array {
             if ($supervisor->status !== Supervisor::STATUS_ACTIVE) {
                 throw new \RuntimeException('Supervisor is not active.');
             }
 
-            if ($student->supervisorAssignments()->whereNull('revoked_at')->exists()) {
-                throw new \RuntimeException('Student already has an active supervisor assignment.');
+            $student->supervisorAssignments()
+                ->whereNull('revoked_at')
+                ->where('supervisor_id', '!=', $supervisor->id)
+                ->update([
+                    'revoked_by' => $assignedBy instanceof User ? $assignedBy->id : null,
+                    'revoked_at' => now(),
+                    'revocation_reason' => 'Automatically revoked during supervisor reassignment.',
+                ]);
+
+            $existing = $student->supervisorAssignments()
+                ->whereNull('revoked_at')
+                ->where('supervisor_id', $supervisor->id)
+                ->first();
+
+            if ($existing) {
+                return [$existing, false];
             }
 
-            return SupervisorStudentAssignment::query()->create([
+            return [SupervisorStudentAssignment::query()->create([
                 'supervisor_id' => $supervisor->id,
                 'student_id' => $student->id,
                 'assigned_by' => $assignedBy instanceof User ? $assignedBy->id : null,
                 'assigned_at' => now(),
-            ]);
+            ]), true];
         });
+
+        if ($created) {
+            $assignment->loadMissing(['supervisor.user', 'student.user', 'student.department', 'student.faculty', 'student.placement']);
+            $assignment->supervisor->user?->notify(new SupervisorAssignmentNotification($assignment));
+        }
+
+        return $assignment;
     }
 
     public function revoke(SupervisorStudentAssignment $assignment, ?Authenticatable $revokedBy = null, ?string $reason = null): SupervisorStudentAssignment
@@ -45,23 +67,36 @@ class SupervisorAssignmentService
 
     /**
      * @param  array<string, mixed>  $filters
-     * @return array{assigned: int, skipped: int}
+     * @return array{assigned: int, reassigned: int, skipped: int}
      */
     public function bulkAssign(Supervisor $supervisor, array $filters, ?Authenticatable $assignedBy = null): array
     {
         $assigned = 0;
+        $reassigned = 0;
         $skipped = 0;
 
-        $this->filteredStudents($filters)->each(function (Student $student) use ($supervisor, $assignedBy, &$assigned, &$skipped): void {
+        $this->filteredStudents($filters)->each(function (Student $student) use ($supervisor, $assignedBy, &$assigned, &$reassigned, &$skipped): void {
             try {
+                $hadOtherSupervisor = $student->supervisorAssignments()
+                    ->whereNull('revoked_at')
+                    ->where('supervisor_id', '!=', $supervisor->id)
+                    ->exists();
+                $hadSameSupervisor = $student->supervisorAssignments()
+                    ->whereNull('revoked_at')
+                    ->where('supervisor_id', $supervisor->id)
+                    ->exists();
                 $this->assign($supervisor, $student, $assignedBy);
-                $assigned++;
+                match (true) {
+                    $hadOtherSupervisor => $reassigned++,
+                    $hadSameSupervisor => $skipped++,
+                    default => $assigned++,
+                };
             } catch (\RuntimeException) {
                 $skipped++;
             }
         });
 
-        return ['assigned' => $assigned, 'skipped' => $skipped];
+        return ['assigned' => $assigned, 'reassigned' => $reassigned, 'skipped' => $skipped];
     }
 
     /**
@@ -74,6 +109,8 @@ class SupervisorAssignmentService
             ->when($filters['faculty_id'] ?? null, fn (Builder $query, mixed $value) => $query->where('faculty_id', $value))
             ->when($filters['department_id'] ?? null, fn (Builder $query, mixed $value) => $query->where('department_id', $value))
             ->when($filters['academic_level_id'] ?? null, fn (Builder $query, mixed $value) => $query->where('academic_level_id', $value))
-            ->when($filters['academic_session_id'] ?? null, fn (Builder $query, mixed $value) => $query->where('academic_session_id', $value));
+            ->when($filters['academic_session_id'] ?? null, fn (Builder $query, mixed $value) => $query->where('academic_session_id', $value))
+            ->when($filters['company_state'] ?? null, fn (Builder $query, mixed $value) => $query->whereHas('placement', fn (Builder $placementQuery) => $placementQuery->where('company_state', $value)))
+            ->when($filters['company_lga'] ?? null, fn (Builder $query, mixed $value) => $query->whereHas('placement', fn (Builder $placementQuery) => $placementQuery->where('company_lga', $value)));
     }
 }

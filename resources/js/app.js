@@ -654,6 +654,41 @@ document.addEventListener('input', (event) => {
     });
 });
 
+document.addEventListener('input', (event) => {
+    const input = event.target.closest('[data-option-search]');
+
+    if (!input) {
+        return;
+    }
+
+    const select = document.querySelector(input.dataset.optionSearch || '');
+
+    if (!select) {
+        return;
+    }
+
+    const query = input.value.trim().toLowerCase();
+    let firstVisibleValue = '';
+
+    select.querySelectorAll('option').forEach((option) => {
+        const isVisible = query === '' || option.textContent.toLowerCase().includes(query);
+        option.hidden = !isVisible;
+        option.disabled = !isVisible;
+
+        if (isVisible && firstVisibleValue === '') {
+            firstVisibleValue = option.value;
+        }
+    });
+
+    if (select.selectedOptions[0]?.disabled) {
+        select.value = firstVisibleValue;
+    }
+
+    if (!select.value && firstVisibleValue !== '') {
+        select.value = firstVisibleValue;
+    }
+});
+
 const filterDependentSelect = (parent) => {
     const target = document.querySelector(parent.dataset.filterParent || '');
 

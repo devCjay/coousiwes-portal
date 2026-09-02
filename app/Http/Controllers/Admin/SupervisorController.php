@@ -59,11 +59,24 @@ class SupervisorController extends Controller
                 'average_performance' => round((float) $metrics->avg('performance_score'), 1),
             ],
             'allSupervisors' => Supervisor::query()->with('user')->where('status', Supervisor::STATUS_ACTIVE)->orderBy('staff_no')->get(),
-            'students' => Student::query()->with(['user', 'department'])->whereDoesntHave('supervisorAssignments', fn ($query) => $query->whereNull('revoked_at'))->latest()->limit(100)->get(),
+            'students' => Student::query()->with(['user', 'department', 'activeSupervisorAssignment.supervisor.user'])->latest()->limit(200)->get(),
             'faculties' => Faculty::query()->orderBy('name')->get(),
             'departments' => Department::query()->with('faculty')->orderBy('name')->get(),
             'levels' => AcademicLevel::query()->orderBy('level')->get(),
             'sessions' => AcademicSession::query()->orderByDesc('starts_on')->get(),
+            'states' => config('siwes_profile.states', []),
+            'placementStates' => StudentPlacement::query()
+                ->whereNotNull('company_state')
+                ->distinct()
+                ->orderBy('company_state')
+                ->pluck('company_state'),
+            'placementLgas' => StudentPlacement::query()
+                ->whereNotNull('company_lga')
+                ->select('company_state', 'company_lga')
+                ->distinct()
+                ->orderBy('company_state')
+                ->orderBy('company_lga')
+                ->get(),
             'assignments' => SupervisorStudentAssignment::query()
                 ->with(['supervisor.user', 'student.user', 'student.placement'])
                 ->whereNull('revoked_at')

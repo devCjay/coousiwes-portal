@@ -555,7 +555,12 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             ->assertOk()
             ->assertSee('email-test-modal')
             ->assertSee('Test Email Address')
-            ->assertSee('Send Test Email');
+            ->assertSee('Send Test Email')
+            ->assertSee('Email Templates')
+            ->assertSee('email-templates-modal')
+            ->assertSee('Admin Login Subject')
+            ->assertSee('Supervisor Login Body')
+            ->assertSee('Supervisor Assignment Body');
     }
 
     public function test_email_connection_test_requires_smtp_host_and_port_after_recipient(): void

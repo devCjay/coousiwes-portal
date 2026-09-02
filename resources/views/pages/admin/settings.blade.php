@@ -44,6 +44,14 @@
             ['group' => 'mail', 'key' => 'mail.from_address', 'label' => 'From Address', 'type' => 'string', 'input' => 'email', 'value' => $settingValue('mail.from_address', config('mail.from.address')), 'description' => 'Default sender email address.'],
             ['group' => 'mail', 'key' => 'mail.from_name', 'label' => 'From Name', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('mail.from_name', config('mail.from.name')), 'description' => 'Default sender display name.'],
         ];
+        $emailTemplateFields = [
+            ['group' => 'mail_templates', 'key' => 'mail.templates.admin_login_details.subject', 'label' => 'Admin Login Subject', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('mail.templates.admin_login_details.subject', 'COOU SIWES Admin Portal Login Details'), 'description' => 'Subject for new admin login detail email.'],
+            ['group' => 'mail_templates', 'key' => 'mail.templates.admin_login_details.body', 'label' => 'Admin Login Body', 'type' => 'string', 'input' => 'textarea', 'value' => $settingValue('mail.templates.admin_login_details.body', "An admin account has been created for you on the COOU SIWES portal.\n\nEmail: {email}\nTemporary password: {temporary_password}\n\nPlease sign in and change your password after your first login."), 'description' => 'Available placeholders: {name}, {email}, {temporary_password}, {login_url}.'],
+            ['group' => 'mail_templates', 'key' => 'mail.templates.supervisor_login_details.subject', 'label' => 'Supervisor Login Subject', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('mail.templates.supervisor_login_details.subject', 'COOU SIWES Supervisor Portal Login Details'), 'description' => 'Subject for new supervisor login detail email.'],
+            ['group' => 'mail_templates', 'key' => 'mail.templates.supervisor_login_details.body', 'label' => 'Supervisor Login Body', 'type' => 'string', 'input' => 'textarea', 'value' => $settingValue('mail.templates.supervisor_login_details.body', "A supervisor account has been created for you on the COOU SIWES portal.\n\nEmail: {email}\nTemporary password: {temporary_password}\n\nPlease sign in and change your password after your first login."), 'description' => 'Available placeholders: {name}, {email}, {temporary_password}, {login_url}.'],
+            ['group' => 'mail_templates', 'key' => 'mail.templates.supervisor_assignment.subject', 'label' => 'Supervisor Assignment Subject', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('mail.templates.supervisor_assignment.subject', 'New COOU SIWES Student Assignment'), 'description' => 'Subject for every single or bulk assignment email.'],
+            ['group' => 'mail_templates', 'key' => 'mail.templates.supervisor_assignment.body', 'label' => 'Supervisor Assignment Body', 'type' => 'string', 'input' => 'textarea', 'value' => $settingValue('mail.templates.supervisor_assignment.body', "A student has been assigned to you for SIWES supervision.\n\nStudent: {student_name}\nMatric Number: {matric_no}\nDepartment: {department}\nFaculty: {faculty}\nPlacement Location: {lga}, {state}"), 'description' => 'Available placeholders: {supervisor_name}, {student_name}, {matric_no}, {department}, {faculty}, {state}, {lga}, {dashboard_url}.'],
+        ];
         $importFields = [
             ['group' => 'imports', 'key' => 'imports.immediate_threshold', 'label' => 'Immediate Import Threshold', 'type' => 'integer', 'input' => 'number', 'value' => $settingValue('imports.immediate_threshold', config('siwes.imports.immediate_threshold', 2000)), 'description' => 'Rows up to this number import immediately. Higher uploads are queued.'],
             ['group' => 'imports', 'key' => 'imports.cron_batch_size', 'label' => 'Cron Batch Size', 'type' => 'integer', 'input' => 'number', 'value' => $settingValue('imports.cron_batch_size', config('siwes.imports.cron_batch_size', 1000)), 'description' => 'Rows processed per cron hit. Keep between 500 and 2000 on cPanel.'],
@@ -65,6 +73,7 @@
                 <button type="button" class="settings-tab is-active rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#welcome-settings-panel" aria-selected="true">Welcome Message</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#payment-settings-panel" aria-selected="false">Payment Settings</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#email-settings-panel" aria-selected="false">Email Settings</button>
+                <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#email-templates-panel" aria-selected="false">Email Templates</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#import-settings-panel" aria-selected="false">Import Settings</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#system-settings-panel" aria-selected="false">System Settings</button>
                 @if ($canUpdateSettings)
@@ -177,6 +186,32 @@
                 <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
                     <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">From</p>
                     <p class="mt-2 truncate text-sm font-semibold text-[var(--text-strong)]">{{ $settingValue('mail.from_address', config('mail.from.address')) }}</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="email-templates-panel" class="settings-panel mt-5 hidden" data-settings-panel>
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 class="text-base font-semibold text-[var(--text-strong)]">Email Templates</h2>
+                    <p class="mt-1 text-sm text-[var(--text-soft)]">Edit the notification messages sent by the portal. Placeholders are replaced automatically during delivery.</p>
+                </div>
+                @if ($canUpdateSettings)
+                    <x-ui.button type="button" data-modal-target="#email-templates-modal">Configure Templates</x-ui.button>
+                @endif
+            </div>
+            <div class="mt-5 grid gap-4 lg:grid-cols-3">
+                <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Admin Login Details</p>
+                    <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">{{ $settingValue('mail.templates.admin_login_details.subject', 'COOU SIWES Admin Portal Login Details') }}</p>
+                </div>
+                <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Supervisor Login Details</p>
+                    <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">{{ $settingValue('mail.templates.supervisor_login_details.subject', 'COOU SIWES Supervisor Portal Login Details') }}</p>
+                </div>
+                <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Supervisor Assignment</p>
+                    <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">{{ $settingValue('mail.templates.supervisor_assignment.subject', 'New COOU SIWES Student Assignment') }}</p>
                 </div>
             </div>
         </section>
@@ -469,6 +504,42 @@
             <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
                 <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
                 <x-ui.button type="submit" icon="mail" data-loading-text="Sending...">Send Test Email</x-ui.button>
+            </div>
+        </form>
+        </x-ui.modal>
+
+        <x-ui.modal id="email-templates-modal" title="Email Templates" class="w-[min(64rem,calc(100vw-2rem))]">
+        <form method="POST" action="{{ route('admin.settings.bulk') }}" class="grid gap-4">
+            @csrf
+            <div class="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
+                @foreach ($emailTemplateFields as $index => $field)
+                    <label class="block rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                        <span class="text-sm font-medium text-[var(--text-strong)]">{{ $field['label'] }}</span>
+                        @if (($field['input'] ?? 'text') === 'textarea')
+                            <textarea
+                                name="settings[{{ $index }}][value]"
+                                rows="5"
+                                class="siwes-form-control mt-2 theme-transition placeholder:text-[var(--text-soft)]"
+                            >{{ $field['value'] }}</textarea>
+                        @else
+                            <input
+                                type="{{ $field['input'] }}"
+                                name="settings[{{ $index }}][value]"
+                                value="{{ $field['value'] }}"
+                                class="siwes-form-control mt-2 theme-transition placeholder:text-[var(--text-soft)]"
+                            >
+                        @endif
+                        <span class="mt-2 block text-xs leading-5 text-[var(--text-soft)]">{{ $field['description'] }}</span>
+                        <input type="hidden" name="settings[{{ $index }}][group]" value="{{ $field['group'] }}">
+                        <input type="hidden" name="settings[{{ $index }}][key]" value="{{ $field['key'] }}">
+                        <input type="hidden" name="settings[{{ $index }}][type]" value="{{ $field['type'] }}">
+                        <input type="hidden" name="settings[{{ $index }}][description]" value="{{ $field['description'] }}">
+                    </label>
+                @endforeach
+            </div>
+            <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
+                <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
+                <x-ui.button type="submit">Save Email Templates</x-ui.button>
             </div>
         </form>
         </x-ui.modal>

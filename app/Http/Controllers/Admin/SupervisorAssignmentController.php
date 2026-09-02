@@ -50,7 +50,7 @@ class SupervisorAssignmentController extends Controller
 
         $this->auditLogger->record('supervisors.bulk_assigned', $request->user(), $request, metadata: $result);
 
-        return AjaxResponse::success($request, "{$result['assigned']} assigned, {$result['skipped']} skipped.");
+        return AjaxResponse::success($request, "{$result['assigned']} assigned, {$result['reassigned']} reassigned, {$result['skipped']} skipped.");
     }
 
     public function revoke(Request $request, SupervisorStudentAssignment $assignment): JsonResponse|RedirectResponse

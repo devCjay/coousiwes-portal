@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAdminUserRequest;
 use App\Http\Requests\Admin\UpdateAdminUserRequest;
 use App\Models\Admin;
+use App\Notifications\AdminLoginDetailsNotification;
 use App\Services\AuditLogger;
 use App\Support\AjaxResponse;
 use App\Support\PortalPermission;
@@ -35,6 +36,7 @@ class AdminUserController extends Controller
         $admin->syncRoles($validated['roles']);
         $admin->syncPermissions($validated['permissions'] ?? []);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $admin->notify(new AdminLoginDetailsNotification((string) $validated['password']));
 
         $this->auditLogger->record('admins.created', $request->user(), $request, $admin, [
             'roles' => $validated['roles'],

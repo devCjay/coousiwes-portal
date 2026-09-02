@@ -29,6 +29,8 @@ class BulkAssignSupervisorRequest extends FormRequest
             'department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->whereNull('deleted_at')],
             'academic_level_id' => ['nullable', 'integer', Rule::exists('academic_levels', 'id')->whereNull('deleted_at')],
             'academic_session_id' => ['nullable', 'integer', Rule::exists('academic_sessions', 'id')->whereNull('deleted_at')],
+            'company_state' => ['nullable', 'string', 'max:120'],
+            'company_lga' => ['nullable', 'string', 'max:120'],
         ];
     }
 }

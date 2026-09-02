@@ -287,19 +287,25 @@
         <x-ui.modal id="assign-student-modal" title="Assign Student" class="w-[min(40rem,calc(100vw-2rem))]">
             <form method="POST" action="{{ route('admin.supervisor-assignments.store') }}" class="grid gap-4">
                 @csrf
-                <label class="block">
+                <div class="block">
                     <span class="text-sm font-medium text-[var(--text-strong)]">Supervisor</span>
-                    <select name="supervisor_id" class="siwes-form-control mt-2">
+                    <input type="search" name="single_supervisor_search" class="siwes-form-control mt-2" placeholder="Type supervisor name or staff number..." data-option-search="#single-assignment-supervisor">
+                    <select id="single-assignment-supervisor" name="supervisor_id" class="siwes-form-control mt-2">
                         @foreach ($allSupervisors as $supervisor)
                             <option value="{{ $supervisor->id }}">{{ $supervisor->user->name }} / {{ $supervisor->staff_no }}</option>
                         @endforeach
                     </select>
-                </label>
+                </div>
                 <label class="block">
                     <span class="text-sm font-medium text-[var(--text-strong)]">Student</span>
                     <select name="student_id" class="siwes-form-control mt-2">
                         @foreach ($students as $student)
-                            <option value="{{ $student->id }}">{{ $student->user->name }} / {{ $student->matric_no }} / {{ $student->department?->code ?? 'N/A' }}</option>
+                            <option value="{{ $student->id }}">
+                                {{ $student->user->name }} / {{ $student->matric_no }} / {{ $student->department?->code ?? 'N/A' }}
+                                @if ($student->activeSupervisorAssignment)
+                                    / Assigned to {{ $student->activeSupervisorAssignment->supervisor->user->name }}
+                                @endif
+                            </option>
                         @endforeach
                     </select>
                 </label>
@@ -313,14 +319,15 @@
         <x-ui.modal id="bulk-assignment-modal" title="Bulk Assignment" class="w-[min(52rem,calc(100vw-2rem))]">
             <form method="POST" action="{{ route('admin.supervisor-assignments.bulk') }}" class="grid gap-4">
                 @csrf
-                <label class="block">
+                <div class="block">
                     <span class="text-sm font-medium text-[var(--text-strong)]">Supervisor</span>
-                    <select name="supervisor_id" class="siwes-form-control mt-2">
+                    <input type="search" name="bulk_supervisor_search" class="siwes-form-control mt-2" placeholder="Type supervisor name or staff number..." data-option-search="#bulk-assignment-supervisor">
+                    <select id="bulk-assignment-supervisor" name="supervisor_id" class="siwes-form-control mt-2">
                         @foreach ($allSupervisors as $supervisor)
                             <option value="{{ $supervisor->id }}">{{ $supervisor->user->name }} / {{ $supervisor->staff_no }}</option>
                         @endforeach
                     </select>
-                </label>
+                </div>
                 <div class="grid gap-3 md:grid-cols-2">
                     <label class="block">
                         <span class="text-sm font-medium text-[var(--text-strong)]">Faculty</span>
@@ -346,6 +353,34 @@
                             <option value="">Any</option>
                             @foreach ($sessions as $session)
                                 <option value="{{ $session->id }}">{{ $session->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-[var(--text-strong)]">Placement State</span>
+                        <select name="company_state" class="siwes-form-control mt-2" data-filter-parent="#bulk-assignment-lga">
+                            <option value="">Any</option>
+                            @foreach ($states as $state)
+                                <option value="{{ $state['name'] }}">{{ $state['name'] }}</option>
+                            @endforeach
+                            @foreach ($placementStates as $state)
+                                @unless (collect($states)->pluck('name')->contains($state))
+                                    <option value="{{ $state }}">{{ $state }}</option>
+                                @endunless
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-[var(--text-strong)]">Placement Local Government Area</span>
+                        <select id="bulk-assignment-lga" name="company_lga" class="siwes-form-control mt-2">
+                            <option value="">Any</option>
+                            @foreach ($states as $state)
+                                @foreach ($state['lgas'] as $lga)
+                                    <option value="{{ $lga }}" data-parent-value="{{ $state['name'] }}">{{ $lga }}</option>
+                                @endforeach
+                            @endforeach
+                            @foreach ($placementLgas as $placementLga)
+                                <option value="{{ $placementLga->company_lga }}" data-parent-value="{{ $placementLga->company_state }}">{{ $placementLga->company_lga }}</option>
                             @endforeach
                         </select>
                     </label>
