@@ -274,6 +274,7 @@
                 <div class="grid gap-4 md:grid-cols-2">
                     <x-ui.input label="Full Name" name="name" required />
                     <x-ui.input label="Email" name="email" type="email" required />
+                    <x-ui.input label="Phone Number" name="phone" placeholder="08030000000" />
                 </div>
                 <div class="flex justify-end gap-2">
                     <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>

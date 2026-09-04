@@ -271,7 +271,7 @@ class StudentImportService
         $normalized = str_replace([' ', '-', '.'], '_', $normalized);
 
         return match ($normalized) {
-            'matric', 'matric_number', 'matric_no', 'matriculation_number' => 'matric_no',
+            'matric', 'matric_number', 'matric_no', 'matriculation_number', 'reg_no', 'reg_number', 'registration_number' => 'matric_no',
             'surname', 'last' => 'last_name',
             'firstname', 'first' => 'first_name',
             'middlename', 'middle' => 'middle_name',
@@ -296,8 +296,8 @@ class StudentImportService
             $validator = Validator::make($row, [
                 'first_name' => ['required_without:name', 'string', 'max:80'],
                 'middle_name' => ['nullable', 'string', 'max:80'],
-                'last_name' => ['required_without:name', 'string', 'max:80'],
-                'name' => ['required_without:first_name', 'string', 'max:160'],
+                'last_name' => ['nullable', 'string', 'max:80'],
+                'name' => ['nullable', 'string', 'max:160'],
                 'email' => ['nullable', 'email', 'max:160'],
                 'phone' => ['nullable', 'string', 'max:40'],
                 'matric_no' => ['required', 'string', 'max:40'],

@@ -44,6 +44,20 @@
             ['group' => 'mail', 'key' => 'mail.from_address', 'label' => 'From Address', 'type' => 'string', 'input' => 'email', 'value' => $settingValue('mail.from_address', config('mail.from.address')), 'description' => 'Default sender email address.'],
             ['group' => 'mail', 'key' => 'mail.from_name', 'label' => 'From Name', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('mail.from_name', config('mail.from.name')), 'description' => 'Default sender display name.'],
         ];
+        $whatsAppFields = [
+            ['group' => 'whatsapp', 'key' => 'whatsapp.enabled', 'label' => 'WhatsApp Notifications', 'type' => 'boolean', 'input' => 'select', 'options' => ['false' => 'Inactive', 'true' => 'Active'], 'value' => $settingValue('whatsapp.enabled', false) ? 'true' : 'false', 'description' => 'Enable optional WhatsApp notifications for portal events.'],
+            ['group' => 'whatsapp', 'key' => 'whatsapp.provider', 'label' => 'Provider', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('whatsapp.provider', 'meta_cloud_api'), 'description' => 'Default supported provider is Meta WhatsApp Cloud API.'],
+            ['group' => 'whatsapp', 'key' => 'whatsapp.api_version', 'label' => 'API Version', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('whatsapp.api_version', 'v21.0'), 'description' => 'Meta Graph API version, for example v21.0.'],
+            ['group' => 'whatsapp', 'key' => 'whatsapp.phone_number_id', 'label' => 'Phone Number ID', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('whatsapp.phone_number_id'), 'description' => 'WhatsApp Business phone number ID.'],
+            ['group' => 'whatsapp', 'key' => 'whatsapp.access_token', 'label' => 'Access Token', 'type' => 'string', 'input' => 'password', 'value' => $settingValue('whatsapp.access_token'), 'description' => 'Permanent access token for WhatsApp Cloud API.'],
+            ['group' => 'whatsapp', 'key' => 'whatsapp.default_country_code', 'label' => 'Default Country Code', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('whatsapp.default_country_code', '234'), 'description' => 'Used to convert local phone numbers like 0803... to international format.'],
+        ];
+        $whatsAppTemplateFields = [
+            ['group' => 'whatsapp_templates', 'key' => 'whatsapp.templates.admin_login_details.body', 'label' => 'Admin Login WhatsApp Body', 'type' => 'string', 'input' => 'textarea', 'value' => $settingValue('whatsapp.templates.admin_login_details.body', "An admin account has been created for you on the COOU SIWES portal.\nEmail: {email}\nTemporary password: {temporary_password}\nLogin: {login_url}"), 'description' => 'Available placeholders: {name}, {email}, {temporary_password}, {login_url}.'],
+            ['group' => 'whatsapp_templates', 'key' => 'whatsapp.templates.supervisor_login_details.body', 'label' => 'Supervisor Login WhatsApp Body', 'type' => 'string', 'input' => 'textarea', 'value' => $settingValue('whatsapp.templates.supervisor_login_details.body', "A supervisor account has been created for you on the COOU SIWES portal.\nEmail: {email}\nTemporary password: {temporary_password}\nLogin: {login_url}"), 'description' => 'Available placeholders: {name}, {email}, {temporary_password}, {login_url}.'],
+            ['group' => 'whatsapp_templates', 'key' => 'whatsapp.templates.supervisor_assignment.body', 'label' => 'Supervisor Assignment WhatsApp Body', 'type' => 'string', 'input' => 'textarea', 'value' => $settingValue('whatsapp.templates.supervisor_assignment.body', "A student has been assigned to you for SIWES supervision.\nStudent: {student_name}\nMatric Number: {matric_no}\nDepartment: {department}\nFaculty: {faculty}\nPlacement Location: {lga}, {state}"), 'description' => 'Available placeholders: {supervisor_name}, {student_name}, {matric_no}, {department}, {faculty}, {state}, {lga}, {dashboard_url}.'],
+            ['group' => 'whatsapp_templates', 'key' => 'whatsapp.templates.supervisor_bulk_assignment.body', 'label' => 'Supervisor Bulk Assignment WhatsApp Body', 'type' => 'string', 'input' => 'textarea', 'value' => $settingValue('whatsapp.templates.supervisor_bulk_assignment.body', "Bulk SIWES supervisor assignment has been completed.\nTotal Students Assigned: {total_assigned}\nFaculty: {faculty}\nDepartment: {department}\nPlacement State: {state}\nPlacement LGA: {lga}"), 'description' => 'Available placeholders: {supervisor_name}, {total_assigned}, {assigned_count}, {reassigned_count}, {skipped_count}, {faculty}, {department}, {state}, {lga}, {dashboard_url}.'],
+        ];
         $emailTemplateFields = [
             ['group' => 'mail_templates', 'key' => 'mail.templates.admin_login_details.subject', 'label' => 'Admin Login Subject', 'type' => 'string', 'input' => 'text', 'value' => $settingValue('mail.templates.admin_login_details.subject', 'COOU SIWES Admin Portal Login Details'), 'description' => 'Subject for new admin login detail email.'],
             ['group' => 'mail_templates', 'key' => 'mail.templates.admin_login_details.body', 'label' => 'Admin Login Body', 'type' => 'string', 'input' => 'textarea', 'value' => $settingValue('mail.templates.admin_login_details.body', "An admin account has been created for you on the COOU SIWES portal.\n\nEmail: {email}\nTemporary password: {temporary_password}\n\nPlease sign in and change your password after your first login."), 'description' => 'Available placeholders: {name}, {email}, {temporary_password}, {login_url}.'],
@@ -75,6 +89,7 @@
                 <button type="button" class="settings-tab is-active rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#welcome-settings-panel" aria-selected="true">Welcome Message</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#payment-settings-panel" aria-selected="false">Payment Settings</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#email-settings-panel" aria-selected="false">Email Settings</button>
+                <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#whatsapp-settings-panel" aria-selected="false">WhatsApp Settings</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#email-templates-panel" aria-selected="false">Email Templates</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#import-settings-panel" aria-selected="false">Import Settings</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#system-settings-panel" aria-selected="false">System Settings</button>
@@ -188,6 +203,32 @@
                 <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
                     <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">From</p>
                     <p class="mt-2 truncate text-sm font-semibold text-[var(--text-strong)]">{{ $settingValue('mail.from_address', config('mail.from.address')) }}</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="whatsapp-settings-panel" class="settings-panel mt-5 hidden" data-settings-panel>
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 class="text-base font-semibold text-[var(--text-strong)]">WhatsApp Settings</h2>
+                    <p class="mt-1 text-sm text-[var(--text-soft)]">Configure optional WhatsApp Cloud API delivery and message templates.</p>
+                </div>
+                @if ($canUpdateSettings)
+                    <x-ui.button type="button" data-modal-target="#whatsapp-settings-modal">Configure WhatsApp</x-ui.button>
+                @endif
+            </div>
+            <div class="mt-5 grid gap-4 lg:grid-cols-3">
+                <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Status</p>
+                    <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">{{ $settingValue('whatsapp.enabled', false) ? 'Active' : 'Inactive' }}</p>
+                </div>
+                <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Provider</p>
+                    <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">{{ $settingValue('whatsapp.provider', 'meta_cloud_api') }}</p>
+                </div>
+                <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                    <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Phone Number ID</p>
+                    <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">{{ filled($settingValue('whatsapp.phone_number_id')) ? 'Configured' : 'Not configured' }}</p>
                 </div>
             </div>
         </section>
@@ -542,6 +583,52 @@
             <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
                 <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
                 <x-ui.button type="submit">Save Email Templates</x-ui.button>
+            </div>
+        </form>
+        </x-ui.modal>
+
+        <x-ui.modal id="whatsapp-settings-modal" title="WhatsApp Settings" class="w-[min(64rem,calc(100vw-2rem))]">
+        <form method="POST" action="{{ route('admin.settings.bulk') }}" class="grid gap-4">
+            @csrf
+            <div class="grid gap-4 md:grid-cols-2">
+                @foreach ($whatsAppFields as $index => $field)
+                    <label class="block rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                        <span class="text-sm font-medium text-[var(--text-strong)]">{{ $field['label'] }}</span>
+                        @if (($field['input'] ?? 'text') === 'select')
+                            <select name="settings[{{ $index }}][value]" class="siwes-form-control mt-2 theme-transition">
+                                @foreach ($field['options'] as $value => $label)
+                                    <option value="{{ $value }}" @selected((string) $field['value'] === (string) $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <input type="{{ $field['input'] }}" name="settings[{{ $index }}][value]" value="{{ $field['value'] }}" class="siwes-form-control mt-2 theme-transition placeholder:text-[var(--text-soft)]">
+                        @endif
+                        <span class="mt-2 block text-xs leading-5 text-[var(--text-soft)]">{{ $field['description'] }}</span>
+                        <input type="hidden" name="settings[{{ $index }}][group]" value="{{ $field['group'] }}">
+                        <input type="hidden" name="settings[{{ $index }}][key]" value="{{ $field['key'] }}">
+                        <input type="hidden" name="settings[{{ $index }}][type]" value="{{ $field['type'] }}">
+                        <input type="hidden" name="settings[{{ $index }}][description]" value="{{ $field['description'] }}">
+                    </label>
+                @endforeach
+            </div>
+            <div class="max-h-[50vh] space-y-4 overflow-y-auto rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+                <h3 class="text-sm font-bold text-[var(--text-strong)]">WhatsApp Message Templates</h3>
+                @foreach ($whatsAppTemplateFields as $index => $field)
+                    @php($fieldIndex = count($whatsAppFields) + $index)
+                    <label class="block rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] p-4">
+                        <span class="text-sm font-medium text-[var(--text-strong)]">{{ $field['label'] }}</span>
+                        <textarea name="settings[{{ $fieldIndex }}][value]" rows="4" class="siwes-form-control mt-2 theme-transition placeholder:text-[var(--text-soft)]">{{ $field['value'] }}</textarea>
+                        <span class="mt-2 block text-xs leading-5 text-[var(--text-soft)]">{{ $field['description'] }}</span>
+                        <input type="hidden" name="settings[{{ $fieldIndex }}][group]" value="{{ $field['group'] }}">
+                        <input type="hidden" name="settings[{{ $fieldIndex }}][key]" value="{{ $field['key'] }}">
+                        <input type="hidden" name="settings[{{ $fieldIndex }}][type]" value="{{ $field['type'] }}">
+                        <input type="hidden" name="settings[{{ $fieldIndex }}][description]" value="{{ $field['description'] }}">
+                    </label>
+                @endforeach
+            </div>
+            <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
+                <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
+                <x-ui.button type="submit">Save WhatsApp Settings</x-ui.button>
             </div>
         </form>
         </x-ui.modal>

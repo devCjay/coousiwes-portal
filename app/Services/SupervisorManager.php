@@ -32,6 +32,17 @@ class SupervisorManager
             $supervisor = Supervisor::query()->create($this->payload($data, $user));
 
             $user->notify(new SupervisorLoginDetailsNotification($temporaryPassword));
+            app(WhatsAppNotificationService::class)->send(
+                $user->phone,
+                'supervisor_login_details',
+                "A supervisor account has been created for you on the COOU SIWES portal.\nEmail: {email}\nTemporary password: {temporary_password}\nLogin: {login_url}",
+                [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'temporary_password' => $temporaryPassword,
+                    'login_url' => route('login.supervisor'),
+                ],
+            );
 
             return $supervisor;
         });

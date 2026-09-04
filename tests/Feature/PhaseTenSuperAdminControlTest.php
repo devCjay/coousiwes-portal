@@ -10,6 +10,7 @@ use Database\Seeders\AcademicStructureSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -76,7 +77,11 @@ class PhaseTenSuperAdminControlTest extends TestCase
         AppSetting::query()->updateOrCreate(['key' => 'mail.host'], ['group' => 'mail', 'value' => 'smtp.portal.test', 'type' => 'string']);
         AppSetting::query()->updateOrCreate(['key' => 'mail.port'], ['group' => 'mail', 'value' => 587, 'type' => 'integer']);
         AppSetting::query()->updateOrCreate(['key' => 'mail.from_address'], ['group' => 'mail', 'value' => 'noreply@portal.test', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.enabled'], ['group' => 'whatsapp', 'value' => true, 'type' => 'boolean']);
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.access_token'], ['group' => 'whatsapp', 'value' => 'test-token', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.phone_number_id'], ['group' => 'whatsapp', 'value' => '123456789', 'type' => 'string']);
         config(['mail.default' => 'log', 'mail.mailers.smtp.host' => '127.0.0.1']);
+        Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.admin-login']]], 200)]);
         $superAdmin = $this->superAdmin();
 
         $this->actingAs($superAdmin, 'admin')
@@ -99,8 +104,10 @@ class PhaseTenSuperAdminControlTest extends TestCase
 
         $this->assertTrue($admin->hasRole('admin'));
         $this->assertTrue($admin->hasPermissionTo('payments.export'));
+        $this->assertSame('08030000000', $admin->phone);
         $this->assertDatabaseHas('admins', [
             'email' => 'finance.admin@example.test',
+            'phone' => '08030000000',
             'status' => 'active',
         ]);
         Notification::assertSentTo(
@@ -119,6 +126,9 @@ class PhaseTenSuperAdminControlTest extends TestCase
                     && config('mail.from.address') === 'noreply@portal.test';
             }
         );
+        Http::assertSent(fn ($request): bool => str_contains($request->url(), 'graph.facebook.com')
+            && $request['to'] === '2348030000000'
+            && str_contains($request['text']['body'], 'finance.admin@example.test'));
         $this->assertTrue(AuditLog::where('event', 'admins.created')->where('auditable_id', $admin->id)->exists());
     }
 

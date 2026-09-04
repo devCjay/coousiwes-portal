@@ -654,6 +654,25 @@ class PhaseFiveStudentManagementTest extends TestCase
         $this->assertSame(1, $import->fresh()->successful_rows);
     }
 
+    public function test_import_accepts_rows_with_only_first_name_and_matric_number(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
+            ['Ada', '', '', '2026/CSC/015'],
+        ]));
+
+        $import = app(StudentImportService::class)->createImport($file, $admin->id);
+        $this->assertSame([], $import->error_report);
+
+        app(StudentImportService::class)->process($import);
+
+        $student = Student::where('matric_no', '2026/CSC/015')->firstOrFail();
+
+        $this->assertSame('Ada', $student->user->name);
+        $this->assertSame(StudentImport::STATUS_COMPLETED, $import->fresh()->status);
+        $this->assertSame(1, $import->fresh()->successful_rows);
+    }
+
     public function test_import_can_mark_uploaded_students_as_workshop_fee_paid(): void
     {
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();

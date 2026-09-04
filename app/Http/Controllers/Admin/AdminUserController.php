@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UpdateAdminUserRequest;
 use App\Models\Admin;
 use App\Notifications\AdminLoginDetailsNotification;
 use App\Services\AuditLogger;
+use App\Services\WhatsAppNotificationService;
 use App\Support\AjaxResponse;
 use App\Support\PortalPermission;
 use Illuminate\Http\JsonResponse;
@@ -37,6 +38,17 @@ class AdminUserController extends Controller
         $admin->syncPermissions($validated['permissions'] ?? []);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         $admin->notify(new AdminLoginDetailsNotification((string) $validated['password']));
+        app(WhatsAppNotificationService::class)->send(
+            $admin->phone,
+            'admin_login_details',
+            "An admin account has been created for you on the COOU SIWES portal.\nEmail: {email}\nTemporary password: {temporary_password}\nLogin: {login_url}",
+            [
+                'name' => $admin->name,
+                'email' => $admin->email,
+                'temporary_password' => (string) $validated['password'],
+                'login_url' => route('login.admin'),
+            ],
+        );
 
         $this->auditLogger->record('admins.created', $request->user(), $request, $admin, [
             'roles' => $validated['roles'],

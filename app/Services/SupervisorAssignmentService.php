@@ -50,6 +50,7 @@ class SupervisorAssignmentService
         if ($created && $notify) {
             $assignment->loadMissing(['supervisor.user', 'student.user', 'student.department', 'student.faculty', 'student.placement']);
             $assignment->supervisor->user?->notify(new SupervisorAssignmentNotification($assignment));
+            $this->sendSingleWhatsApp($assignment);
         }
 
         return $assignment;
@@ -102,6 +103,7 @@ class SupervisorAssignmentService
         if (($assigned + $reassigned) > 0) {
             $supervisor->loadMissing('user');
             $supervisor->user?->notify(new SupervisorBulkAssignmentNotification($result, $filters));
+            $this->sendBulkWhatsApp($supervisor, $result, $filters);
         }
 
         return $result;
@@ -120,5 +122,64 @@ class SupervisorAssignmentService
             ->when($filters['academic_session_id'] ?? null, fn (Builder $query, mixed $value) => $query->where('academic_session_id', $value))
             ->when($filters['company_state'] ?? null, fn (Builder $query, mixed $value) => $query->whereHas('placement', fn (Builder $placementQuery) => $placementQuery->where('company_state', $value)))
             ->when($filters['company_lga'] ?? null, fn (Builder $query, mixed $value) => $query->whereHas('placement', fn (Builder $placementQuery) => $placementQuery->where('company_lga', $value)));
+    }
+
+    private function sendSingleWhatsApp(SupervisorStudentAssignment $assignment): void
+    {
+        $student = $assignment->student;
+        $placement = $student->placement;
+
+        app(WhatsAppNotificationService::class)->send(
+            $assignment->supervisor->user?->phone,
+            'supervisor_assignment',
+            "A student has been assigned to you for SIWES supervision.\nStudent: {student_name}\nMatric Number: {matric_no}\nDepartment: {department}\nFaculty: {faculty}\nPlacement Location: {lga}, {state}",
+            [
+                'supervisor_name' => $assignment->supervisor->user?->name ?? 'N/A',
+                'student_name' => $student->user?->name ?? 'N/A',
+                'matric_no' => $student->matric_no,
+                'department' => $student->department?->name ?? 'N/A',
+                'faculty' => $student->faculty?->name ?? 'N/A',
+                'state' => $placement?->company_state ?? 'N/A',
+                'lga' => $placement?->company_lga ?? 'N/A',
+                'dashboard_url' => route('supervisor.dashboard'),
+            ],
+        );
+    }
+
+    /**
+     * @param  array{assigned: int, reassigned: int, skipped: int}  $result
+     * @param  array<string, mixed>  $filters
+     */
+    private function sendBulkWhatsApp(Supervisor $supervisor, array $result, array $filters): void
+    {
+        app(WhatsAppNotificationService::class)->send(
+            $supervisor->user?->phone,
+            'supervisor_bulk_assignment',
+            "Bulk SIWES supervisor assignment has been completed.\nTotal Students Assigned: {total_assigned}\nFaculty: {faculty}\nDepartment: {department}\nPlacement State: {state}\nPlacement LGA: {lga}",
+            [
+                'supervisor_name' => $supervisor->user?->name ?? 'N/A',
+                'total_assigned' => $result['assigned'] + $result['reassigned'],
+                'assigned_count' => $result['assigned'],
+                'reassigned_count' => $result['reassigned'],
+                'skipped_count' => $result['skipped'],
+                'faculty' => $this->filterLabel(\App\Models\Faculty::class, $filters['faculty_id'] ?? null),
+                'department' => $this->filterLabel(\App\Models\Department::class, $filters['department_id'] ?? null),
+                'state' => $filters['company_state'] ?? 'Any',
+                'lga' => $filters['company_lga'] ?? 'Any',
+                'dashboard_url' => route('supervisor.dashboard'),
+            ],
+        );
+    }
+
+    /**
+     * @param  class-string  $model
+     */
+    private function filterLabel(string $model, mixed $id): string
+    {
+        if (! $id) {
+            return 'Any';
+        }
+
+        return (string) ($model::query()->find($id)?->name ?? 'Any');
     }
 }

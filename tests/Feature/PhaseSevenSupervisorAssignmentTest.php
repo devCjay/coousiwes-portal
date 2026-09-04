@@ -22,6 +22,7 @@ use App\Services\SupervisorManager;
 use Database\Seeders\AcademicStructureSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -45,13 +46,18 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         AppSetting::query()->updateOrCreate(['key' => 'mail.host'], ['group' => 'mail', 'value' => 'smtp.supervisor.test', 'type' => 'string']);
         AppSetting::query()->updateOrCreate(['key' => 'mail.port'], ['group' => 'mail', 'value' => 587, 'type' => 'integer']);
         AppSetting::query()->updateOrCreate(['key' => 'mail.from_address'], ['group' => 'mail', 'value' => 'noreply@portal.test', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.enabled'], ['group' => 'whatsapp', 'value' => true, 'type' => 'boolean']);
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.access_token'], ['group' => 'whatsapp', 'value' => 'test-token', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.phone_number_id'], ['group' => 'whatsapp', 'value' => '123456789', 'type' => 'string']);
         config(['mail.default' => 'log', 'mail.mailers.smtp.host' => '127.0.0.1']);
+        Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.supervisor-login']]], 200)]);
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->postJson(route('admin.supervisors.store'), [
                 'name' => 'Dr Ada Supervisor',
                 'email' => 'ada.supervisor@example.test',
+                'phone' => '08031112222',
             ])
             ->assertOk()
             ->assertJsonPath('message', 'Supervisor created.');
@@ -59,6 +65,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         $supervisor = Supervisor::whereHas('user', fn ($query) => $query->where('email', 'ada.supervisor@example.test'))->firstOrFail();
 
         $this->assertSame('Dr Ada Supervisor', $supervisor->user->name);
+        $this->assertSame('08031112222', $supervisor->user->phone);
         $this->assertStringStartsWith('SUP-', $supervisor->staff_no);
         $this->assertTrue($supervisor->user->hasRole('supervisor'));
         Notification::assertSentTo(
@@ -77,6 +84,9 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
                     && config('mail.from.address') === 'noreply@portal.test';
             }
         );
+        Http::assertSent(fn ($request): bool => str_contains($request->url(), 'graph.facebook.com')
+            && $request['to'] === '2348031112222'
+            && str_contains($request['text']['body'], 'ada.supervisor@example.test'));
         $this->assertTrue(AuditLog::where('event', 'supervisors.created')->where('auditable_id', $supervisor->id)->exists());
     }
 
@@ -88,7 +98,11 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         AppSetting::query()->updateOrCreate(['key' => 'mail.port'], ['group' => 'mail', 'value' => 465, 'type' => 'integer']);
         AppSetting::query()->updateOrCreate(['key' => 'mail.scheme'], ['group' => 'mail', 'value' => 'ssl', 'type' => 'string']);
         AppSetting::query()->updateOrCreate(['key' => 'mail.from_address'], ['group' => 'mail', 'value' => 'noreply@portal.test', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.enabled'], ['group' => 'whatsapp', 'value' => true, 'type' => 'boolean']);
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.access_token'], ['group' => 'whatsapp', 'value' => 'test-token', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.phone_number_id'], ['group' => 'whatsapp', 'value' => '123456789', 'type' => 'string']);
         config(['mail.default' => 'log', 'mail.mailers.smtp.host' => '127.0.0.1']);
+        Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.test']]], 200)]);
         $admin = $this->admin();
         $student = $this->student('assigned@example.test', '2026/SUP/001');
         $supervisor = $this->supervisor('SUP-2001');
@@ -129,6 +143,10 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
                     && config('mail.from.address') === 'noreply@portal.test';
             }
         );
+        Http::assertSent(fn ($request): bool => str_contains($request->url(), 'graph.facebook.com')
+            && $request['to'] === '2348030000000'
+            && str_contains($request['text']['body'], 'Student:')
+            && str_contains($request['text']['body'], $student->matric_no));
 
         $student->placement()->create([
             'academic_level_id' => $student->academic_level_id,
@@ -191,6 +209,10 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
     public function test_bulk_assignment_assigns_all_matching_students(): void
     {
         Notification::fake();
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.enabled'], ['group' => 'whatsapp', 'value' => true, 'type' => 'boolean']);
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.access_token'], ['group' => 'whatsapp', 'value' => 'test-token', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.phone_number_id'], ['group' => 'whatsapp', 'value' => '123456789', 'type' => 'string']);
+        Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.bulk']]], 200)]);
         $admin = $this->admin();
         $supervisor = $this->supervisor('SUP-2003');
         $first = $this->student('bulk-one@example.test', '2026/SUP/004');
@@ -214,6 +236,10 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
     public function test_bulk_assignment_can_filter_by_placement_state_and_lga_and_reassign_existing_students(): void
     {
         Notification::fake();
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.enabled'], ['group' => 'whatsapp', 'value' => true, 'type' => 'boolean']);
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.access_token'], ['group' => 'whatsapp', 'value' => 'test-token', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'whatsapp.phone_number_id'], ['group' => 'whatsapp', 'value' => '123456789', 'type' => 'string']);
+        Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.bulk']]], 200)]);
         $admin = $this->admin();
         $targetSupervisor = $this->supervisor('SUP-2010');
         $previousSupervisor = $this->supervisor('SUP-2011');
@@ -272,6 +298,11 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             }
         );
         Notification::assertNotSentTo($targetSupervisor->user, SupervisorAssignmentNotification::class);
+        Http::assertSent(fn ($request): bool => str_contains($request->url(), 'graph.facebook.com')
+            && $request['to'] === '2348030000000'
+            && str_contains($request['text']['body'], 'Total Students Assigned: 1')
+            && str_contains($request['text']['body'], 'Placement State: Lagos')
+            && ! str_contains($request['text']['body'], $lagosMainland->matric_no));
     }
 
     public function test_supervisor_can_only_see_their_assigned_students(): void
