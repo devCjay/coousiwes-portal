@@ -114,7 +114,7 @@
                 <div id="profile-tab-overview" data-profile-page-panel>
                     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <x-profile.info-card icon="user-circle" label="Full Name" :value="$student->user->name" meta="Locked by admin" locked />
-                        <x-profile.info-card icon="graduation-cap" label="Matric Number" :value="$student->matric_no" meta="Locked by admin" locked />
+                        <x-profile.info-card icon="graduation-cap" label="Reg No" :value="$student->matric_no" meta="Locked by admin" locked />
                         <x-profile.info-card icon="credit-card" label="Email" :value="$student->user->email ?: 'N/A'" meta="Student editable" />
                         <x-profile.info-card icon="home" label="Location" :value="($metadata['state'] ?? 'Not set').' / '.($metadata['lga'] ?? 'Not set')" meta="Contact details" />
                         <x-profile.info-card icon="building" label="Faculty" :value="$student->faculty?->name ?? 'N/A'" meta="Student editable" />
@@ -123,11 +123,11 @@
                 </div>
 
                 <div id="profile-tab-personal" data-profile-page-panel class="hidden">
-                    <x-ui.card title="Personal Information" description="Name and matric number are managed by the SIWES admin team.">
+                    <x-ui.card title="Personal Information" description="Name and registration number are managed by the SIWES admin team.">
                         <x-profile.locked-note />
                         <dl class="mt-5 grid gap-3 sm:grid-cols-2">
                             <x-profile.detail label="Full Name" :value="$student->user->name" />
-                            <x-profile.detail label="Matric Number" :value="$student->matric_no" />
+                            <x-profile.detail label="Reg No" :value="$student->matric_no" />
                         </dl>
                         <form id="personal-edit" method="POST" action="{{ route('student.profile.step') }}" enctype="multipart/form-data" data-profile-step-form data-ajax-reset="false" class="mt-5 grid min-w-0 gap-5">
                             @csrf
@@ -233,7 +233,7 @@
         <x-ui.modal id="mobile-profile-overview" title="Profile Overview" class="w-[min(42rem,calc(100vw-1rem))]">
             <div class="grid gap-4">
                 <x-profile.info-card icon="user-circle" label="Full Name" :value="$student->user->name" meta="Locked by admin" locked />
-                <x-profile.info-card icon="graduation-cap" label="Matric Number" :value="$student->matric_no" meta="Locked by admin" locked />
+                <x-profile.info-card icon="graduation-cap" label="Reg No" :value="$student->matric_no" meta="Locked by admin" locked />
                 <x-profile.info-card icon="credit-card" label="Email" :value="$student->user->email ?: 'N/A'" meta="Student editable" />
                 <x-profile.info-card icon="home" label="Location" :value="($metadata['state'] ?? 'Not set').' / '.($metadata['lga'] ?? 'Not set')" meta="Contact details" />
                 <x-profile.info-card icon="building" label="Faculty" :value="$student->faculty?->name ?? 'N/A'" meta="Student editable" />
@@ -245,7 +245,7 @@
             <x-profile.locked-note />
             <dl class="mt-5 grid gap-3">
                 <x-profile.detail label="Full Name" :value="$student->user->name" />
-                <x-profile.detail label="Matric Number" :value="$student->matric_no" />
+                <x-profile.detail label="Reg No" :value="$student->matric_no" />
             </dl>
             <form method="POST" action="{{ route('student.profile.step') }}" enctype="multipart/form-data" data-profile-step-form data-ajax-reset="false" class="mt-5 grid min-w-0 gap-5">
                 @csrf

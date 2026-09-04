@@ -18,7 +18,7 @@
             <x-ui.input class="mb-4" label="Live Search" name="supervisor_dashboard_search" placeholder="Search assigned students..." data-live-search="#supervisor-dashboard-students tbody tr" />
             <x-ui.data-table
                 id="supervisor-dashboard-students"
-                :headers="['Student', 'Matric Number', 'Department', 'Level', 'Assigned']"
+                :headers="['Student', 'Reg No', 'Department', 'Level', 'Assigned']"
                 :rows="$assignments->map(fn ($assignment) => [
                     e($assignment->student->user->name),
                     e($assignment->student->matric_no),

@@ -171,7 +171,7 @@ class StudentController extends Controller
             'matric_no' => $student->matric_no,
         ]);
 
-        return AjaxResponse::success($request, 'Student password reset to matric number.');
+        return AjaxResponse::success($request, 'Student password reset to reg no.');
     }
 
     public function destroy(Request $request, Student $student): JsonResponse|RedirectResponse
@@ -239,7 +239,7 @@ class StudentController extends Controller
         abort_unless($request->user()?->can('students.export'), 403);
 
         $handle = fopen('php://temp', 'w+');
-        fputcsv($handle, ['Name', 'Email', 'Phone', 'Matric No', 'Faculty', 'Department', 'Level', 'Session', 'Status']);
+        fputcsv($handle, ['Name', 'Email', 'Phone', 'Reg No', 'Faculty', 'Department', 'Level', 'Session', 'Status']);
 
         Student::query()
             ->with(['user', 'faculty', 'department', 'academicLevel', 'academicSession'])

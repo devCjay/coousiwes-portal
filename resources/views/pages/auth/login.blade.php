@@ -25,7 +25,7 @@
         @endif
 
         @if ($role === 'Student')
-            <x-ui.input label="Matric Number" name="matric_no" type="text" placeholder="2026/DEMO/001" required />
+            <x-ui.input label="Reg No" name="matric_no" type="text" placeholder="2026/DEMO/001" required />
         @else
             <x-ui.input label="Email address" name="email" type="email" placeholder="{{ strtolower($role) }}@coousiwes.edu.ng" required />
         @endif

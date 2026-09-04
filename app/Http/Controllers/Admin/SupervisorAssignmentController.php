@@ -93,7 +93,7 @@ class SupervisorAssignmentController extends Controller
         abort_unless($request->user()?->can('supervisors.view'), 403);
 
         $handle = fopen('php://temp', 'w+');
-        fputcsv($handle, ['Supervisor', 'Student', 'Matric No', 'Department', 'Assigned At', 'Revoked At']);
+        fputcsv($handle, ['Supervisor', 'Student', 'Reg No', 'Department', 'Assigned At', 'Revoked At']);
 
         SupervisorStudentAssignment::query()->with(['supervisor.user', 'student.user', 'student.department'])->latest('assigned_at')->each(function (SupervisorStudentAssignment $assignment) use ($handle): void {
             fputcsv($handle, [

@@ -20,9 +20,9 @@ class StoreStudentRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $name = $this->input('name') ?: collect([
+            $this->input('last_name'),
             $this->input('first_name'),
             $this->input('middle_name'),
-            $this->input('last_name'),
         ])->filter()->join(' ');
         $matricNo = trim((string) $this->input('matric_no'));
 

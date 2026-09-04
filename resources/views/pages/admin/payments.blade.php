@@ -25,7 +25,7 @@
 
     <x-ui.card class="mt-6" title="Korapay Payment History" description="Payment references, checkout status, and verification state.">
         <form method="GET" action="{{ route('admin.payments.index') }}" data-ajax="false" class="mb-4 grid gap-3 md:grid-cols-[1fr_12rem_auto] md:items-end">
-            <x-ui.input label="Search" name="search" value="{{ request('search') }}" placeholder="Search reference, student, email, or matric number" data-live-search="#payments-table tbody tr" />
+            <x-ui.input label="Search" name="search" value="{{ request('search') }}" placeholder="Search reference, student, email, or reg no" data-live-search="#payments-table tbody tr" />
             <label class="block">
                 <span class="text-sm font-medium text-[var(--text-strong)]">Status</span>
                 <select name="status" class="siwes-form-control mt-2">

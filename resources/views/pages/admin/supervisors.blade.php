@@ -180,7 +180,7 @@
                     label="Search assignments"
                     name="assignment_search"
                     value="{{ request('assignment_search') }}"
-                    placeholder="Search by student name, supervisor, matric number, or year..."
+                    placeholder="Search by student name, supervisor, reg no, or year..."
                 />
                 <div class="flex items-end gap-2">
                     <x-ui.button type="submit">Search</x-ui.button>
@@ -212,7 +212,7 @@
                                 @endif
                                 <th class="whitespace-nowrap px-4 py-3.5">#</th>
                                 <th class="whitespace-nowrap px-4 py-3.5">Student Name</th>
-                                <th class="whitespace-nowrap px-4 py-3.5">Matric Number</th>
+                                <th class="whitespace-nowrap px-4 py-3.5">Reg No</th>
                                 <th class="whitespace-nowrap px-4 py-3.5">Year</th>
                                 <th class="whitespace-nowrap px-4 py-3.5">Supervisor</th>
                                 @if ($can('supervisors.assign'))

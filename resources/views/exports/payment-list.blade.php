@@ -10,7 +10,7 @@
                     <td height="22" style="border:solid 1px;">S/NO.</td>
                     <td width="14%" style="border:solid 1px;">PAYMENT TYPE</td>
                     <td width="24%" style="border:solid 1px;">STUDENT NAME</td>
-                    <td width="15%" style="border:solid 1px;">MATRIC NUMBER</td>
+                    <td width="15%" style="border:solid 1px;">REG NO</td>
                     <td width="20%" style="border:solid 1px;">DEPARTMENT</td>
                     <td width="20%" style="border:solid 1px;">FACULTY</td>
                     <td width="12%" style="border:solid 1px;">AMOUNT PAID</td>

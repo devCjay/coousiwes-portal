@@ -49,7 +49,7 @@
     <x-ui.card class="mt-6" title="All Tickets (Total: {{ number_format($ticketTotal) }})" description="Search, filter, print, and export activation ticket records.">
         <form method="GET" action="{{ route('admin.tickets.index') }}" data-ajax="false" class="mb-4 grid gap-3">
             <div class="grid gap-3 md:grid-cols-[1fr_auto]">
-                <x-ui.input label="Search" name="search" value="{{ request('search') }}" placeholder="Search by serial, student name, email, or matric number" data-live-search="#tickets-table tbody tr" />
+                <x-ui.input label="Search" name="search" value="{{ request('search') }}" placeholder="Search by serial, student name, email, or reg no" data-live-search="#tickets-table tbody tr" />
                 <div class="flex items-end">
                     <x-ui.button type="submit">Search</x-ui.button>
                 </div>
@@ -164,7 +164,7 @@
                         <x-ui.card title="Student Information" description="Student who used this activation ticket.">
                             <dl class="grid gap-4 sm:grid-cols-2">
                                 <x-profile.detail label="Name" :value="$ticket->student?->user?->name ?? 'N/A'" />
-                                <x-profile.detail label="Matric Number" :value="$ticket->student?->matric_no ?? 'N/A'" />
+                                <x-profile.detail label="Reg No" :value="$ticket->student?->matric_no ?? 'N/A'" />
                                 <x-profile.detail label="Email" :value="$ticket->student?->user?->email ?? 'N/A'" />
                                 <x-profile.detail label="Phone" :value="$ticket->student?->user?->phone ?: 'N/A'" />
                                 <x-profile.detail label="Faculty" :value="$ticket->student?->faculty?->name ?? 'N/A'" />

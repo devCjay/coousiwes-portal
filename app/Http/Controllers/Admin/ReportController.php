@@ -26,7 +26,7 @@ class ReportController extends Controller
         abort_unless($request->user()?->can('feedback.view'), 403);
 
         $handle = fopen('php://temp', 'w+');
-        fputcsv($handle, ['Student', 'Matric No', 'Supervisor', 'Score', 'Max Score', 'Percent', 'Submitted']);
+        fputcsv($handle, ['Student', 'Reg No', 'Supervisor', 'Score', 'Max Score', 'Percent', 'Submitted']);
 
         Assessment::query()
             ->with(['student.user', 'supervisor.user'])

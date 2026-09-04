@@ -45,7 +45,7 @@ class SupervisorAssignmentNotification extends Notification
 
         $body = EmailTemplate::lines(
             'supervisor_assignment',
-            "A student has been assigned to you for SIWES supervision.\n\nStudent: {student_name}\nMatric Number: {matric_no}\nDepartment: {department}\nFaculty: {faculty}\nPlacement Location: {lga}, {state}",
+            "A student has been assigned to you for SIWES supervision.\n\nStudent: {student_name}\nReg No: {matric_no}\nDepartment: {department}\nFaculty: {faculty}\nPlacement Location: {lga}, {state}",
             $replacements,
         );
 

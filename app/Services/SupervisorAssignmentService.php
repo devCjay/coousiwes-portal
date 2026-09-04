@@ -132,7 +132,7 @@ class SupervisorAssignmentService
         app(WhatsAppNotificationService::class)->send(
             $assignment->supervisor->user?->phone,
             'supervisor_assignment',
-            "A student has been assigned to you for SIWES supervision.\nStudent: {student_name}\nMatric Number: {matric_no}\nDepartment: {department}\nFaculty: {faculty}\nPlacement Location: {lga}, {state}",
+            "A student has been assigned to you for SIWES supervision.\nStudent: {student_name}\nReg No: {matric_no}\nDepartment: {department}\nFaculty: {faculty}\nPlacement Location: {lga}, {state}",
             [
                 'supervisor_name' => $assignment->supervisor->user?->name ?? 'N/A',
                 'student_name' => $student->user?->name ?? 'N/A',

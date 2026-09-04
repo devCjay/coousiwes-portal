@@ -180,7 +180,7 @@
     @if ($can('students.view'))
     <x-ui.card id="students" class="mt-6" title="Student List" description="Reusable table pattern with filters, statuses, and action controls.">
         <div class="mb-4 grid gap-3 md:grid-cols-[1fr_auto_auto]">
-            <x-ui.input label="Search" name="search" placeholder="Search by name, matric number, department, phone..." data-live-search="#students-table tbody tr" />
+            <x-ui.input label="Search" name="search" placeholder="Search by name, reg no, department, phone..." data-live-search="#students-table tbody tr" />
             <label class="block">
                 <span class="text-sm font-medium text-[var(--text-strong)]">Status</span>
                 <select class="siwes-form-control mt-2">
@@ -199,7 +199,7 @@
 
         <x-ui.data-table
             id="students-table"
-            :headers="['Name', 'Matric Number', 'Faculty', 'Department', 'Year', 'Status']"
+            :headers="['Name', 'Reg No', 'Faculty', 'Department', 'Year', 'Status']"
             :rows="$recentStudents->map(function ($student) {
                 $statusClasses = match ($student->activation_status) {
                     \App\Models\Student::STATUS_ACTIVE => 'bg-brand-500/10 text-brand-700 dark:text-brand-200',
@@ -231,10 +231,10 @@
             <form method="POST" action="{{ route('admin.students.store') }}" class="grid gap-4">
                 @csrf
                 <div class="grid gap-3 md:grid-cols-4">
+                    <x-ui.input label="SURNAME" name="last_name" placeholder="Surname" />
                     <x-ui.input label="FIRST NAME" name="first_name" placeholder="First name" required />
-                    <x-ui.input label="MIDDLE NAME" name="middle_name" placeholder="Middle name" />
-                    <x-ui.input label="LAST NAME" name="last_name" placeholder="Last name" required />
-                    <x-ui.input label="MATRIC NUMBER" name="matric_no" placeholder="2026/CSC/001" required />
+                    <x-ui.input label="OTHER NAME" name="middle_name" placeholder="Other name" />
+                    <x-ui.input label="REG NO" name="matric_no" placeholder="2026/CSC/001" required />
                 </div>
                 <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
                     <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>

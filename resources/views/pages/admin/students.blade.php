@@ -78,7 +78,7 @@
         </div>
 
         <form method="GET" action="{{ route('admin.students.index') }}" data-ajax="false" class="mb-4 grid gap-3 lg:grid-cols-[1fr_12rem_12rem_auto]">
-            <x-ui.input label="Search" name="search" value="{{ request('search') }}" placeholder="Name, email, or matric number..." data-live-search="#students-management-table tbody tr" />
+            <x-ui.input label="Search" name="search" value="{{ request('search') }}" placeholder="Name, email, or reg no..." data-live-search="#students-management-table tbody tr" />
             <label class="block">
                 <span class="text-sm font-medium text-[var(--text-strong)]">Status</span>
                 <select name="status" class="siwes-form-control mt-2">
@@ -123,7 +123,7 @@
                                 </th>
                             @endif
                             <th class="whitespace-nowrap px-4 py-3">Name</th>
-                            <th class="whitespace-nowrap px-4 py-3">Matric Number</th>
+                            <th class="whitespace-nowrap px-4 py-3">Reg No</th>
                             <th class="whitespace-nowrap px-4 py-3">Faculty</th>
                             <th class="whitespace-nowrap px-4 py-3">Course</th>
                             <th class="whitespace-nowrap px-4 py-3">Year</th>
@@ -207,10 +207,10 @@
             <form method="POST" action="{{ route('admin.students.store') }}" class="grid gap-4">
                 @csrf
                 <div class="grid gap-3 md:grid-cols-4">
+                    <x-ui.input label="SURNAME" name="last_name" placeholder="Surname" />
                     <x-ui.input label="FIRST NAME" name="first_name" placeholder="First name" required />
-                    <x-ui.input label="MIDDLE NAME" name="middle_name" placeholder="Middle name" />
-                    <x-ui.input label="LAST NAME" name="last_name" placeholder="Last name" required />
-                    <x-ui.input label="MATRIC NUMBER" name="matric_no" placeholder="2026/CSC/001" required />
+                    <x-ui.input label="OTHER NAME" name="middle_name" placeholder="Other name" />
+                    <x-ui.input label="REG NO" name="matric_no" placeholder="2026/CSC/001" required />
                 </div>
                 <fieldset class="rounded-2xl border border-[var(--line)] bg-[var(--surface-muted)] p-4">
                     <legend class="px-1 text-sm font-semibold text-[var(--text-strong)]">Activation Status</legend>

@@ -104,7 +104,7 @@
             <div class="min-w-0">
                 <div id="student-tab-overview" data-student-admin-panel>
                     <div class="grid gap-4 md:grid-cols-3">
-                        <x-ui.stat-card label="Matric Number" :value="$student->matric_no" meta="Login identity" tone="cyan" />
+                        <x-ui.stat-card label="Reg No" :value="$student->matric_no" meta="Login identity" tone="cyan" />
                         <x-ui.stat-card label="Year" :value="$studentYear()" meta="Derived from academic level" tone="amber" />
                         <x-ui.stat-card label="Academic Year" :value="$academicYear($placement?->academicSession ?? $student->academicSession)" meta="Current session" tone="rose" />
                     </div>
@@ -151,7 +151,7 @@
                 <div id="student-tab-academic" data-student-admin-panel class="hidden">
                     <x-ui.card title="Academic Data" description="Course here means the department attached to the student's SIWES record.">
                         <dl class="grid gap-4 md:grid-cols-2">
-                            <x-profile.detail label="Matric Number" :value="$student->matric_no" />
+                            <x-profile.detail label="Reg No" :value="$student->matric_no" />
                             <x-profile.detail label="Faculty" :value="$student->faculty?->name ?? 'N/A'" />
                             <x-profile.detail label="Course" :value="$student->department?->name ?? 'N/A'" />
                             <x-profile.detail label="Year" :value="$studentYear()" />
@@ -210,7 +210,7 @@
                     <x-ui.input label="Full Name" name="name" value="{{ $student->user->name }}" required />
                     <x-ui.input label="Email" name="email" type="email" value="{{ $student->user->email }}" />
                     <x-ui.input label="Phone" name="phone" value="{{ $student->user->phone }}" />
-                    <x-ui.input label="Matric Number" name="matric_no" value="{{ $student->matric_no }}" required />
+                    <x-ui.input label="Reg No" name="matric_no" value="{{ $student->matric_no }}" required />
                     <label class="block">
                         <span class="siwes-form-label">Faculty</span>
                         <select name="faculty_id" class="siwes-form-control mt-2" data-filter-parent="#admin-student-department">

@@ -316,7 +316,7 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             ->assertHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
             ->assertSee('MASTER LIST FOR 2026/2027 SIWES PROGRAMME', false)
             ->assertSee('NAME_OF_STUDENT', false)
-            ->assertSee('MATRIC_NUMBER', false)
+            ->assertSee('REG_NO', false)
             ->assertSee('Mary Dennis Abang', false)
             ->assertSee('APRIL - OCTOBER 2026', false)
             ->assertDontSee('Filtered Out Student', false);
@@ -461,7 +461,7 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             ->assertSee('TICKET FEE PAYMENT LIST', false)
             ->assertSee('PAYMENT TYPE', false)
             ->assertSee('STUDENT NAME', false)
-            ->assertSee('MATRIC NUMBER', false)
+            ->assertSee('REG NO', false)
             ->assertSee('PAYMENT METHOD', false)
             ->assertSee('Ticket Fee', false)
             ->assertSee('Online Ticket Student', false)

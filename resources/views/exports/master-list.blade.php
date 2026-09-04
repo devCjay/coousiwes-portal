@@ -38,7 +38,7 @@
                     <tr align="left" class="fieldDarkText" style="border:solid 1px;">
                         <td height="22" style="border:solid 1px;">S/NO.</td>
                         <td width="25%" style="border:solid 1px;">NAME_OF_STUDENT</td>
-                        <td style="border:solid 1px;">MATRIC_NUMBER</td>
+                        <td style="border:solid 1px;">REG_NO</td>
                         <td width="18%" style="border:solid 1px;">COURSE_OF_STUDY</td>
                         <td width="18%" style="border:solid 1px;">LEVEL_OF_STUDY</td>
                         <td width="18%" style="border:solid 1px;">SIWES_YEAR</td>

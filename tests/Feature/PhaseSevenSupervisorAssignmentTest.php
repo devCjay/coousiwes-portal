@@ -162,7 +162,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             ->assertOk()
             ->assertSee('Current Assignments')
             ->assertSee('Student Name')
-            ->assertSee('Matric Number')
+            ->assertSee('Reg No')
             ->assertSee('Year')
             ->assertSee('Supervisor')
             ->assertSee('2026')

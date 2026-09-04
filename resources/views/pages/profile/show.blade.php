@@ -40,7 +40,7 @@
         <x-ui.card title="Portal Identity" description="Role-specific profile information synchronized from the database.">
             @if ($user->student)
                 <dl class="grid gap-4 sm:grid-cols-2">
-                    <div><dt class="text-xs font-semibold uppercase text-[var(--text-soft)]">Matric Number</dt><dd class="mt-1 text-sm font-medium">{{ $user->student->matric_no }}</dd></div>
+                    <div><dt class="text-xs font-semibold uppercase text-[var(--text-soft)]">Reg No</dt><dd class="mt-1 text-sm font-medium">{{ $user->student->matric_no }}</dd></div>
                     <div><dt class="text-xs font-semibold uppercase text-[var(--text-soft)]">Status</dt><dd class="mt-1 text-sm font-medium">{{ ucfirst($user->student->activation_status) }}</dd></div>
                 </dl>
             @elseif ($user->supervisor)

@@ -20,10 +20,10 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class StudentImportService
 {
     public const array HEADERS = [
+        'surname',
         'first_name',
-        'middle_name',
-        'last_name',
-        'matric_no',
+        'other_name',
+        'reg_no',
     ];
 
     public function __construct(
@@ -272,9 +272,9 @@ class StudentImportService
 
         return match ($normalized) {
             'matric', 'matric_number', 'matric_no', 'matriculation_number', 'reg_no', 'reg_number', 'registration_number' => 'matric_no',
-            'surname', 'last' => 'last_name',
+            'surname', 'last', 'last_name' => 'last_name',
             'firstname', 'first' => 'first_name',
-            'middlename', 'middle' => 'middle_name',
+            'other_name', 'other_names', 'middlename', 'middle', 'middle_name' => 'middle_name',
             'faculty_name', 'faculty_code' => 'faculty',
             'department_name', 'department_code', 'course', 'course_name', 'course_code' => 'department',
             'session' => 'academic_session',
@@ -315,7 +315,7 @@ class StudentImportService
                 $messages[] = 'Duplicate email inside import file.';
             }
             if (in_array(strtolower((string) ($row['matric_no'] ?? '')), $matricNumbers, true)) {
-                $messages[] = 'Duplicate matric number inside import file.';
+                $messages[] = 'Duplicate reg no inside import file.';
             }
             if ($email !== '' && User::query()->where('email', $row['email'] ?? null)->exists()) {
                 $messages[] = 'Email already exists.';
@@ -387,7 +387,7 @@ class StudentImportService
         };
 
         return [
-            'name' => $row['name'] ?? collect([$row['first_name'] ?? null, $row['middle_name'] ?? null, $row['last_name'] ?? null])
+            'name' => $row['name'] ?? collect([$row['last_name'] ?? null, $row['first_name'] ?? null, $row['middle_name'] ?? null])
                 ->filter(fn (mixed $value): bool => filled($value))
                 ->implode(' '),
             'email' => $row['email'] ?? null,
