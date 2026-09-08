@@ -9,6 +9,12 @@
 
     $metadata = $student->metadata ?? [];
     $placement = $student->placement;
+    $profilePhotoUrl = $student->user->profilePhotoUrl();
+    $initials = collect(explode(' ', trim($student->user->name)))
+        ->filter()
+        ->take(2)
+        ->map(fn ($part) => strtoupper(substr($part, 0, 1)))
+        ->join('') ?: 'ST';
     $displayStatus = $student->activation_status === 'suspended' ? 'suspended' : ($placement ? 'active' : 'inactive');
     $displayStatusClasses = match ($displayStatus) {
         'active' => 'bg-emerald-400/15 text-emerald-100 ring-emerald-300/25',
@@ -43,8 +49,12 @@
             <div class="absolute inset-y-0 right-0 hidden w-1/2 bg-[linear-gradient(120deg,transparent_0%,rgba(255,255,255,.08)_36%,transparent_37%,transparent_55%,rgba(255,255,255,.10)_56%,transparent_78%)] md:block"></div>
             <div class="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div class="flex min-w-0 gap-4">
-                    <span class="grid size-20 shrink-0 place-items-center rounded-2xl bg-white/12 text-white ring-1 ring-white/15 sm:size-24">
-                        <x-ui.icon name="graduation-cap" class="size-10" />
+                    <span class="grid size-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-white/25 bg-white/12 text-2xl font-black text-white shadow-[0_20px_50px_rgb(0_0_0_/_0.18)] ring-1 ring-white/15 sm:size-24">
+                        @if ($profilePhotoUrl)
+                            <img src="{{ $profilePhotoUrl }}" alt="{{ $student->user->name }} profile photo" class="h-full w-full object-cover">
+                        @else
+                            {{ $initials }}
+                        @endif
                     </span>
                     <div class="min-w-0">
                         <span class="inline-flex rounded-full px-3 py-1 text-xs font-extrabold uppercase ring-1 {{ $displayStatusClasses }}">{{ $displayStatus }}</span>

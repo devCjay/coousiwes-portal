@@ -148,9 +148,10 @@
                                         name="profile_photo"
                                         accept="image/png,image/jpeg,image/webp"
                                         capture="environment"
+                                        @required(! $profilePhotoUrl)
                                         data-profile-photo-input
                                     >
-                                    <span class="mt-2 block text-xs leading-5 text-[var(--text-soft)]">Optional. Upload JPG, PNG, or WEBP, max 2MB.</span>
+                                    <span class="mt-2 block text-xs leading-5 text-[var(--text-soft)]">Required. Upload JPG, PNG, or WEBP, max 2MB.</span>
                                 </label>
                             </div>
                             <div class="grid min-w-0 gap-5 md:grid-cols-2">
@@ -212,6 +213,7 @@
                         <dl class="grid gap-3 sm:grid-cols-3">
                             <x-profile.detail label="Bank Name" :value="$metadata['bank_name'] ?? 'Not set'" />
                             <x-profile.detail label="Account Number" :value="$metadata['account_number'] ?? 'Not set'" />
+                            <x-profile.detail label="Account Name" :value="$metadata['account_name'] ?? 'Not set'" />
                             <x-profile.detail label="Sort Code" :value="$metadata['sort_code'] ?? 'Not set'" />
                         </dl>
                         <form id="bank-edit" method="POST" action="{{ route('student.profile.step') }}" data-profile-step-form data-ajax-reset="false" class="mt-5 grid min-w-0 gap-5">
@@ -221,6 +223,7 @@
                             <div class="grid min-w-0 gap-5 md:grid-cols-2">
                                 <x-profile.search-select label="Bank Name" name="bank_name" placeholder="Search Nigerian banks..." :options="collect($banks)->map(fn ($bank) => ['value' => $bank['name'], 'label' => $bank['name'], 'meta' => 'Sort code '.$bank['sort_code'], 'sort_code' => $bank['sort_code']])->all()" :value="$selectedBank" data-profile-bank />
                                 <x-ui.input label="Account Number" name="account_number" value="{{ $metadata['account_number'] ?? '' }}" inputmode="numeric" maxlength="10" required />
+                                <x-ui.input label="Account Name" name="account_name" value="{{ $metadata['account_name'] ?? '' }}" required />
                                 <x-ui.input label="Sort Code" name="sort_code" value="{{ $metadata['sort_code'] ?? ($selectedBankRecord['sort_code'] ?? '') }}" required readonly data-profile-sort-code />
                             </div>
                             <x-ui.button type="submit" class="w-full sm:w-auto" data-loading-text="Saving...">Save Bank</x-ui.button>
@@ -266,6 +269,7 @@
                             name="profile_photo"
                             accept="image/png,image/jpeg,image/webp"
                             capture="environment"
+                            @required(! $profilePhotoUrl)
                             data-profile-photo-input
                         >
                     </label>
@@ -315,6 +319,7 @@
                 <input type="hidden" name="source" value="profile">
                 <x-profile.search-select label="Bank Name" name="bank_name" placeholder="Search Nigerian banks..." :options="collect($banks)->map(fn ($bank) => ['value' => $bank['name'], 'label' => $bank['name'], 'meta' => 'Sort code '.$bank['sort_code'], 'sort_code' => $bank['sort_code']])->all()" :value="$selectedBank" data-profile-bank />
                 <x-ui.input label="Account Number" name="account_number" value="{{ $metadata['account_number'] ?? '' }}" inputmode="numeric" maxlength="10" required />
+                <x-ui.input label="Account Name" name="account_name" value="{{ $metadata['account_name'] ?? '' }}" required />
                 <x-ui.input label="Sort Code" name="sort_code" value="{{ $metadata['sort_code'] ?? ($selectedBankRecord['sort_code'] ?? '') }}" required readonly data-profile-sort-code />
                 <x-ui.button type="submit" class="w-full" data-loading-text="Saving...">Save Bank</x-ui.button>
             </form>

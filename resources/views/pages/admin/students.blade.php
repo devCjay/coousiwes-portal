@@ -142,6 +142,12 @@
                                     'suspended' => 'border border-rose-700/20 bg-rose-100 text-rose-800 dark:border-rose-200/20 dark:bg-rose-400/18 dark:text-rose-100',
                                     default => 'border border-red-700/20 bg-red-600 text-white dark:border-red-200/20 dark:bg-red-500 dark:text-white',
                                 };
+                                $profilePhotoUrl = $student->user->profilePhotoUrl();
+                                $initials = collect(explode(' ', trim($student->user->name)))
+                                    ->filter()
+                                    ->take(2)
+                                    ->map(fn ($part) => strtoupper(substr($part, 0, 1)))
+                                    ->join('') ?: 'ST';
                             @endphp
                             <tr class="theme-transition hover:bg-brand-600/5">
                                 @if ($can('students.update'))
@@ -158,9 +164,18 @@
                                     </td>
                                 @endif
                                 <td class="whitespace-nowrap px-4 py-3">
-                                    <a class="font-extrabold text-brand-700 underline-offset-2 hover:text-brand-600 hover:underline dark:text-brand-200 dark:hover:text-brand-100" href="{{ route('admin.students.show', $student) }}">
-                                        {{ $student->user->name }}
-                                    </a>
+                                    <div class="flex min-w-0 items-center gap-3">
+                                        <span class="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl border border-brand-600/15 bg-brand-600 text-xs font-black text-white shadow-[0_10px_24px_rgb(0_81_54_/_0.10)]">
+                                            @if ($profilePhotoUrl)
+                                                <img src="{{ $profilePhotoUrl }}" alt="{{ $student->user->name }} profile photo" class="h-full w-full object-cover">
+                                            @else
+                                                {{ $initials }}
+                                            @endif
+                                        </span>
+                                        <a class="min-w-0 truncate font-extrabold text-brand-700 underline-offset-2 hover:text-brand-600 hover:underline dark:text-brand-200 dark:hover:text-brand-100" href="{{ route('admin.students.show', $student) }}">
+                                            {{ $student->user->name }}
+                                        </a>
+                                    </div>
                                 </td>
                                 <td class="whitespace-nowrap px-4 py-3 text-[var(--text-strong)]">{{ $student->matric_no }}</td>
                                 <td class="whitespace-nowrap px-4 py-3 text-[var(--text-strong)]">{{ $student->faculty?->name ?? 'N/A' }}</td>

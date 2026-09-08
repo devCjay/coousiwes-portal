@@ -18,7 +18,11 @@ class EnsureStudentProfileIsComplete
 
         if ($student instanceof Student && ! $student->hasCompleteProfile()) {
             if (! $request->routeIs('student.profile.*')) {
-                return redirect()->route('student.profile.edit');
+                return redirect()
+                    ->route('student.profile.edit')
+                    ->with('toast_title', 'Profile update required')
+                    ->with('toast_tone', 'warning')
+                    ->with('status', 'Please upload your profile photo and complete every required field, including account name.');
             }
         }
 

@@ -605,7 +605,7 @@ const renderPreview = (form, payload) => {
     const rows = payload.preview || [];
     const errors = payload.errors ? Object.values(payload.errors) : [];
     const rowMarkup = rows
-        .map((row) => `<tr>${['first_name', 'middle_name', 'last_name', 'matric_no']
+        .map((row) => `<tr>${['last_name', 'first_name', 'middle_name', 'matric_no']
             .map((key) => `<td class="whitespace-nowrap px-3 py-2">${row[key] || ''}</td>`)
             .join('')}</tr>`)
         .join('');
@@ -621,7 +621,7 @@ const renderPreview = (form, payload) => {
             </div>
             <div class="mt-4 overflow-x-auto">
                 <table class="min-w-full text-left text-xs">
-                    <thead class="text-[var(--text-soft)]"><tr><th class="px-3 py-2">First Name</th><th class="px-3 py-2">Middle Name</th><th class="px-3 py-2">Last Name</th><th class="px-3 py-2">Matric Number</th></tr></thead>
+                    <thead class="text-[var(--text-soft)]"><tr><th class="px-3 py-2">Surname</th><th class="px-3 py-2">First Name</th><th class="px-3 py-2">Other Name</th><th class="px-3 py-2">Reg No</th></tr></thead>
                     <tbody>${rowMarkup}</tbody>
                 </table>
             </div>

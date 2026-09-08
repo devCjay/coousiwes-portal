@@ -241,8 +241,10 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             'email' => 'mary.abang@example.test',
             'phone' => '08030000000',
             'metadata' => [
+                'profile_photo_path' => 'profile-photos/mary-abang.png',
                 'bank_name' => 'Access Bank',
                 'account_number' => '0123456789',
+                'account_name' => 'Mary Dennis Abang',
                 'sort_code' => '044',
             ],
         ]);
@@ -259,6 +261,7 @@ class PhaseFourAcademicConfigurationTest extends TestCase
             'metadata' => [
                 'bank_name' => 'Access Bank',
                 'account_number' => '0123456789',
+                'account_name' => 'Mary Dennis Abang',
                 'sort_code' => '044',
             ],
         ]);

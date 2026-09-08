@@ -25,7 +25,7 @@ class ProfileController extends Controller
         abort_unless($student instanceof Student, 403);
 
         if (! $student->hasCompleteProfile()) {
-            return redirect()->route('student.profile.edit');
+            return $this->redirectToIncompleteProfile();
         }
 
         return view('pages.student.profile-show', [
@@ -131,7 +131,7 @@ class ProfileController extends Controller
         abort_unless($student instanceof Student, 403);
 
         if (! $student->hasCompleteProfile()) {
-            return redirect()->route('student.profile.edit');
+            return $this->redirectToIncompleteProfile();
         }
 
         return view('pages.student.profile-complete', [
@@ -205,8 +205,18 @@ class ProfileController extends Controller
     {
         $metadata['bank_name'] = $validated['bank_name'];
         $metadata['account_number'] = $validated['account_number'];
+        $metadata['account_name'] = $validated['account_name'];
         $metadata['sort_code'] = $validated['sort_code'];
 
         $student->update(['metadata' => $metadata]);
+    }
+
+    private function redirectToIncompleteProfile(): RedirectResponse
+    {
+        return redirect()
+            ->route('student.profile.edit')
+            ->with('toast_title', 'Profile update required')
+            ->with('toast_tone', 'warning')
+            ->with('status', 'Please upload your profile photo and complete every required field, including account name.');
     }
 }

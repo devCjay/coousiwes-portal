@@ -223,9 +223,16 @@ class PhaseNineAssessmentReportingTest extends TestCase
                 'lga' => 'Awka South',
                 'bank_name' => 'Access Bank',
                 'account_number' => '0123456789',
+                'account_name' => 'Assessment Student',
                 'sort_code' => '044',
             ],
         ]);
+
+        $student->user->forceFill([
+            'metadata' => [
+                'profile_photo_path' => 'profile-photos/assessment-student.png',
+            ],
+        ])->save();
 
         return $student;
     }

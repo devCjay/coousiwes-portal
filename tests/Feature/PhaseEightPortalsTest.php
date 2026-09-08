@@ -130,15 +130,39 @@ class PhaseEightPortalsTest extends TestCase
             ->assertSee('Save Academic');
     }
 
+    public function test_students_missing_new_required_profile_fields_return_to_setup_with_notice(): void
+    {
+        $student = $this->student('missing-new-fields@example.test', '2026/PORTAL/016');
+        $metadata = $student->metadata;
+        unset($metadata['account_name']);
+
+        $student->update(['metadata' => $metadata]);
+        $student->user->forceFill(['metadata' => []])->save();
+
+        $this->actingAs($student->user)
+            ->withSession(['otp.verified' => true])
+            ->get(route('student.dashboard'))
+            ->assertRedirect(route('student.profile.edit'))
+            ->assertSessionHas('toast_title', 'Profile update required')
+            ->assertSessionHas('status', 'Please upload your profile photo and complete every required field, including account name.');
+    }
+
     public function test_student_can_save_profile_setup_steps_over_ajax(): void
     {
+        Storage::fake('public');
+
         $student = $this->student('wizard-student@example.test', '2026/PORTAL/008', completeProfile: false);
         $session = AcademicSession::where('name', '2026/2027')->firstOrFail();
 
         $this->actingAs($student->user)
             ->withSession(['otp.verified' => true])
-            ->postJson(route('student.profile.step'), [
+            ->withHeaders(['Accept' => 'application/json', 'X-Requested-With' => 'XMLHttpRequest'])
+            ->post(route('student.profile.step'), [
                 'step' => 'basic',
+                'profile_photo' => UploadedFile::fake()->createWithContent(
+                    'wizard-photo.png',
+                    base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=')
+                ),
                 'email' => 'wizard-student@example.test',
                 'phone' => '08039990000',
                 'gender' => 'Female',
@@ -174,6 +198,7 @@ class PhaseEightPortalsTest extends TestCase
                 'step' => 'bank',
                 'bank_name' => 'Access Bank',
                 'account_number' => '0123456789',
+                'account_name' => 'Wizard Student',
                 'sort_code' => '044',
             ])
             ->assertOk()
@@ -454,6 +479,12 @@ class PhaseEightPortalsTest extends TestCase
         ]);
 
         if ($completeProfile) {
+            $student->user->forceFill([
+                'metadata' => [
+                    'profile_photo_path' => 'profile-photos/test-profile.png',
+                ],
+            ])->save();
+
             $student->update([
                 'gender' => 'Male',
                 'date_of_birth' => '2001-01-01',
@@ -464,6 +495,7 @@ class PhaseEightPortalsTest extends TestCase
                     'lga' => 'Awka South',
                     'bank_name' => 'Access Bank',
                     'account_number' => '0123456789',
+                    'account_name' => "Student {$matricNo}",
                     'sort_code' => '044',
                 ],
             ]);

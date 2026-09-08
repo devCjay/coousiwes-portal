@@ -95,9 +95,10 @@
                                         name="profile_photo"
                                         accept="image/png,image/jpeg,image/webp"
                                         capture="environment"
+                                        @required(! $profilePhotoUrl)
                                         data-profile-photo-input
                                     >
-                                    <span class="mt-2 block text-xs leading-5 text-[var(--text-soft)]">Upload a clear JPG, PNG, or WEBP image. Maximum size is 2MB.</span>
+                                    <span class="mt-2 block text-xs leading-5 text-[var(--text-soft)]">Required. Upload a clear JPG, PNG, or WEBP image. Maximum size is 2MB.</span>
                                 </label>
                             </div>
                             <div class="grid min-w-0 gap-5 md:grid-cols-2">
@@ -217,6 +218,7 @@
                                     data-profile-bank
                                 />
                                 <x-ui.input label="Account Number" name="account_number" value="{{ $metadata['account_number'] ?? '' }}" inputmode="numeric" maxlength="10" required />
+                                <x-ui.input label="Account Name" name="account_name" value="{{ $metadata['account_name'] ?? '' }}" required />
                                 <x-ui.input label="Sort Code" name="sort_code" value="{{ $metadata['sort_code'] ?? ($selectedBankRecord['sort_code'] ?? '') }}" required readonly data-profile-sort-code />
                             </div>
                         </form>

@@ -45,6 +45,7 @@ class Student extends Model
         'lga',
         'bank_name',
         'account_number',
+        'account_name',
         'sort_code',
     ];
 
@@ -120,7 +121,9 @@ class Student extends Model
     public function profileCompletionPercent(): int
     {
         $metadata = $this->metadata ?? [];
+        $userMetadata = $this->user?->metadata ?? [];
         $fields = collect([
+            $userMetadata['profile_photo_path'] ?? null,
             $this->user?->email,
             $this->user?->phone,
             $this->gender,
@@ -134,6 +137,7 @@ class Student extends Model
             $this->academic_session_id,
             $metadata['bank_name'] ?? null,
             $metadata['account_number'] ?? null,
+            $metadata['account_name'] ?? null,
             $metadata['sort_code'] ?? null,
         ]);
 
