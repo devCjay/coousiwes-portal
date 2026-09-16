@@ -20,10 +20,12 @@ use App\Support\AjaxResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SupervisorController extends Controller
 {
@@ -60,8 +62,8 @@ class SupervisorController extends Controller
             ],
             'allSupervisors' => Supervisor::query()->with('user')->where('status', Supervisor::STATUS_ACTIVE)->orderBy('staff_no')->get(),
             'students' => Student::query()->with(['user', 'department', 'activeSupervisorAssignment.supervisor.user'])->latest()->limit(200)->get(),
-            'faculties' => Faculty::query()->orderBy('name')->get(),
-            'departments' => Department::query()->with('faculty')->orderBy('name')->get(),
+            'faculties' => Faculty::query()->where('is_active', true)->orderBy('name')->get(),
+            'departments' => Department::query()->where('is_active', true)->with('faculty')->orderBy('name')->get(),
             'levels' => AcademicLevel::query()->orderBy('level')->get(),
             'sessions' => AcademicSession::query()->orderByDesc('starts_on')->get(),
             'states' => config('siwes_profile.states', []),
@@ -106,12 +108,12 @@ class SupervisorController extends Controller
 
     public function update(UpdateSupervisorRequest $request, Supervisor $supervisor): JsonResponse|RedirectResponse
     {
-        $before = $supervisor->only(['staff_no', 'status']);
+        $before = $supervisor->only(['staff_no', 'status', 'faculty_id', 'department_id', 'department', 'rank']);
         $supervisor = $this->supervisorManager->update($supervisor, $request->validated());
 
         $this->auditLogger->record('supervisors.updated', $request->user(), $request, $supervisor, [
             'before' => $before,
-            'after' => $supervisor->only(['staff_no', 'status']),
+            'after' => $supervisor->only(['staff_no', 'status', 'faculty_id', 'department_id', 'department', 'rank']),
         ]);
 
         return AjaxResponse::success($request, 'Supervisor updated.');
@@ -122,7 +124,7 @@ class SupervisorController extends Controller
         abort_unless($request->user()?->can('supervisors.view'), 403);
 
         return view('pages.admin.supervisor-show', [
-            'supervisor' => $supervisor->load(['user', 'assignments.student.user', 'assignments.student.department']),
+            'supervisor' => $supervisor->load(['user', 'faculty', 'academicDepartment', 'assignments.student.user', 'assignments.student.department']),
         ]);
     }
 
@@ -146,40 +148,39 @@ class SupervisorController extends Controller
         return AjaxResponse::success($request, 'Supervisor reactivated.');
     }
 
-    public function export(Request $request): Response
+    public function export(Request $request): BinaryFileResponse
     {
         abort_unless($request->user()?->can('supervisors.view'), 403);
 
-        $handle = fopen('php://temp', 'w+');
-        fputcsv($handle, ['Rank', 'Name', 'Email', 'Staff No', 'Students', 'Assessments', 'Feedback', 'Months', 'Performance Score (%)', 'Rating', 'Payment']);
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->fromArray(['Name', 'Email', 'Phone', 'Department', 'Rank'], null, 'A1');
 
-        $year = $request->integer('year') ?: null;
-
-        $this->supervisorMetrics($year)
-            ->sortByDesc('performance_score')
+        Supervisor::query()
+            ->with(['user', 'academicDepartment'])
+            ->orderBy('staff_no')
+            ->get()
             ->values()
-            ->each(function (array $supervisor, int $index) use ($handle): void {
-            fputcsv($handle, [
-                $index + 1,
-                $supervisor['name'],
-                $supervisor['email'],
-                $supervisor['staff_no'],
-                $supervisor['students_assigned'],
-                $supervisor['assessments'],
-                $supervisor['feedback'],
-                $supervisor['months'],
-                $supervisor['performance_score'],
-                $supervisor['rating'],
-                $supervisor['payment'],
-            ]);
-        });
+            ->each(function (Supervisor $supervisor, int $index) use ($sheet): void {
+                $sheet->fromArray([
+                    $supervisor->user?->name ?? 'N/A',
+                    $supervisor->user?->email ?? 'N/A',
+                    $supervisor->user?->phone ?? 'N/A',
+                    $supervisor->academicDepartment?->name ?? $supervisor->department ?? 'N/A',
+                    $supervisor->rank ?? 'N/A',
+                ], null, 'A'.($index + 2));
+            });
 
-        rewind($handle);
+        foreach (range('A', 'E') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
 
-        return response((string) stream_get_contents($handle), 200, [
-            'Content-Type' => 'application/vnd.ms-excel',
-            'Content-Disposition' => 'attachment; filename=supervisor-analytics.xls',
-        ]);
+        $path = tempnam(sys_get_temp_dir(), 'supervisors-list-');
+        (new Xlsx($spreadsheet))->save($path);
+
+        return response()->download($path, 'supervisors-list.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend();
     }
 
     /**
@@ -190,6 +191,8 @@ class SupervisorController extends Controller
         return Supervisor::query()
             ->with([
                 'user',
+                'faculty',
+                'academicDepartment',
                 'activeAssignments.student.placement',
                 'assessments' => fn ($query) => $query
                     ->when($year, fn ($yearQuery) => $yearQuery->whereYear('submitted_at', $year)),
@@ -215,7 +218,11 @@ class SupervisorController extends Controller
                     'id' => $supervisor->id,
                     'name' => $supervisor->user?->name ?? 'N/A',
                     'email' => $supervisor->user?->email ?? 'N/A',
+                    'phone' => $supervisor->user?->phone ?? 'N/A',
                     'staff_no' => $supervisor->staff_no,
+                    'department' => $supervisor->academicDepartment?->name ?? $supervisor->department ?? 'N/A',
+                    'faculty' => $supervisor->faculty?->name ?? 'N/A',
+                    'rank_title' => $supervisor->rank ?? 'N/A',
                     'students_assigned' => $assignments->count(),
                     'assessments' => $assessments->count(),
                     'feedback' => $assessments->filter(fn (Assessment $assessment): bool => filled($assessment->feedback))->count(),
@@ -254,6 +261,9 @@ class SupervisorController extends Controller
                 $supervisor['name'],
                 $supervisor['email'],
                 $supervisor['staff_no'],
+                $supervisor['phone'],
+                $supervisor['department'],
+                $supervisor['rank_title'],
                 $supervisor['bank_name'],
                 $supervisor['account_name'],
                 $supervisor['account_number'],

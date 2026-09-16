@@ -23,7 +23,8 @@ class ProfileController extends Controller
             $relations[] = 'student';
         }
         if (method_exists($user, 'supervisor')) {
-            $relations[] = 'supervisor';
+            $relations[] = 'supervisor.faculty';
+            $relations[] = 'supervisor.academicDepartment';
         }
 
         return view('pages.profile.show', [

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Department;
 use App\Models\Supervisor;
 use App\Models\User;
 use App\Notifications\SupervisorLoginDetailsNotification;
@@ -83,11 +84,18 @@ class SupervisorManager
      */
     private function payload(array $data, User $user): array
     {
+        $department = isset($data['department_id'])
+            ? Department::query()->find($data['department_id'])
+            : null;
+
         return [
             'user_id' => $user->id,
             'staff_no' => $data['staff_no'] ?? $this->generateStaffNo(),
             'organization' => $data['organization'] ?? 'COOU SIWES Unit',
-            'department' => $data['department'] ?? null,
+            'faculty_id' => $department?->faculty_id,
+            'department_id' => $department?->id,
+            'department' => $department?->name ?? ($data['department'] ?? null),
+            'rank' => $data['rank'] ?? null,
             'status' => $data['status'] ?? Supervisor::STATUS_ACTIVE,
         ];
     }

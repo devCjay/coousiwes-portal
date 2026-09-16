@@ -76,7 +76,7 @@
                     <input type="hidden" name="search" value="{{ request('search') }}">
                 @endif
             </form>
-            <x-ui.button :href="route('admin.supervisors.export', array_filter(['year' => $analyticsYear]))" variant="primary">Export Analytics (Excel)</x-ui.button>
+            <x-ui.button :href="route('admin.supervisors.export')" variant="primary">Export Supervisors (Excel)</x-ui.button>
         </div>
 
         <section class="siwes-surface overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-raised)] p-4 shadow-[0_14px_34px_rgb(8_15_12_/_0.055)] sm:p-5">
@@ -106,13 +106,16 @@
             </form>
 
             <div class="mt-4 overflow-x-auto">
-                <table class="min-w-[70rem] w-full divide-y divide-[var(--line)] text-left text-sm">
+                <table class="min-w-[78rem] w-full divide-y divide-[var(--line)] text-left text-sm">
                     <thead class="text-xs font-bold text-[var(--text-strong)]">
                         <tr>
                             <th class="whitespace-nowrap px-3 py-3">Select</th>
                             <th class="whitespace-nowrap px-3 py-3">Rank</th>
                             <th class="whitespace-nowrap px-3 py-3">Name</th>
                             <th class="whitespace-nowrap px-3 py-3">Email</th>
+                            <th class="whitespace-nowrap px-3 py-3">Phone</th>
+                            <th class="whitespace-nowrap px-3 py-3">Department</th>
+                            <th class="whitespace-nowrap px-3 py-3">Academic Rank</th>
                             <th class="whitespace-nowrap px-3 py-3">Students</th>
                             <th class="whitespace-nowrap px-3 py-3">Assessments</th>
                             <th class="whitespace-nowrap px-3 py-3">Feedback</th>
@@ -135,6 +138,9 @@
                                     <div class="text-xs text-[var(--text-soft)]">{{ $supervisor['staff_no'] }}</div>
                                 </td>
                                 <td class="whitespace-nowrap px-3 py-3 text-[var(--text-strong)]">{{ $supervisor['email'] }}</td>
+                                <td class="whitespace-nowrap px-3 py-3 text-[var(--text-strong)]">{{ $supervisor['phone'] }}</td>
+                                <td class="whitespace-nowrap px-3 py-3 text-[var(--text-strong)]">{{ $supervisor['department'] }}</td>
+                                <td class="whitespace-nowrap px-3 py-3 text-[var(--text-strong)]">{{ $supervisor['rank_title'] }}</td>
                                 <td class="whitespace-nowrap px-3 py-3 text-[var(--text-strong)]">{{ $supervisor['students_assigned'] }}</td>
                                 <td class="whitespace-nowrap px-3 py-3 text-[var(--text-strong)]">{{ $supervisor['assessments'] }}</td>
                                 <td class="whitespace-nowrap px-3 py-3 text-[var(--text-strong)]">{{ $supervisor['feedback'] }}</td>
@@ -155,7 +161,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="12" class="px-3 py-8 text-center text-sm text-[var(--text-soft)]">No supervisors found.</td>
+                                <td colspan="15" class="px-3 py-8 text-center text-sm text-[var(--text-soft)]">No supervisors found.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -268,13 +274,36 @@
     </div>
 
     @if ($can('supervisors.create'))
-        <x-ui.modal id="add-supervisor-modal" title="Add Supervisor" class="w-[min(42rem,calc(100vw-2rem))]">
+        <x-ui.modal id="add-supervisor-modal" title="Add Supervisor" class="w-[min(48rem,calc(100vw-2rem))]">
             <form method="POST" action="{{ route('admin.supervisors.store') }}" class="grid gap-4">
                 @csrf
                 <div class="grid gap-4 md:grid-cols-2">
                     <x-ui.input label="Full Name" name="name" required />
                     <x-ui.input label="Email" name="email" type="email" required />
                     <x-ui.input label="Phone Number" name="phone" placeholder="08030000000" />
+                    <label class="block">
+                        <span class="siwes-form-label">Department</span>
+                        <select name="department_id" class="siwes-form-control mt-2" required data-supervisor-department="#add-supervisor-faculty" data-supervisor-faculty-id="#add-supervisor-faculty-id">
+                            <option value="">Select department</option>
+                            @foreach ($departments as $department)
+                                <option value="{{ $department->id }}" data-faculty-id="{{ $department->faculty_id }}" data-faculty-name="{{ $department->faculty?->name ?? 'N/A' }}">{{ $department->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="siwes-form-label">Faculty</span>
+                        <input id="add-supervisor-faculty" class="siwes-form-control mt-2" value="" placeholder="Select a department first" readonly>
+                        <input id="add-supervisor-faculty-id" type="hidden" name="faculty_id" value="">
+                    </label>
+                    <label class="block">
+                        <span class="siwes-form-label">Rank</span>
+                        <select name="rank" class="siwes-form-control mt-2" required>
+                            <option value="">Select rank</option>
+                            @foreach (\App\Models\Supervisor::RANKS as $rank)
+                                <option value="{{ $rank }}">{{ $rank }}</option>
+                            @endforeach
+                        </select>
+                    </label>
                 </div>
                 <div class="flex justify-end gap-2">
                     <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>

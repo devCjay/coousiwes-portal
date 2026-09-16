@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Http\Requests\Admin\Concerns\ReturnsAjaxValidationErrors;
+use App\Models\Supervisor;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -29,7 +30,9 @@ class UpdateSupervisorRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:40'],
             'staff_no' => ['required', 'string', 'max:40', Rule::unique('supervisors', 'staff_no')->ignore($this->route('supervisor'))],
             'organization' => ['nullable', 'string', 'max:160'],
-            'department' => ['nullable', 'string', 'max:160'],
+            'faculty_id' => ['nullable', 'integer', Rule::exists('faculties', 'id')->where('is_active', true)->whereNull('deleted_at')],
+            'department_id' => ['required', 'integer', Rule::exists('departments', 'id')->where('is_active', true)->whereNull('deleted_at')],
+            'rank' => ['required', 'string', Rule::in(Supervisor::RANKS)],
             'status' => ['required', 'string', Rule::in(['active', 'suspended'])],
         ];
     }

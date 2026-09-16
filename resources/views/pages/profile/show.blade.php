@@ -46,6 +46,9 @@
             @elseif ($user->supervisor)
                 <dl class="grid gap-4 sm:grid-cols-2">
                     <div><dt class="text-xs font-semibold uppercase text-[var(--text-soft)]">Staff Number</dt><dd class="mt-1 text-sm font-medium">{{ $user->supervisor->staff_no }}</dd></div>
+                    <div><dt class="text-xs font-semibold uppercase text-[var(--text-soft)]">Faculty</dt><dd class="mt-1 text-sm font-medium">{{ $user->supervisor->faculty?->name ?? 'N/A' }}</dd></div>
+                    <div><dt class="text-xs font-semibold uppercase text-[var(--text-soft)]">Department</dt><dd class="mt-1 text-sm font-medium">{{ $user->supervisor->academicDepartment?->name ?? $user->supervisor->department ?? 'N/A' }}</dd></div>
+                    <div><dt class="text-xs font-semibold uppercase text-[var(--text-soft)]">Rank</dt><dd class="mt-1 text-sm font-medium">{{ $user->supervisor->rank ?? 'N/A' }}</dd></div>
                     <div><dt class="text-xs font-semibold uppercase text-[var(--text-soft)]">Status</dt><dd class="mt-1 text-sm font-medium">{{ ucfirst($user->supervisor->status) }}</dd></div>
                 </dl>
             @else

@@ -12,6 +12,10 @@
         <x-ui.card title="{{ $supervisor->user->name }}" description="{{ $supervisor->staff_no }}">
             <dl class="space-y-3 text-sm">
                 <div><dt class="text-[var(--text-soft)]">Email</dt><dd class="font-medium">{{ $supervisor->user->email }}</dd></div>
+                <div><dt class="text-[var(--text-soft)]">Phone</dt><dd class="font-medium">{{ $supervisor->user->phone ?: 'N/A' }}</dd></div>
+                <div><dt class="text-[var(--text-soft)]">Faculty</dt><dd class="font-medium">{{ $supervisor->faculty?->name ?? 'N/A' }}</dd></div>
+                <div><dt class="text-[var(--text-soft)]">Department</dt><dd class="font-medium">{{ $supervisor->academicDepartment?->name ?? $supervisor->department ?? 'N/A' }}</dd></div>
+                <div><dt class="text-[var(--text-soft)]">Rank</dt><dd class="font-medium">{{ $supervisor->rank ?? 'N/A' }}</dd></div>
                 <div><dt class="text-[var(--text-soft)]">Active Assignments</dt><dd class="font-medium">{{ $supervisor->activeAssignments()->count() }}</dd></div>
                 <div><dt class="text-[var(--text-soft)]">Status</dt><dd class="font-medium">{{ ucfirst($supervisor->status) }}</dd></div>
             </dl>

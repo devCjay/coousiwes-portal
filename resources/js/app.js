@@ -731,6 +731,30 @@ document.addEventListener('change', (event) => {
     }
 });
 
+const fillSupervisorFaculty = (departmentSelect) => {
+    const facultyInput = document.querySelector(departmentSelect.dataset.supervisorDepartment || '');
+    const facultyHidden = document.querySelector(departmentSelect.dataset.supervisorFacultyId || '');
+    const selected = departmentSelect.selectedOptions[0];
+
+    if (facultyInput) {
+        facultyInput.value = selected?.dataset.facultyName || '';
+    }
+
+    if (facultyHidden) {
+        facultyHidden.value = selected?.dataset.facultyId || '';
+    }
+};
+
+document.querySelectorAll('[data-supervisor-department]').forEach(fillSupervisorFaculty);
+
+document.addEventListener('change', (event) => {
+    const departmentSelect = event.target.closest('[data-supervisor-department]');
+
+    if (departmentSelect) {
+        fillSupervisorFaculty(departmentSelect);
+    }
+});
+
 document.querySelectorAll('[data-countup]').forEach((element) => {
     const rawValue = element.textContent.trim();
     const target = Number(rawValue.replace(/[^0-9.]/g, ''));

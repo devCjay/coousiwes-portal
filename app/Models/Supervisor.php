@@ -20,11 +20,23 @@ class Supervisor extends Model
 
     public const string STATUS_SUSPENDED = 'suspended';
 
+    public const array RANKS = [
+        'Assistant Lecturer',
+        'Lecturer 2',
+        'Lecturer 1',
+        'Senior Lecturer',
+        'Associate Professor',
+        'Professor',
+    ];
+
     protected $fillable = [
         'user_id',
         'staff_no',
         'organization',
+        'faculty_id',
+        'department_id',
         'department',
+        'rank',
         'status',
         'metadata',
     ];
@@ -40,6 +52,16 @@ class Supervisor extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function faculty(): BelongsTo
+    {
+        return $this->belongsTo(Faculty::class);
+    }
+
+    public function academicDepartment(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
     }
 
     public function assignments(): HasMany

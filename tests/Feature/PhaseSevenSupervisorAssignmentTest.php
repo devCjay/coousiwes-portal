@@ -24,6 +24,7 @@ use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
 class PhaseSevenSupervisorAssignmentTest extends TestCase
@@ -51,6 +52,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         AppSetting::query()->updateOrCreate(['key' => 'whatsapp.phone_number_id'], ['group' => 'whatsapp', 'value' => '123456789', 'type' => 'string']);
         config(['mail.default' => 'log', 'mail.mailers.smtp.host' => '127.0.0.1']);
         Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.supervisor-login']]], 200)]);
+        $department = Department::where('code', 'AGE')->firstOrFail();
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
@@ -58,6 +60,8 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
                 'name' => 'Dr Ada Supervisor',
                 'email' => 'ada.supervisor@example.test',
                 'phone' => '08031112222',
+                'department_id' => $department->id,
+                'rank' => 'Senior Lecturer',
             ])
             ->assertOk()
             ->assertJsonPath('message', 'Supervisor created.');
@@ -66,6 +70,10 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
 
         $this->assertSame('Dr Ada Supervisor', $supervisor->user->name);
         $this->assertSame('08031112222', $supervisor->user->phone);
+        $this->assertSame($department->id, $supervisor->department_id);
+        $this->assertSame($department->faculty_id, $supervisor->faculty_id);
+        $this->assertSame($department->name, $supervisor->department);
+        $this->assertSame('Senior Lecturer', $supervisor->rank);
         $this->assertStringStartsWith('SUP-', $supervisor->staff_no);
         $this->assertTrue($supervisor->user->hasRole('supervisor'));
         Notification::assertSentTo(
@@ -334,11 +342,26 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         $admin = $this->admin();
         $this->supervisor('SUP-2006');
 
-        $this->actingAs($admin, 'admin')
+        $response = $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.supervisors.export'))
             ->assertOk()
-            ->assertSee('SUP-2006');
+            ->assertDownload('supervisors-list.xlsx');
+
+        $spreadsheet = IOFactory::load($response->baseResponse->getFile()->getPathname());
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $this->assertSame(['Name', 'Email', 'Phone', 'Department', 'Rank'], $sheet->rangeToArray('A1:E1')[0]);
+        $rows = collect($sheet->rangeToArray('A2:E'.$sheet->getHighestDataRow()))
+            ->keyBy(fn (array $row): string => (string) $row[1]);
+
+        $this->assertSame([
+            'Supervisor SUP-2006',
+            'sup-2006@example.test',
+            '08030000000',
+            'SIWES',
+            'N/A',
+        ], $rows->get('sup-2006@example.test'));
     }
 
     private function admin(): Admin
