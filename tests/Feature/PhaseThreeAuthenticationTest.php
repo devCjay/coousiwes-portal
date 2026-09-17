@@ -12,6 +12,7 @@ use Illuminate\Session\DatabaseSessionHandler;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
 use Tests\TestCase;
 
 class PhaseThreeAuthenticationTest extends TestCase
@@ -309,5 +310,19 @@ class PhaseThreeAuthenticationTest extends TestCase
 
             Notification::assertSentTo($user, ResetPassword::class);
         }
+    }
+
+    public function test_password_reset_request_returns_ajax_toast_payload(): void
+    {
+        Notification::fake();
+
+        $student = User::where('email', 'student@coousiwes.test')->firstOrFail();
+
+        $this->postJson(route('password.email'), ['email' => $student->email])
+            ->assertOk()
+            ->assertJsonPath('message', __(Password::RESET_LINK_SENT))
+            ->assertJsonPath('reload', false);
+
+        Notification::assertSentTo($student, ResetPassword::class);
     }
 }
