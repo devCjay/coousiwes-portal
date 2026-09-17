@@ -293,6 +293,14 @@ class PhaseFiveStudentManagementTest extends TestCase
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
         $student = $this->createStudent('profile-actions@example.test', '2026/CSC/030');
         $student->user->forceFill(['password' => Hash::make('old-password')])->save();
+        $student->update([
+            'metadata' => [
+                'bank_name' => 'Access Bank',
+                'account_number' => '0123456789',
+                'account_name' => 'Profile Actions Student',
+                'sort_code' => '044',
+            ],
+        ]);
         $ticket = $student->tickets()->create([
             'serial_number' => 'SIWES-303030303030',
             'pin' => '303030',
@@ -322,6 +330,8 @@ class PhaseFiveStudentManagementTest extends TestCase
             ->assertOk()
             ->assertSee('Personal Data')
             ->assertSee('Placement Data')
+            ->assertSee('Bank Information')
+            ->assertSee('Profile Actions Student')
             ->assertSee('Profile Works Ltd')
             ->assertSee('Reset Password')
             ->assertSee('Activate')

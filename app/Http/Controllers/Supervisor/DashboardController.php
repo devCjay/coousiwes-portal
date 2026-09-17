@@ -15,7 +15,15 @@ class DashboardController extends Controller
         abort_unless($supervisor instanceof Supervisor, 403);
 
         $assignments = $supervisor->activeAssignments()
-            ->with(['student.user', 'student.department', 'student.academicLevel'])
+            ->with([
+                'student.user',
+                'student.faculty',
+                'student.department',
+                'student.academicLevel',
+                'student.academicSession',
+                'student.placement.academicLevel',
+                'student.placement.academicSession',
+            ])
             ->latest('assigned_at')
             ->get();
 

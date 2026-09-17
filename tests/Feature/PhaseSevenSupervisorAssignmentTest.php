@@ -53,6 +53,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         config(['mail.default' => 'log', 'mail.mailers.smtp.host' => '127.0.0.1']);
         Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.supervisor-login']]], 200)]);
         $department = Department::where('code', 'AGE')->firstOrFail();
+        $temporaryPassword = null;
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
@@ -79,9 +80,11 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         Notification::assertSentTo(
             $supervisor->user,
             SupervisorLoginDetailsNotification::class,
-            function (SupervisorLoginDetailsNotification $notification, array $channels) use ($supervisor): bool {
+            function (SupervisorLoginDetailsNotification $notification, array $channels) use ($supervisor, &$temporaryPassword): bool {
                 $mail = $notification->toMail($supervisor->user);
                 $content = implode("\n", $mail->introLines);
+                preg_match('/Temporary password:\s*(.+)/', $content, $matches);
+                $temporaryPassword = trim($matches[1] ?? '');
 
                 return in_array('mail', $channels, true)
                     && $mail->subject === 'COOU SIWES Supervisor Portal Login Details'
@@ -96,6 +99,15 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             && $request['to'] === '2348031112222'
             && str_contains($request['text']['body'], 'ada.supervisor@example.test'));
         $this->assertTrue(AuditLog::where('event', 'supervisors.created')->where('auditable_id', $supervisor->id)->exists());
+
+        $this->assertNotEmpty($temporaryPassword);
+        auth('admin')->logout();
+        $this->flushSession();
+
+        $this->post(route('login.store', 'supervisor'), [
+            'email' => 'ada.supervisor@example.test',
+            'password' => $temporaryPassword,
+        ])->assertRedirect(route('supervisor.dashboard'));
     }
 
     public function test_assignment_can_reassign_students_and_preserves_history_on_revocation(): void
@@ -212,6 +224,35 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             ->assertJsonPath('message', 'Student assigned to supervisor.');
 
         $this->assertSame(2, $supervisor->activeAssignments()->count());
+    }
+
+    public function test_single_assignment_picker_only_lists_students_with_placement_details(): void
+    {
+        $admin = $this->admin();
+        $placed = $this->student('placed-assignment@example.test', '2026/SUP/060');
+        $unplaced = $this->student('unplaced-assignment@example.test', '2026/SUP/061');
+
+        $placed->placement()->create([
+            'academic_level_id' => $placed->academic_level_id,
+            'academic_session_id' => $placed->academic_session_id,
+            'siwes_year' => 2026,
+            'attachment_period' => 'April to October',
+            'company_name' => 'Placed Works Ltd',
+            'company_state' => 'Lagos',
+            'company_lga' => 'Ikeja',
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.supervisors.index'))
+            ->assertOk()
+            ->assertSee('Search by student name, reg no, or email')
+            ->assertSee($placed->user->name)
+            ->assertSee($placed->matric_no)
+            ->assertSee('placed-assignment@example.test')
+            ->assertSee('Placed Works Ltd')
+            ->assertDontSee($unplaced->matric_no)
+            ->assertDontSee('unplaced-assignment@example.test');
     }
 
     public function test_bulk_assignment_assigns_all_matching_students(): void
@@ -362,6 +403,29 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             'SIWES',
             'N/A',
         ], $rows->get('sup-2006@example.test'));
+    }
+
+    public function test_admin_can_delete_supervisor_and_assignments_are_removed(): void
+    {
+        $admin = $this->admin();
+        $supervisor = $this->supervisor('SUP-2012');
+        $student = $this->student('delete-supervisor-assignment@example.test', '2026/SUP/050');
+        $assignment = $supervisor->assignments()->create([
+            'student_id' => $student->id,
+            'assigned_at' => now(),
+        ]);
+        $userId = $supervisor->user_id;
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->deleteJson(route('admin.supervisors.destroy', $supervisor))
+            ->assertOk()
+            ->assertJsonPath('message', 'Supervisor deleted.');
+
+        $this->assertDatabaseMissing('supervisor_student_assignments', ['id' => $assignment->id]);
+        $this->assertDatabaseMissing('supervisors', ['id' => $supervisor->id]);
+        $this->assertDatabaseMissing('users', ['id' => $userId]);
+        $this->assertTrue(AuditLog::where('event', 'supervisors.deleted')->exists());
     }
 
     private function admin(): Admin

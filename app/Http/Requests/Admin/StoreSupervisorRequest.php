@@ -33,7 +33,6 @@ class StoreSupervisorRequest extends FormRequest
             'faculty_id' => ['nullable', 'integer', Rule::exists('faculties', 'id')->where('is_active', true)->whereNull('deleted_at')],
             'department_id' => ['required', 'integer', Rule::exists('departments', 'id')->where('is_active', true)->whereNull('deleted_at')],
             'rank' => ['required', 'string', Rule::in(Supervisor::RANKS)],
-            'status' => ['nullable', 'string', Rule::in(['active', 'suspended'])],
         ];
     }
 }

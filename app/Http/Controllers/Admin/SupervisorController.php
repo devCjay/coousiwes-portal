@@ -21,6 +21,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -61,7 +62,12 @@ class SupervisorController extends Controller
                 'average_performance' => round((float) $metrics->avg('performance_score'), 1),
             ],
             'allSupervisors' => Supervisor::query()->with('user')->where('status', Supervisor::STATUS_ACTIVE)->orderBy('staff_no')->get(),
-            'students' => Student::query()->with(['user', 'department', 'activeSupervisorAssignment.supervisor.user'])->latest()->limit(200)->get(),
+            'students' => Student::query()
+                ->with(['user', 'department', 'placement', 'activeSupervisorAssignment.supervisor.user'])
+                ->whereHas('placement')
+                ->latest()
+                ->limit(500)
+                ->get(),
             'faculties' => Faculty::query()->where('is_active', true)->orderBy('name')->get(),
             'departments' => Department::query()->where('is_active', true)->with('faculty')->orderBy('name')->get(),
             'levels' => AcademicLevel::query()->orderBy('level')->get(),
@@ -146,6 +152,33 @@ class SupervisorController extends Controller
         $this->auditLogger->record('supervisors.reactivated', $request->user(), $request, $supervisor);
 
         return AjaxResponse::success($request, 'Supervisor reactivated.');
+    }
+
+    public function destroy(Request $request, Supervisor $supervisor): JsonResponse|RedirectResponse
+    {
+        abort_unless($request->user()?->can('supervisors.update'), 403);
+
+        $supervisorId = $supervisor->id;
+        $user = $supervisor->user;
+
+        DB::transaction(function () use ($supervisor, $user): void {
+            $assignmentIds = $supervisor->assignments()->pluck('id');
+
+            Assessment::query()
+                ->where('supervisor_id', $supervisor->id)
+                ->orWhereIn('supervisor_student_assignment_id', $assignmentIds)
+                ->delete();
+
+            $supervisor->assignments()->delete();
+            $supervisor->forceDelete();
+            $user?->delete();
+        });
+
+        $this->auditLogger->record('supervisors.deleted', $request->user(), $request, metadata: [
+            'supervisor_id' => $supervisorId,
+        ]);
+
+        return AjaxResponse::success($request, 'Supervisor deleted.');
     }
 
     public function export(Request $request): BinaryFileResponse

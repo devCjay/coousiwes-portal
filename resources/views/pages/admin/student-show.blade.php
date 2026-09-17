@@ -38,6 +38,7 @@
         ['id' => 'personal', 'label' => 'Personal Data', 'icon' => 'user-circle'],
         ['id' => 'academic', 'label' => 'Academic', 'icon' => 'graduation-cap'],
         ['id' => 'placement', 'label' => 'Placement', 'icon' => 'building'],
+        ['id' => 'bank', 'label' => 'Bank', 'icon' => 'wallet'],
         ['id' => 'account', 'label' => 'Account', 'icon' => 'shield'],
     ];
     $can = fn (string $permission): bool => \App\Support\PortalPermission::userHas(auth('admin')->user(), $permission);
@@ -192,6 +193,17 @@
                                 <p class="mt-1 text-sm text-[var(--text-soft)]">This student is displayed as inactive on the student list because no placement record exists.</p>
                             </div>
                         @endif
+                    </x-ui.card>
+                </div>
+
+                <div id="student-tab-bank" data-student-admin-panel class="hidden">
+                    <x-ui.card title="Bank Information" description="Student bank details submitted during profile setup.">
+                        <dl class="grid gap-4 md:grid-cols-2">
+                            <x-profile.detail label="Bank Name" :value="$metadata['bank_name'] ?? 'N/A'" />
+                            <x-profile.detail label="Account Number" :value="$metadata['account_number'] ?? 'N/A'" />
+                            <x-profile.detail label="Account Name" :value="$metadata['account_name'] ?? 'N/A'" />
+                            <x-profile.detail label="Sort Code" :value="$metadata['sort_code'] ?? 'N/A'" />
+                        </dl>
                     </x-ui.card>
                 </div>
 

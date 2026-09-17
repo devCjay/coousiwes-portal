@@ -7,9 +7,11 @@ use App\Models\Admin;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Session\DatabaseSessionHandler;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class PhaseThreeAuthenticationTest extends TestCase
@@ -288,5 +290,24 @@ class PhaseThreeAuthenticationTest extends TestCase
             ->assertUnprocessable();
 
         $this->assertTrue(Hash::check('password', $admin->fresh()->password));
+    }
+
+    public function test_students_and_supervisors_can_request_password_reset_by_email(): void
+    {
+        Notification::fake();
+
+        $student = User::where('email', 'student@coousiwes.test')->firstOrFail();
+        $supervisor = User::where('email', 'supervisor@coousiwes.test')->firstOrFail();
+
+        $this->get(route('password.request', ['role' => 'student']))
+            ->assertOk()
+            ->assertSee('Reset Password');
+
+        foreach ([$student, $supervisor] as $user) {
+            $this->post(route('password.email'), ['email' => $user->email])
+                ->assertSessionHas('status');
+
+            Notification::assertSentTo($user, ResetPassword::class);
+        }
     }
 }

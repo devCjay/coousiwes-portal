@@ -16,7 +16,18 @@ class AssignedStudentController extends Controller
 
         return view('pages.supervisor.students', [
             'supervisor' => $supervisor->load('user'),
-            'assignments' => $supervisor->activeAssignments()->with(['student.user', 'student.department', 'student.academicLevel'])->latest('assigned_at')->get(),
+            'assignments' => $supervisor->activeAssignments()
+                ->with([
+                    'student.user',
+                    'student.faculty',
+                    'student.department',
+                    'student.academicLevel',
+                    'student.academicSession',
+                    'student.placement.academicLevel',
+                    'student.placement.academicSession',
+                ])
+                ->latest('assigned_at')
+                ->get(),
         ]);
     }
 }

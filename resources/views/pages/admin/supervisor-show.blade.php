@@ -19,14 +19,15 @@
                 <div><dt class="text-[var(--text-soft)]">Active Assignments</dt><dd class="font-medium">{{ $supervisor->activeAssignments()->count() }}</dd></div>
                 <div><dt class="text-[var(--text-soft)]">Status</dt><dd class="font-medium">{{ ucfirst($supervisor->status) }}</dd></div>
             </dl>
-            <div class="mt-5 flex gap-2">
-                <form method="POST" action="{{ route('admin.supervisors.suspend', $supervisor) }}">
-                    @csrf
-                    <x-ui.button type="submit" variant="danger">Suspend</x-ui.button>
-                </form>
+            <div class="mt-5 flex flex-wrap gap-2">
                 <form method="POST" action="{{ route('admin.supervisors.reactivate', $supervisor) }}">
                     @csrf
                     <x-ui.button type="submit" variant="secondary">Reactivate</x-ui.button>
+                </form>
+                <form method="POST" action="{{ route('admin.supervisors.destroy', $supervisor) }}" onsubmit="return confirm('Delete this supervisor and all assignments?');">
+                    @csrf
+                    @method('DELETE')
+                    <x-ui.button type="submit" variant="danger">Delete Supervisor</x-ui.button>
                 </form>
             </div>
         </x-ui.card>

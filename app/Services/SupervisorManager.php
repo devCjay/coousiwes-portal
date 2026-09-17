@@ -7,6 +7,7 @@ use App\Models\Supervisor;
 use App\Models\User;
 use App\Notifications\SupervisorLoginDetailsNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class SupervisorManager
@@ -17,13 +18,13 @@ class SupervisorManager
     public function create(array $data): Supervisor
     {
         return DB::transaction(function () use ($data): Supervisor {
-            $temporaryPassword = Str::password(12);
+            $temporaryPassword = Str::upper(Str::random(4)).'-'.Str::lower(Str::random(4)).'-'.random_int(1000, 9999);
 
             $user = User::query()->create([
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'phone' => $data['phone'] ?? null,
-                'password' => $temporaryPassword,
+                'password' => Hash::make($temporaryPassword),
                 'status' => $data['status'] ?? Supervisor::STATUS_ACTIVE,
                 'otp_enabled' => false,
                 'email_verified_at' => now(),
@@ -60,9 +61,9 @@ class SupervisorManager
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'phone' => $data['phone'] ?? null,
-                'status' => $data['status'],
+                'status' => $data['status'] ?? $supervisor->status,
             ]);
-            $supervisor->update($this->payload($data, $user));
+            $supervisor->update($this->payload($data + ['status' => $supervisor->status], $user));
 
             return $supervisor->refresh();
         });

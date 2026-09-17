@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\TicketController;
 use App\Http\Controllers\AccountPasswordController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\OtpChallengeController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Cron\StudentImportCronController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationCenterController;
@@ -62,6 +63,17 @@ Route::middleware('guest:web,admin')->group(function () {
         ->whereIn('role', ['admin', 'supervisor', 'student'])
         ->middleware('throttle:login')
         ->name('login.store');
+
+    Route::get('/forgot-password', [PasswordResetController::class, 'create'])
+        ->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'edit'])
+        ->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'update'])
+        ->middleware('throttle:6,1')
+        ->name('password.update');
 });
 
 Route::middleware('auth:web,admin')->group(function () {
@@ -331,6 +343,9 @@ Route::middleware('auth:web,admin')->group(function () {
         Route::post('/supervisors/{supervisor}/reactivate', [SupervisorController::class, 'reactivate'])
             ->middleware('permission:supervisors.update')
             ->name('supervisors.reactivate');
+        Route::delete('/supervisors/{supervisor}', [SupervisorController::class, 'destroy'])
+            ->middleware('permission:supervisors.update')
+            ->name('supervisors.destroy');
         Route::post('/supervisor-assignments', [SupervisorAssignmentController::class, 'store'])
             ->middleware('permission:supervisors.assign')
             ->name('supervisor-assignments.store');

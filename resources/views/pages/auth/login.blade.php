@@ -36,7 +36,9 @@
                 <input name="remember" type="checkbox" class="size-4 rounded border-[var(--line)] text-brand-600">
                 Remember device
             </label>
-            <a href="#" class="text-sm font-semibold text-brand-700 dark:text-brand-300">Reset password</a>
+            @if ($role !== 'Admin')
+                <a href="{{ route('password.request', ['role' => strtolower($role)]) }}" class="text-sm font-semibold text-brand-700 dark:text-brand-300">Reset password</a>
+            @endif
         </div>
 
         <x-ui.button type="submit" class="w-full">Continue securely</x-ui.button>

@@ -274,6 +274,20 @@ class PhaseEightPortalsTest extends TestCase
         $visible = $this->student('visible-portal@example.test', '2026/PORTAL/003');
         $hidden = $this->student('hidden-portal@example.test', '2026/PORTAL/004');
 
+        $visible->user->forceFill(['phone' => '08035550000'])->save();
+        $visible->update(['address' => 'Visible student lodge']);
+        $visible->placement()->create([
+            'academic_level_id' => $visible->academic_level_id,
+            'academic_session_id' => $visible->academic_session_id,
+            'siwes_year' => 2026,
+            'attachment_period' => 'April to October',
+            'company_name' => 'Visible Works Ltd',
+            'company_address' => '22 Visible Road',
+            'company_state' => 'Lagos',
+            'company_lga' => 'Ikeja',
+            'company_supervisor_phone' => '08039990000',
+        ]);
+
         $supervisor->assignments()->create(['student_id' => $visible->id, 'assigned_at' => now()]);
         $otherSupervisor->assignments()->create(['student_id' => $hidden->id, 'assigned_at' => now()]);
 
@@ -282,6 +296,19 @@ class PhaseEightPortalsTest extends TestCase
             ->get(route('supervisor.dashboard'))
             ->assertOk()
             ->assertSee('2026/PORTAL/003')
+            ->assertSee('visible-portal@example.test')
+            ->assertSee('08035550000')
+            ->assertSee('Visible Works Ltd')
+            ->assertSee('Lagos / Ikeja')
+            ->assertDontSee('2026/PORTAL/004');
+
+        $this->actingAs($supervisor->user)
+            ->withSession(['otp.verified' => true])
+            ->get(route('supervisor.students.index'))
+            ->assertOk()
+            ->assertSee('Visible student lodge')
+            ->assertSee('08039990000')
+            ->assertSee('Visible Works Ltd')
             ->assertDontSee('2026/PORTAL/004');
     }
 

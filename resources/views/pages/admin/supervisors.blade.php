@@ -328,10 +328,11 @@
                 </div>
                 <label class="block">
                     <span class="text-sm font-medium text-[var(--text-strong)]">Student</span>
-                    <select name="student_id" class="siwes-form-control mt-2">
+                    <input type="search" name="single_student_search" class="siwes-form-control mt-2" placeholder="Search by student name, reg no, or email..." data-option-search="#single-assignment-student">
+                    <select id="single-assignment-student" name="student_id" class="siwes-form-control mt-2">
                         @foreach ($students as $student)
                             <option value="{{ $student->id }}">
-                                {{ $student->user->name }} / {{ $student->matric_no }} / {{ $student->department?->code ?? 'N/A' }}
+                                {{ $student->user->name }} / {{ $student->matric_no }} / {{ $student->user->email ?: 'No email' }} / {{ $student->department?->code ?? 'N/A' }} / {{ $student->placement?->company_name ?? 'No placement' }}
                                 @if ($student->activeSupervisorAssignment)
                                     / Assigned to {{ $student->activeSupervisorAssignment->supervisor->user->name }}
                                 @endif
