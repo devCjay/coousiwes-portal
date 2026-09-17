@@ -156,7 +156,16 @@
                                 <td class="whitespace-nowrap px-3 py-3 text-[var(--text-strong)]">{{ $supervisor['rating'] }}</td>
                                 <td class="whitespace-nowrap px-3 py-3 text-[var(--text-strong)]">{{ $supervisor['payment'] }}</td>
                                 <td class="whitespace-nowrap px-3 py-3">
-                                    <x-ui.button :href="$supervisor['show_url']" variant="secondary" class="px-3 py-2 text-xs">View</x-ui.button>
+                                    <div class="flex items-center gap-2">
+                                        <x-ui.button :href="$supervisor['show_url']" variant="secondary" class="px-3 py-2 text-xs">View</x-ui.button>
+                                        @if ($can('supervisors.update'))
+                                            <form method="POST" action="{{ $supervisor['delete_url'] }}" onsubmit="return confirm('Delete this supervisor and all assignments?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <x-ui.button type="submit" variant="danger" class="px-3 py-2 text-xs" data-loading-text="Deleting...">Delete</x-ui.button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty

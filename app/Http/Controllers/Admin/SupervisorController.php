@@ -178,7 +178,7 @@ class SupervisorController extends Controller
             'supervisor_id' => $supervisorId,
         ]);
 
-        return AjaxResponse::success($request, 'Supervisor deleted.');
+        return AjaxResponse::success($request, 'Supervisor deleted.', route('admin.supervisors.index'));
     }
 
     public function export(Request $request): BinaryFileResponse
@@ -272,6 +272,7 @@ class SupervisorController extends Controller
                     'account_name' => $metadata['account_name'] ?? '',
                     'account_number' => $metadata['account_number'] ?? '',
                     'show_url' => route('admin.supervisors.show', $supervisor),
+                    'delete_url' => route('admin.supervisors.destroy', $supervisor),
                     'status' => $supervisor->status,
                 ];
             });

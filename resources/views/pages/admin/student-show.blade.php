@@ -50,9 +50,13 @@
             <div class="absolute inset-y-0 right-0 hidden w-1/2 bg-[linear-gradient(120deg,transparent_0%,rgba(255,255,255,.08)_36%,transparent_37%,transparent_55%,rgba(255,255,255,.10)_56%,transparent_78%)] md:block"></div>
             <div class="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div class="flex min-w-0 gap-4">
-                    <span class="grid size-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-white/25 bg-white/12 text-2xl font-black text-white shadow-[0_20px_50px_rgb(0_0_0_/_0.18)] ring-1 ring-white/15 sm:size-24">
+                    <span class="relative grid size-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-white/25 bg-white/12 text-2xl font-black text-white shadow-[0_20px_50px_rgb(0_0_0_/_0.18)] ring-1 ring-white/15 sm:size-24">
                         @if ($profilePhotoUrl)
                             <img src="{{ $profilePhotoUrl }}" alt="{{ $student->user->name }} profile photo" class="h-full w-full object-cover">
+                            <button type="button" data-modal-target="#student-profile-photo-modal" class="absolute inset-x-2 bottom-2 inline-flex items-center justify-center gap-1 rounded-lg bg-graphite-950/75 px-2 py-1 text-[0.65rem] font-bold text-white shadow-lg backdrop-blur-sm">
+                                <x-ui.icon name="eye" class="size-3" />
+                                View
+                            </button>
                         @else
                             {{ $initials }}
                         @endif
@@ -222,6 +226,14 @@
             </div>
         </div>
     </section>
+
+    @if ($profilePhotoUrl)
+        <x-ui.modal id="student-profile-photo-modal" title="{{ $student->user->name }} - Profile Picture" class="w-[min(42rem,calc(100vw-2rem))]">
+            <div class="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-muted)]">
+                <img src="{{ $profilePhotoUrl }}" alt="{{ $student->user->name }} full profile picture" class="max-h-[70vh] w-full object-contain">
+            </div>
+        </x-ui.modal>
+    @endif
 
     @if ($can('students.update'))
         <x-ui.modal id="edit-student-modal" title="Edit Student" class="w-[min(62rem,calc(100vw-2rem))]">

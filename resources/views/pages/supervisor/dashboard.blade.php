@@ -31,9 +31,12 @@
                     @endphp
                     <article data-dashboard-student class="rounded-2xl border border-[var(--line)] bg-[var(--surface-muted)] p-4">
                         <div class="flex gap-3">
-                            <span class="grid size-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-brand-600 text-sm font-black text-white">
+                            <span class="relative grid size-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-brand-600 text-sm font-black text-white">
                                 @if ($photoUrl)
                                     <img src="{{ $photoUrl }}" alt="{{ $user->name }} profile photo" class="h-full w-full object-cover">
+                                    <button type="button" data-modal-target="#dashboard-student-photo-{{ $assignment->id }}" class="absolute inset-x-1 bottom-1 inline-flex items-center justify-center rounded bg-graphite-950/75 px-1 py-0.5 text-[0.55rem] font-bold text-white shadow-lg backdrop-blur-sm" aria-label="View {{ $user->name }} profile picture">
+                                        View
+                                    </button>
                                 @else
                                     {{ $initials }}
                                 @endif
@@ -54,6 +57,13 @@
                             </div>
                         </div>
                     </article>
+                    @if ($photoUrl)
+                        <x-ui.modal id="dashboard-student-photo-{{ $assignment->id }}" title="{{ $user->name }} - Profile Picture" class="w-[min(42rem,calc(100vw-2rem))]">
+                            <div class="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-muted)]">
+                                <img src="{{ $photoUrl }}" alt="{{ $user->name }} full profile picture" class="max-h-[70vh] w-full object-contain">
+                            </div>
+                        </x-ui.modal>
+                    @endif
                 @empty
                     <p class="text-sm text-[var(--text-soft)]">No assigned students yet.</p>
                 @endforelse

@@ -420,7 +420,8 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             ->withSession(['otp.verified' => true])
             ->deleteJson(route('admin.supervisors.destroy', $supervisor))
             ->assertOk()
-            ->assertJsonPath('message', 'Supervisor deleted.');
+            ->assertJsonPath('message', 'Supervisor deleted.')
+            ->assertJsonPath('redirect', route('admin.supervisors.index'));
 
         $this->assertDatabaseMissing('supervisor_student_assignments', ['id' => $assignment->id]);
         $this->assertDatabaseMissing('supervisors', ['id' => $supervisor->id]);

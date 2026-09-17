@@ -31,9 +31,13 @@
                 <article data-assigned-student class="rounded-2xl border border-[var(--line)] bg-[var(--surface-raised)] p-4 shadow-[0_16px_42px_rgb(8_15_12_/_0.06)]">
                     <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div class="flex min-w-0 gap-3">
-                            <span class="grid size-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-brand-600 text-lg font-black text-white">
+                            <span class="relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-brand-600 text-lg font-black text-white">
                                 @if ($photoUrl)
                                     <img src="{{ $photoUrl }}" alt="{{ $user->name }} profile photo" class="h-full w-full object-cover">
+                                    <button type="button" data-modal-target="#assigned-student-photo-{{ $assignment->id }}" class="absolute inset-x-1 bottom-1 inline-flex items-center justify-center gap-1 rounded-md bg-graphite-950/75 px-1.5 py-0.5 text-[0.6rem] font-bold text-white shadow-lg backdrop-blur-sm">
+                                        <x-ui.icon name="eye" class="size-3" />
+                                        View
+                                    </button>
                                 @else
                                     {{ $initials }}
                                 @endif
@@ -76,6 +80,13 @@
                         </div>
                     </div>
                 </article>
+                @if ($photoUrl)
+                    <x-ui.modal id="assigned-student-photo-{{ $assignment->id }}" title="{{ $user->name }} - Profile Picture" class="w-[min(42rem,calc(100vw-2rem))]">
+                        <div class="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-muted)]">
+                            <img src="{{ $photoUrl }}" alt="{{ $user->name }} full profile picture" class="max-h-[70vh] w-full object-contain">
+                        </div>
+                    </x-ui.modal>
+                @endif
             @empty
                 <p class="rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-5 text-sm text-[var(--text-soft)]">No assigned students yet.</p>
             @endforelse
