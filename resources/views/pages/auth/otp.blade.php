@@ -28,7 +28,7 @@
 
         <div>
             <label class="mb-3 block text-center text-sm font-semibold text-[var(--text-strong)]">OTP Code</label>
-            <div class="grid grid-cols-6 gap-2 sm:gap-3" data-otp-boxes>
+            <div class="flex flex-nowrap justify-center gap-2 overflow-x-auto pb-1 sm:gap-3" data-otp-boxes>
                 @for ($index = 0; $index < 6; $index++)
                     <input
                         type="text"
@@ -37,11 +37,12 @@
                         maxlength="1"
                         pattern="[0-9]"
                         aria-label="OTP digit {{ $index + 1 }}"
-                        class="h-12 rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] text-center text-xl font-black text-brand-700 shadow-sm outline-none theme-transition focus:border-brand-500 focus:bg-[var(--surface-raised)] focus:ring-4 focus:ring-brand-400/15 dark:text-brand-200 sm:h-14"
+                        class="h-14 w-12 shrink-0 rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] text-center text-xl font-black text-brand-700 shadow-sm outline-none theme-transition focus:border-brand-500 focus:bg-[var(--surface-raised)] focus:ring-4 focus:ring-brand-400/15 dark:text-brand-200 sm:h-16 sm:w-16"
                         data-otp-digit
                     >
                 @endfor
             </div>
+            <p class="mt-2 text-center text-xs text-[var(--text-soft)]">Enter the code sent to your email address.</p>
         </div>
 
         <x-ui.button type="submit" class="w-full">Verify and continue</x-ui.button>
