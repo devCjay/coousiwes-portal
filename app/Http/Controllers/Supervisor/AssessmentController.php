@@ -26,7 +26,7 @@ class AssessmentController extends Controller
         return view('pages.supervisor.assessments', [
             'supervisor' => $supervisor,
             'assignments' => $supervisor->activeAssignments()
-                ->with(['student.user', 'student.department', 'student.academicLevel', 'assessment'])
+                ->with(['student.user', 'student.department', 'student.academicLevel', 'assessment.scores.rubricItem'])
                 ->latest('assigned_at')
                 ->get(),
             'rubricItems' => AssessmentRubricItem::query()->where('is_active', true)->orderBy('sort_order')->get(),

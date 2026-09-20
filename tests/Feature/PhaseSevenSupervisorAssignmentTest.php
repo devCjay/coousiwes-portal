@@ -445,7 +445,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
 
     private function supervisor(string $staffNo): Supervisor
     {
-        return app(SupervisorManager::class)->create([
+        $supervisor = app(SupervisorManager::class)->create([
             'name' => "Supervisor {$staffNo}",
             'email' => strtolower($staffNo).'@example.test',
             'phone' => '08030000000',
@@ -454,6 +454,17 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             'department' => 'SIWES',
             'status' => Supervisor::STATUS_ACTIVE,
         ]);
+
+        $supervisor->update([
+            'metadata' => [
+                'bank_name' => 'Access Bank',
+                'account_number' => '0123456789',
+                'account_name' => "Supervisor {$staffNo}",
+                'sort_code' => '044',
+            ],
+        ]);
+
+        return $supervisor;
     }
 
     private function student(string $email, string $matricNo): Student

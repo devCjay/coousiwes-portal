@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Supervisor;
 
 use App\Http\Controllers\Controller;
+use App\Models\AssessmentRubricItem;
 use App\Models\Supervisor;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -25,9 +26,12 @@ class AssignedStudentController extends Controller
                     'student.academicSession',
                     'student.placement.academicLevel',
                     'student.placement.academicSession',
+                    'assessment.scores.rubricItem',
                 ])
                 ->latest('assigned_at')
-                ->get(),
+                ->paginate(20)
+                ->withQueryString(),
+            'rubricItems' => AssessmentRubricItem::query()->where('is_active', true)->orderBy('sort_order')->get(),
         ]);
     }
 }

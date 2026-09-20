@@ -103,6 +103,40 @@ class PhaseNineAssessmentReportingTest extends TestCase
             ->assertJsonPath('message', 'Student is not actively assigned to this supervisor.');
     }
 
+    public function test_supervisor_cannot_update_final_submitted_assessment(): void
+    {
+        $supervisor = $this->supervisor('SUP-9012');
+        $student = $this->student('edit-grade@example.test', '2026/ASM/012');
+        $supervisor->assignments()->create(['student_id' => $student->id, 'assigned_at' => now()]);
+        $initialScores = AssessmentRubricItem::query()->where('is_active', true)->pluck('max_score', 'id')->map(fn (int $score): int => max(0, $score - 2))->all();
+        $updatedScores = AssessmentRubricItem::query()->where('is_active', true)->pluck('max_score', 'id')->all();
+
+        $this->actingAs($supervisor->user)
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('supervisor.assessments.store'), [
+                'student_id' => $student->id,
+                'scores' => $initialScores,
+                'feedback' => 'Initial supervisor grade.',
+            ])
+            ->assertOk();
+
+        $assessment = Assessment::where('student_id', $student->id)->firstOrFail();
+
+        $this->actingAs($supervisor->user)
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('supervisor.assessments.store'), [
+                'student_id' => $student->id,
+                'scores' => $updatedScores,
+                'feedback' => 'Updated supervisor grade.',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Assessment has already been submitted for this assignment.');
+
+        $this->assertSame(1, Assessment::where('student_id', $student->id)->count());
+        $this->assertSame('Initial supervisor grade.', $assessment->fresh()->feedback);
+        $this->assertSame(count($initialScores), $assessment->fresh()->scores()->count());
+    }
+
     public function test_student_feedback_page_is_scoped_to_authenticated_student(): void
     {
         $supervisor = $this->supervisor('SUP-9003');
@@ -140,6 +174,37 @@ class PhaseNineAssessmentReportingTest extends TestCase
             ->assertOk()
             ->assertSee('2026/ASM/005')
             ->assertSee('Supervisor SUP-9004');
+    }
+
+    public function test_admin_assessment_page_and_logbook_score_sheet_export_are_permission_protected(): void
+    {
+        $admin = $this->admin();
+        $supervisor = $this->supervisor('SUP-9005');
+        $student = $this->student('logbook-feedback@example.test', '2026/ASM/006');
+        $this->createAssessment($supervisor, $student, 'Log book feedback sample.');
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.assessments.index'))
+            ->assertOk()
+            ->assertSee('Active Assessment Rubric')
+            ->assertSee('Submitted Assessments')
+            ->assertSee('Download Log Book Score Sheet');
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.assessments.logbook-score-sheet', [
+                'department_id' => $student->department_id,
+                'academic_session_id' => $student->academic_session_id,
+                'academic_level_id' => $student->academic_level_id,
+            ]))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
+            ->assertSee('LOG BOOK SCORE SHEET')
+            ->assertSee('Student 2026/ASM/006')
+            ->assertSee('2026/ASM/006')
+            ->assertSee('Log book feedback sample.')
+            ->assertSee('Supervisor SUP-9005');
     }
 
     private function createAssessment(Supervisor $supervisor, Student $student, string $feedback): Assessment
@@ -186,7 +251,7 @@ class PhaseNineAssessmentReportingTest extends TestCase
 
     private function supervisor(string $staffNo): Supervisor
     {
-        return app(SupervisorManager::class)->create([
+        $supervisor = app(SupervisorManager::class)->create([
             'name' => "Supervisor {$staffNo}",
             'email' => strtolower($staffNo).'@example.test',
             'phone' => '08030000000',
@@ -195,6 +260,17 @@ class PhaseNineAssessmentReportingTest extends TestCase
             'department' => 'SIWES',
             'status' => Supervisor::STATUS_ACTIVE,
         ]);
+
+        $supervisor->update([
+            'metadata' => [
+                'bank_name' => 'Access Bank',
+                'account_number' => '0123456789',
+                'account_name' => "Supervisor {$staffNo}",
+                'sort_code' => '044',
+            ],
+        ]);
+
+        return $supervisor;
     }
 
     private function student(string $email, string $matricNo): Student

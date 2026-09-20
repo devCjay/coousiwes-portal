@@ -8,6 +8,7 @@
         ['label' => 'Tickets', 'href' => route('admin.tickets.index'), 'icon' => 'T'],
         ['label' => 'Supervisors', 'href' => route('admin.supervisors.index'), 'icon' => 'V'],
         ['label' => 'Payments', 'href' => route('admin.payments.index'), 'icon' => 'P'],
+        ['label' => 'Assessment', 'href' => route('admin.assessments.index'), 'icon' => 'clipboard-check'],
         ['label' => 'Reports', 'href' => route('admin.reports.index'), 'icon' => 'R'],
         ['label' => 'Rubric', 'href' => route('admin.assessments.rubric.index'), 'icon' => 'A'],
         ['label' => 'Academics', 'href' => route('admin.academics.index'), 'icon' => 'A'],

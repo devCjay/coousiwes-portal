@@ -312,6 +312,39 @@ class PhaseEightPortalsTest extends TestCase
             ->assertDontSee('2026/PORTAL/004');
     }
 
+    public function test_incomplete_supervisor_profile_redirects_to_bank_setup_page(): void
+    {
+        $supervisor = $this->supervisor('SUP-PORTAL-010');
+        $supervisor->update(['metadata' => []]);
+
+        $this->actingAs($supervisor->user)
+            ->withSession(['otp.verified' => true])
+            ->get(route('supervisor.dashboard'))
+            ->assertRedirect(route('supervisor.profile.edit'));
+
+        $this->actingAs($supervisor->user)
+            ->withSession(['otp.verified' => true])
+            ->get(route('supervisor.profile.edit'))
+            ->assertOk()
+            ->assertSee('Complete your supervisor bank details')
+            ->assertSee('Bank Name');
+
+        $this->actingAs($supervisor->user)
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('supervisor.profile.update'), [
+                'bank_name' => 'Access Bank',
+                'account_number' => '0123456789',
+                'account_name' => 'Supervisor Portal',
+                'sort_code' => '044',
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Supervisor bank details saved.')
+            ->assertJsonPath('redirect', route('supervisor.dashboard', absolute: false));
+
+        $this->assertSame('Access Bank', $supervisor->fresh()->metadata['bank_name']);
+        $this->assertSame('Supervisor Portal', $supervisor->fresh()->metadata['account_name']);
+    }
+
     public function test_portal_notifications_are_role_specific(): void
     {
         $student = $this->student('notify-student@example.test', '2026/PORTAL/005');
@@ -533,7 +566,7 @@ class PhaseEightPortalsTest extends TestCase
 
     private function supervisor(string $staffNo): Supervisor
     {
-        return app(SupervisorManager::class)->create([
+        $supervisor = app(SupervisorManager::class)->create([
             'name' => "Supervisor {$staffNo}",
             'email' => strtolower($staffNo).'@example.test',
             'phone' => '08030000000',
@@ -542,5 +575,16 @@ class PhaseEightPortalsTest extends TestCase
             'department' => 'SIWES',
             'status' => Supervisor::STATUS_ACTIVE,
         ]);
+
+        $supervisor->update([
+            'metadata' => [
+                'bank_name' => 'Access Bank',
+                'account_number' => '0123456789',
+                'account_name' => "Supervisor {$staffNo}",
+                'sort_code' => '044',
+            ],
+        ]);
+
+        return $supervisor;
     }
 }

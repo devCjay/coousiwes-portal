@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AcademicStructureController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AppSettingController;
+use App\Http\Controllers\Admin\AssessmentController as AdminAssessmentController;
 use App\Http\Controllers\Admin\AssessmentRubricController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\ControlCenterController;
@@ -36,6 +37,7 @@ use App\Http\Controllers\Student\TicketController as StudentTicketController;
 use App\Http\Controllers\Supervisor\AssessmentController;
 use App\Http\Controllers\Supervisor\AssignedStudentController;
 use App\Http\Controllers\Supervisor\DashboardController as SupervisorDashboardController;
+use App\Http\Controllers\Supervisor\ProfileController as SupervisorProfileController;
 use App\Http\Controllers\Webhooks\KorapayWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -251,6 +253,12 @@ Route::middleware('auth:web,admin')->group(function () {
         Route::put('/assessments/rubric/{assessmentRubricItem}', [AssessmentRubricController::class, 'update'])
             ->middleware('permission:settings.update')
             ->name('assessments.rubric.update');
+        Route::get('/assessments', [AdminAssessmentController::class, 'index'])
+            ->middleware('permission:assessments.view')
+            ->name('assessments.index');
+        Route::get('/assessments/logbook-score-sheet', [AdminAssessmentController::class, 'logbookScoreSheet'])
+            ->middleware(['permission:assessments.export', 'throttle:exports'])
+            ->name('assessments.logbook-score-sheet');
 
         Route::get('/reports', [ReportController::class, 'index'])
             ->middleware('permission:feedback.view')
@@ -361,16 +369,22 @@ Route::middleware('auth:web,admin')->group(function () {
     });
 
     Route::get('/supervisor/dashboard', SupervisorDashboardController::class)
-        ->middleware(['otp.verified', 'role.portal:supervisor'])
+        ->middleware(['otp.verified', 'role.portal:supervisor', 'supervisor.profile.complete'])
         ->name('supervisor.dashboard');
-    Route::get('/supervisor/students', [AssignedStudentController::class, 'index'])
+    Route::get('/supervisor/profile/setup', [SupervisorProfileController::class, 'edit'])
         ->middleware(['otp.verified', 'role.portal:supervisor'])
+        ->name('supervisor.profile.edit');
+    Route::post('/supervisor/profile/setup', [SupervisorProfileController::class, 'update'])
+        ->middleware(['otp.verified', 'role.portal:supervisor'])
+        ->name('supervisor.profile.update');
+    Route::get('/supervisor/students', [AssignedStudentController::class, 'index'])
+        ->middleware(['otp.verified', 'role.portal:supervisor', 'supervisor.profile.complete'])
         ->name('supervisor.students.index');
     Route::get('/supervisor/assessments', [AssessmentController::class, 'index'])
-        ->middleware(['otp.verified', 'role.portal:supervisor'])
+        ->middleware(['otp.verified', 'role.portal:supervisor', 'supervisor.profile.complete'])
         ->name('supervisor.assessments.index');
     Route::post('/supervisor/assessments', [AssessmentController::class, 'store'])
-        ->middleware(['otp.verified', 'role.portal:supervisor'])
+        ->middleware(['otp.verified', 'role.portal:supervisor', 'supervisor.profile.complete'])
         ->name('supervisor.assessments.store');
     Route::get('/student/dashboard', StudentDashboardController::class)
         ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete'])

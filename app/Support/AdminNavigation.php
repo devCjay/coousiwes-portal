@@ -38,6 +38,7 @@ class AdminNavigation
             'Tickets' => 'tickets.view',
             'Supervisors' => 'supervisors.view',
             'Payments' => 'payments.view',
+            'Assessment' => 'assessments.view',
             'Reports' => 'feedback.view',
             'Rubric' => 'settings.view',
             'Academics' => 'academics.manage',

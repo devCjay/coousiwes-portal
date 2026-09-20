@@ -46,6 +46,8 @@ class RoleAndPermissionSeeder extends Seeder
             'supervisors.update',
             'supervisors.suspend',
             'supervisors.assign',
+            'assessments.view',
+            'assessments.export',
             'feedback.view',
             'feedback.manage',
             'payments.view',
@@ -119,6 +121,8 @@ class RoleAndPermissionSeeder extends Seeder
 
         $reportManager->syncPermissions($permissionModels([
             'dashboard.view',
+            'assessments.view',
+            'assessments.export',
             'feedback.view',
         ]));
 

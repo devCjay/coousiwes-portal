@@ -20,10 +20,13 @@
                 @csrf
                 <label class="block">
                     <span class="text-sm font-medium text-[var(--text-strong)]">Student</span>
-                    <select name="student_id" class="siwes-form-control mt-2" required>
+                    <input type="search" name="assessment_student_search" class="siwes-form-control mt-2" placeholder="Live search by student name or reg no..." data-option-search="#assessment-student-select">
+                    <select id="assessment-student-select" name="student_id" class="siwes-form-control mt-2" required>
                         <option value="">Select assigned student</option>
                         @foreach ($openAssignments as $assignment)
-                            <option value="{{ $assignment->student->id }}">{{ $assignment->student->user->name }} - {{ $assignment->student->matric_no }}</option>
+                            <option value="{{ $assignment->student->id }}">
+                                {{ $assignment->student->user->name }} - {{ $assignment->student->matric_no }} - {{ $assignment->student->department?->name ?? 'N/A' }}
+                            </option>
                         @endforeach
                     </select>
                 </label>

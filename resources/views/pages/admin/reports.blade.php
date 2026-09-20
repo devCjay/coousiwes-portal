@@ -5,6 +5,7 @@
         ['label' => 'Students', 'href' => route('admin.students.index'), 'icon' => 'S'],
         ['label' => 'Tickets', 'href' => route('admin.tickets.index'), 'icon' => 'T'],
         ['label' => 'Supervisors', 'href' => route('admin.supervisors.index'), 'icon' => 'V'],
+        ['label' => 'Assessment', 'href' => route('admin.assessments.index'), 'icon' => 'clipboard-check'],
         ['label' => 'Reports', 'href' => route('admin.reports.index'), 'active' => true, 'icon' => 'R'],
         ['label' => 'Rubric', 'href' => route('admin.assessments.rubric.index'), 'icon' => 'A'],
         ['label' => 'Settings', 'href' => route('admin.settings.index'), 'icon' => 'G'],
