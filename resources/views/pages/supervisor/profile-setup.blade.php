@@ -16,9 +16,9 @@
                     <x-ui.icon name="wallet" class="size-4" />
                     Required profile update
                 </span>
-                <h1 class="mt-4 text-2xl font-black tracking-normal sm:text-3xl">Complete your supervisor bank details</h1>
+                <h1 class="mt-4 text-2xl font-black tracking-normal sm:text-3xl">Update Your bank details</h1>
                 <p class="mt-2 max-w-2xl text-sm leading-6 text-white/78">
-                    Bank information is compulsory before accessing assigned students, assessments, and dashboard tools.
+                    Update Your Bank information before accessing assigned students, assessments, and dashboard tools.
                 </p>
             </div>
         </div>

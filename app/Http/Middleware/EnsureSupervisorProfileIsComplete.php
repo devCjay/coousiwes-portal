@@ -22,7 +22,7 @@ class EnsureSupervisorProfileIsComplete
                     ->route('supervisor.profile.edit')
                     ->with('toast_title', 'Profile update required')
                     ->with('toast_tone', 'warning')
-                    ->with('status', 'Please complete your supervisor bank details before accessing the dashboard.');
+                    ->with('status', 'Please Update your bank details before accessing the dashboard.');
             }
         }
 
