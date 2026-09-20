@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\OtpChallenge;
 use App\Services\AuditLogger;
 use App\Services\OtpService;
 use App\Support\AjaxResponse;
@@ -18,12 +17,15 @@ class OtpChallengeController extends Controller
 {
     public function show(Request $request): View|RedirectResponse
     {
-        $challenge = $this->challenge($request);
+        $user = $this->authenticatedUser($request);
+        $otpService = app(OtpService::class);
+        $expiresAt = $user ? $otpService->expiresAt($user, $request) : null;
 
-        if (! $challenge || $challenge->isExpired()) {
-            $role = RoleRedirector::roleSlugFor($request->user());
+        if (! $user || ! $expiresAt || $expiresAt->isPast()) {
+            $role = $user ? RoleRedirector::roleSlugFor($user) : 'student';
 
-            Auth::logout();
+            Auth::guard('web')->logout();
+            Auth::guard('admin')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
@@ -33,7 +35,7 @@ class OtpChallengeController extends Controller
 
         return view('pages.auth.otp', [
             'debugCode' => session('otp.debug_code'),
-            'expiresAt' => $challenge->expires_at,
+            'expiresAt' => $expiresAt,
         ]);
     }
 
@@ -43,43 +45,35 @@ class OtpChallengeController extends Controller
             'code' => ['required', 'digits:6'],
         ]);
 
-        $challenge = $this->challenge($request);
+        $user = $this->authenticatedUser($request);
 
-        if (! $challenge || ! $otpService->verify($challenge, $request->string('code')->toString())) {
-            if ($request->user()) {
-                $auditLogger->record('otp.verify_failed', $request->user(), $request);
+        if (! $user || ! $otpService->verifyLoginChallenge($user, $request, $request->string('code')->toString())) {
+            if ($user) {
+                $auditLogger->record('otp.verify_failed', $user, $request);
             }
 
             return AjaxResponse::error($request, 'The OTP code is invalid or has expired.', key: 'code');
         }
 
-        $auditLogger->record('otp.verify_success', $request->user(), $request);
+        $auditLogger->record('otp.verify_success', $user, $request);
 
-        return AjaxResponse::success($request, 'OTP verified successfully.', RoleRedirector::dashboardFor($request->user()));
+        return AjaxResponse::success($request, 'OTP verified successfully.', RoleRedirector::dashboardFor($user));
     }
 
     public function resend(Request $request, OtpService $otpService, AuditLogger $auditLogger): JsonResponse|RedirectResponse
     {
-        $challenge = $otpService->createLoginChallenge($request->user(), $request);
+        $user = $this->authenticatedUser($request);
+        abort_unless($user !== null, 403);
 
-        $auditLogger->record('otp.challenge_resent', $request->user(), $request, $challenge);
+        $challenge = $otpService->createLoginChallenge($user, $request);
+
+        $auditLogger->record('otp.challenge_resent', $user, $request, $challenge);
 
         return AjaxResponse::success($request, 'A new OTP code has been generated.');
     }
 
-    private function challenge(Request $request): ?OtpChallenge
+    private function authenticatedUser(Request $request): \Illuminate\Contracts\Auth\Authenticatable|null
     {
-        $challengeId = $request->session()->get('otp.challenge_id');
-
-        if (! $challengeId || ! $request->user()) {
-            return null;
-        }
-
-        return OtpChallenge::query()
-            ->whereKey($challengeId)
-            ->where('user_id', $request->user()->id)
-            ->where('purpose', 'login')
-            ->latest()
-            ->first();
+        return Auth::guard('admin')->user() ?? Auth::guard('web')->user() ?? $request->user();
     }
 }

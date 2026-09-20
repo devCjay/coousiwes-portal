@@ -15,13 +15,11 @@ use App\Models\Student;
 use App\Models\Supervisor;
 use App\Models\SupervisorStudentAssignment;
 use App\Models\User;
-use App\Notifications\PortalNotification;
 use App\Services\StudentManager;
 use App\Services\SupervisorManager;
 use Database\Seeders\AcademicStructureSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Notifications\DatabaseNotification;
 use Tests\TestCase;
 
 class PhaseNineAssessmentReportingTest extends TestCase
@@ -79,10 +77,10 @@ class PhaseNineAssessmentReportingTest extends TestCase
         $assessment = Assessment::where('student_id', $student->id)->firstOrFail();
 
         $this->assertSame(count($scores), $assessment->scores()->count());
-        $this->assertTrue(DatabaseNotification::where('notifiable_id', $student->user_id)
-            ->where('type', PortalNotification::class)
-            ->where('data->meta->assessment_id', $assessment->id)
-            ->exists());
+        $this->assertDatabaseMissing('notifications', [
+            'notifiable_id' => $student->user_id,
+            'notifiable_type' => User::class,
+        ]);
         $this->assertTrue(AuditLog::where('event', 'assessments.submitted')->where('auditable_id', $assessment->id)->exists());
     }
 
@@ -137,21 +135,14 @@ class PhaseNineAssessmentReportingTest extends TestCase
         $this->assertSame(count($initialScores), $assessment->fresh()->scores()->count());
     }
 
-    public function test_student_feedback_page_is_scoped_to_authenticated_student(): void
+    public function test_student_feedback_page_is_not_available_to_students(): void
     {
-        $supervisor = $this->supervisor('SUP-9003');
-        $visibleStudent = $this->student('visible-feedback@example.test', '2026/ASM/003');
-        $hiddenStudent = $this->student('hidden-feedback@example.test', '2026/ASM/004');
+        $student = $this->student('visible-feedback@example.test', '2026/ASM/003');
 
-        $this->createAssessment($supervisor, $visibleStudent, 'Visible private feedback.');
-        $this->createAssessment($supervisor, $hiddenStudent, 'Hidden private feedback.');
-
-        $this->actingAs($visibleStudent->user)
+        $this->actingAs($student->user)
             ->withSession(['otp.verified' => true])
-            ->get(route('student.feedback.index'))
-            ->assertOk()
-            ->assertSee('Visible private feedback.')
-            ->assertDontSee('Hidden private feedback.');
+            ->get('/student/feedback')
+            ->assertNotFound();
     }
 
     public function test_admin_reports_and_export_include_assessment_data(): void

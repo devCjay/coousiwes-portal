@@ -107,7 +107,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         $this->post(route('login.store', 'supervisor'), [
             'email' => 'ada.supervisor@example.test',
             'password' => $temporaryPassword,
-        ])->assertRedirect(route('supervisor.dashboard'));
+        ])->assertRedirect(route('otp.show'));
     }
 
     public function test_assignment_can_reassign_students_and_preserves_history_on_revocation(): void

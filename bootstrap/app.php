@@ -8,6 +8,7 @@ use App\Http\Middleware\EnsureStudentProfileIsComplete;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\RedirectIfOtpVerified;
 use App\Http\Middleware\SecurityHeaders;
+use App\Support\OtpRequirement;
 use App\Support\RoleRedirector;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -35,7 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo(function (Request $request): string {
             $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user();
 
-            if ($user && $user->otp_enabled && $request->session()->get('otp.verified') !== true) {
+            if ($user && OtpRequirement::requiredFor($user) && $request->session()->get('otp.verified') !== true) {
                 return route('otp.show');
             }
 

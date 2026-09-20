@@ -190,7 +190,7 @@ test('supervisor management and assignment pages render key workflows', async ({
     await expect(page.getByText('2026/CSC/001')).toBeVisible();
 });
 
-test('assessment, feedback, and reporting pages render phase nine workflows', async ({ page }) => {
+test('assessment and reporting pages render phase nine workflows', async ({ page }) => {
     await page.goto('/admin/assessments/rubric', { waitUntil: 'domcontentloaded' });
 
     await expect(page.getByRole('heading', { name: 'Assessment Rubric' })).toBeVisible();
@@ -201,11 +201,6 @@ test('assessment, feedback, and reporting pages render phase nine workflows', as
 
     await expect(page.getByRole('heading', { name: 'Assessments' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Submit Assessment' })).toBeVisible();
-    await expect(page.getByText('Strong workplace conduct')).toBeVisible();
-
-    await page.goto('/student/feedback', { waitUntil: 'domcontentloaded' });
-
-    await expect(page.getByRole('heading', { name: 'Supervisor Feedback' })).toBeVisible();
     await expect(page.getByText('Strong workplace conduct')).toBeVisible();
 
     await page.goto('/admin/reports', { waitUntil: 'domcontentloaded' });
@@ -237,11 +232,9 @@ test('notification center supports unread alerts and live filtering', async ({ p
     await page.goto('/notifications', { waitUntil: 'domcontentloaded' });
 
     await expect(page.getByRole('heading', { name: 'Notification Center' })).toBeVisible();
-    await expect(page.getByText('Supervisor feedback submitted')).toBeVisible();
     await expect(page.getByText('Payment verified')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Mark All Read' })).toBeVisible();
 
     await page.getByLabel('Live Search').fill('Korapay');
     await expect(page.getByText('Payment verified')).toBeVisible();
-    await expect(page.getByText('Supervisor feedback submitted')).toBeHidden();
 });

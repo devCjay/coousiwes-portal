@@ -35,7 +35,6 @@
         ...($workshopEnabled ? [['label' => 'Workshop Fee', 'href' => route('student.workshop.checkout'), 'icon' => 'credit-card']] : []),
         ['label' => 'Placement', 'href' => route('student.placements.ticket'), 'icon' => 'briefcase'],
         ['label' => 'Payment', 'href' => route('student.payments.index'), 'icon' => 'K'],
-        ['label' => 'Feedback', 'href' => route('student.feedback.index'), 'icon' => 'F'],
     ];
 @endphp
 

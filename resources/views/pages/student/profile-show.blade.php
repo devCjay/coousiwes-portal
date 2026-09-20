@@ -19,7 +19,6 @@
         ['label' => 'My Ticket', 'href' => route('student.tickets.index'), 'icon' => 'ticket'],
         ['label' => 'Placement', 'href' => route('student.placements.ticket'), 'icon' => 'briefcase'],
         ['label' => 'Payment', 'href' => route('student.payments.index'), 'icon' => 'K'],
-        ['label' => 'Feedback', 'href' => route('student.feedback.index'), 'icon' => 'F'],
     ];
 @endphp
 

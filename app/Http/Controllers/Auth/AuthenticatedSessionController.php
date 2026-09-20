@@ -7,7 +7,9 @@ use App\Models\Admin;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\OtpService;
 use App\Support\AjaxResponse;
+use App\Support\OtpRequirement;
 use App\Support\RoleRedirector;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +27,7 @@ class AuthenticatedSessionController extends Controller
         return view('pages.auth.login', ['role' => ucfirst($role)]);
     }
 
-    public function store(Request $request, string $role, AuditLogger $auditLogger): JsonResponse|RedirectResponse
+    public function store(Request $request, string $role, AuditLogger $auditLogger, OtpService $otpService): JsonResponse|RedirectResponse
     {
         abort_unless(in_array($role, ['admin', 'supervisor', 'student'], true), 404);
 
@@ -74,6 +76,13 @@ class AuthenticatedSessionController extends Controller
 
         $user->forceFill(['last_login_at' => now()])->save();
         $auditLogger->record('auth.login_success', $user, $request, metadata: ['portal' => $role]);
+
+        if (OtpRequirement::requiredFor($user)) {
+            $challenge = $otpService->createLoginChallenge($user, $request);
+            $auditLogger->record('otp.challenge_created', $user, $request, $challenge, ['portal' => $role]);
+
+            return AjaxResponse::success($request, 'A login OTP has been sent to your email address.', route('otp.show', absolute: false));
+        }
 
         $request->session()->put('otp.verified', true);
 

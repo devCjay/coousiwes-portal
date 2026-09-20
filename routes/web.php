@@ -28,7 +28,6 @@ use App\Http\Controllers\NotificationCenterController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfilePhotoController;
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
-use App\Http\Controllers\Student\FeedbackController;
 use App\Http\Controllers\Student\PaymentController;
 use App\Http\Controllers\Student\PlacementController;
 use App\Http\Controllers\Student\ProfileDataController as StudentProfileDataController;
@@ -448,7 +447,4 @@ Route::middleware('auth:web,admin')->group(function () {
     Route::get('/student/placements/complete', [PlacementController::class, 'complete'])
         ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete'])
         ->name('student.placements.complete');
-    Route::get('/student/feedback', [FeedbackController::class, 'index'])
-        ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete'])
-        ->name('student.feedback.index');
 });

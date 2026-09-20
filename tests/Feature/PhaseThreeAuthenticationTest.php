@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use App\Notifications\OtpLoginNotification;
 use Tests\TestCase;
 
 class PhaseThreeAuthenticationTest extends TestCase
@@ -33,31 +34,45 @@ class PhaseThreeAuthenticationTest extends TestCase
         $this->get(route('student.dashboard'))->assertRedirect(route('login'));
     }
 
-    public function test_admin_login_redirects_directly_to_dashboard_without_otp(): void
+    public function test_admin_login_requires_email_otp_before_dashboard_access(): void
     {
+        Notification::fake();
+
         $this->post(route('login.store', 'admin'), [
             'email' => 'admin@coousiwes.test',
             'password' => 'password',
-        ])->assertRedirect(route('admin.dashboard'));
+        ])->assertRedirect(route('otp.show'));
 
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
 
+        Notification::assertSentTo($admin, OtpLoginNotification::class);
         $this->assertTrue(AuditLog::where('event', 'auth.login_success')->where('auditable_type', null)->exists());
-        $this->assertFalse(AuditLog::where('user_id', $admin->id)->where('event', 'otp.challenge_created')->exists());
+        $this->assertTrue(AuditLog::where('event', 'otp.challenge_created')->exists());
+
+        $this->get(route('admin.dashboard'))->assertRedirect(route('otp.show'));
+
+        $this->post(route('otp.verify'), ['code' => '123456'])
+            ->assertRedirect(route('admin.dashboard', absolute: false));
+
+        $this->get(route('admin.dashboard'))->assertOk();
     }
 
-    public function test_ajax_login_returns_json_with_dashboard_redirect(): void
+    public function test_ajax_admin_login_returns_json_with_otp_redirect(): void
     {
+        Notification::fake();
+
         $this->postJson(route('login.store', 'admin'), [
             'email' => 'admin@coousiwes.test',
             'password' => 'password',
         ])
             ->assertOk()
             ->assertJson([
-                'message' => 'Signed in successfully.',
-                'redirect' => route('admin.dashboard', absolute: false),
+                'message' => 'A login OTP has been sent to your email address.',
+                'redirect' => route('otp.show', absolute: false),
                 'reload' => false,
             ]);
+
+        Notification::assertSentTo(Admin::where('email', 'admin@coousiwes.test')->firstOrFail(), OtpLoginNotification::class);
     }
 
     public function test_active_admin_record_can_enter_admin_portal_even_before_role_cache_refresh(): void
@@ -72,10 +87,12 @@ class PhaseThreeAuthenticationTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
+        Notification::fake();
+
         $this->post(route('login.store', 'admin'), [
             'email' => $admin->email,
             'password' => 'password',
-        ])->assertRedirect(route('admin.dashboard'));
+        ])->assertRedirect(route('otp.show'));
     }
 
     public function test_supervisor_and_student_portal_login_use_profile_tables_even_before_role_cache_refresh(): void
@@ -85,10 +102,14 @@ class PhaseThreeAuthenticationTest extends TestCase
         $supervisor->syncRoles([]);
         $student->syncRoles([]);
 
+        Notification::fake();
+
         $this->post(route('login.store', 'supervisor'), [
             'email' => 'supervisor@coousiwes.test',
             'password' => 'password',
-        ])->assertRedirect(route('supervisor.dashboard'));
+        ])->assertRedirect(route('otp.show'));
+
+        Notification::assertSentTo($supervisor, OtpLoginNotification::class);
 
         auth()->logout();
         $this->flushSession();
@@ -165,14 +186,14 @@ class PhaseThreeAuthenticationTest extends TestCase
 
         $this->actingAs($admin, 'admin')
             ->get(route('login.admin'))
-            ->assertRedirect(route('admin.dashboard'));
+            ->assertRedirect(route('otp.show'));
 
         auth('admin')->logout();
         $this->flushSession();
 
         $this->actingAs($supervisor)
             ->get(route('login.supervisor'))
-            ->assertRedirect(route('supervisor.dashboard'));
+            ->assertRedirect(route('otp.show'));
 
         auth()->logout();
         $this->flushSession();
@@ -224,6 +245,7 @@ class PhaseThreeAuthenticationTest extends TestCase
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
 
         $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
             ->get(route('account.password.edit'))
             ->assertOk()
             ->assertSee('Change Password')
@@ -231,8 +253,10 @@ class PhaseThreeAuthenticationTest extends TestCase
             ->assertSee('New Password');
     }
 
-    public function test_new_users_with_otp_enabled_flag_still_pass_directly_to_dashboard(): void
+    public function test_admins_with_otp_enabled_flag_require_email_otp(): void
     {
+        Notification::fake();
+
         $admin = Admin::query()->create([
             'admin_code' => 'ADM-00999',
             'name' => 'Direct Admin',
@@ -247,7 +271,9 @@ class PhaseThreeAuthenticationTest extends TestCase
         $this->post(route('login.store', 'admin'), [
             'email' => 'direct-admin@coousiwes.test',
             'password' => 'password',
-        ])->assertRedirect(route('admin.dashboard'));
+        ])->assertRedirect(route('otp.show'));
+
+        Notification::assertSentTo($admin, OtpLoginNotification::class);
     }
 
     public function test_authenticated_admin_supervisor_and_student_can_change_password(): void
@@ -265,6 +291,7 @@ class PhaseThreeAuthenticationTest extends TestCase
             $newPassword = "NewPassword{$index}123!";
 
             $this->actingAs($user, $guard)
+                ->withSession(['otp.verified' => true])
                 ->putJson(route('account.password.update'), [
                     'current_password' => $credentials['current'],
                     'password' => $newPassword,
@@ -283,6 +310,7 @@ class PhaseThreeAuthenticationTest extends TestCase
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
 
         $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
             ->putJson(route('account.password.update'), [
                 'current_password' => 'wrong-password',
                 'password' => 'NewPassword123!',

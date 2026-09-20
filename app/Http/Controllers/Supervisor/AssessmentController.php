@@ -7,7 +7,6 @@ use App\Http\Requests\Supervisor\StoreAssessmentRequest;
 use App\Models\Assessment;
 use App\Models\AssessmentRubricItem;
 use App\Models\Student;
-use App\Notifications\PortalNotification;
 use App\Services\AssessmentService;
 use App\Services\AuditLogger;
 use App\Support\AjaxResponse;
@@ -61,14 +60,6 @@ class AssessmentController extends Controller
             'score' => $assessment->total_score,
             'max_score' => $assessment->max_score,
         ]);
-
-        $student->user->notify(new PortalNotification([
-            'title' => 'Supervisor feedback submitted',
-            'message' => 'Your SIWES supervisor assessment is now available.',
-            'tone' => 'success',
-            'action_url' => route('student.feedback.index'),
-            'meta' => ['assessment_id' => $assessment->id],
-        ]));
 
         return AjaxResponse::success($request, 'Assessment submitted.', reload: true);
     }

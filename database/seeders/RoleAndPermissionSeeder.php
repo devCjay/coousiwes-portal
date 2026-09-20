@@ -140,7 +140,6 @@ class RoleAndPermissionSeeder extends Seeder
 
         $student->syncPermissions($permissionModels([
             'dashboard.view',
-            'feedback.view',
             'payments.view',
         ]));
 
@@ -224,18 +223,25 @@ class RoleAndPermissionSeeder extends Seeder
                     ['starts_on' => '2026-09-01', 'ends_on' => '2027-08-31', 'is_active' => true],
                 );
 
-                Student::query()->updateOrCreate(
-                    ['user_id' => $user->id],
-                    [
-                        'matric_no' => '2026/DEMO/001',
-                        'faculty_id' => $faculty->id,
-                        'department_id' => $department->id,
-                        'course_id' => $course->id,
-                        'academic_level_id' => $level->id,
-                        'academic_session_id' => $session->id,
-                        'activation_status' => 'active',
-                    ],
-                );
+                $student = Student::query()
+                    ->where('matric_no', '2026/DEMO/001')
+                    ->orWhere('user_id', $user->id)
+                    ->first();
+
+                $studentPayload = [
+                    'user_id' => $user->id,
+                    'matric_no' => '2026/DEMO/001',
+                    'faculty_id' => $faculty->id,
+                    'department_id' => $department->id,
+                    'course_id' => $course->id,
+                    'academic_level_id' => $level->id,
+                    'academic_session_id' => $session->id,
+                    'activation_status' => 'active',
+                ];
+
+                $student
+                    ? $student->update($studentPayload)
+                    : Student::query()->create($studentPayload);
             }
         }
     }
