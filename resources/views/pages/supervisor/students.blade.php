@@ -103,7 +103,10 @@
                                     <dl class="mt-3 space-y-2 text-sm">
                                         <div><dt class="text-[var(--text-soft)]">Company</dt><dd class="font-semibold text-[var(--text-strong)]">{{ $placement?->company_name ?? 'N/A' }}</dd></div>
                                         <div><dt class="text-[var(--text-soft)]">Location</dt><dd class="font-semibold text-[var(--text-strong)]">{{ $placement ? trim(($placement->company_state ?: 'N/A').' / '.($placement->company_lga ?: 'N/A')) : 'N/A' }}</dd></div>
+                                        <div><dt class="text-[var(--text-soft)]">Company Address</dt><dd class="font-semibold text-[var(--text-strong)]">{{ $placement?->company_address ?: 'N/A' }}</dd></div>
                                         <div><dt class="text-[var(--text-soft)]">Supervisor Phone</dt><dd class="font-semibold text-[var(--text-strong)]">{{ $placement?->company_supervisor_phone ?: 'N/A' }}</dd></div>
+                                        <div><dt class="text-[var(--text-soft)]">SIWES Year</dt><dd class="font-semibold text-[var(--text-strong)]">{{ $placement?->siwes_year ?? 'N/A' }}</dd></div>
+                                        <div><dt class="text-[var(--text-soft)]">Period</dt><dd class="font-semibold text-[var(--text-strong)]">{{ $placement?->attachment_period ?: 'N/A' }}</dd></div>
                                     </dl>
                                 </div>
                             </div>

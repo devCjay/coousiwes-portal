@@ -139,6 +139,7 @@
                                 <x-profile.detail label="Company" :value="$placement?->company_name ?? 'No placement'" />
                                 <x-profile.detail label="SIWES Year" :value="$placement?->siwes_year ?? 'N/A'" />
                                 <x-profile.detail label="State / LGA" :value="$placement ? $placement->company_state.' / '.$placement->company_lga : 'N/A'" />
+                                <x-profile.detail label="Company Address" :value="$placement?->company_address ?: 'N/A'" />
                                 <x-profile.detail label="Assigned Supervisor" :value="$student->activeSupervisorAssignment?->supervisor?->user?->name ?? 'Not assigned'" />
                             </dl>
                         </x-ui.card>

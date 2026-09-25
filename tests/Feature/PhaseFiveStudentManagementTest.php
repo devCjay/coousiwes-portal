@@ -333,6 +333,7 @@ class PhaseFiveStudentManagementTest extends TestCase
             ->assertSee('Bank Information')
             ->assertSee('Profile Actions Student')
             ->assertSee('Profile Works Ltd')
+            ->assertSee('18 Industrial Road')
             ->assertSee('Reset Password')
             ->assertSee('Activate')
             ->assertSee('Delete');

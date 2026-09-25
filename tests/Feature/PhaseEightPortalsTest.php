@@ -273,10 +273,12 @@ class PhaseEightPortalsTest extends TestCase
         $otherSupervisor = $this->supervisor('SUP-PORTAL-002');
         $visible = $this->student('visible-portal@example.test', '2026/PORTAL/003');
         $hidden = $this->student('hidden-portal@example.test', '2026/PORTAL/004');
+        $ticket = app(TicketService::class)->generateFor($visible);
 
         $visible->user->forceFill(['phone' => '08035550000'])->save();
         $visible->update(['address' => 'Visible student lodge']);
         $visible->placement()->create([
+            'ticket_id' => $ticket->id,
             'academic_level_id' => $visible->academic_level_id,
             'academic_session_id' => $visible->academic_session_id,
             'siwes_year' => 2026,
@@ -299,7 +301,12 @@ class PhaseEightPortalsTest extends TestCase
             ->assertSee('visible-portal@example.test')
             ->assertSee('08035550000')
             ->assertSee('Visible Works Ltd')
+            ->assertSee('22 Visible Road')
             ->assertSee('Lagos / Ikeja')
+            ->assertSee('April to October')
+            ->assertSee('2026')
+            ->assertSee('08039990000')
+            ->assertDontSee($ticket->serial_number)
             ->assertDontSee('2026/PORTAL/004');
 
         $this->actingAs($supervisor->user)
@@ -309,6 +316,10 @@ class PhaseEightPortalsTest extends TestCase
             ->assertSee('Visible student lodge')
             ->assertSee('08039990000')
             ->assertSee('Visible Works Ltd')
+            ->assertSee('22 Visible Road')
+            ->assertSee('April to October')
+            ->assertSee('2026')
+            ->assertDontSee($ticket->serial_number)
             ->assertDontSee('2026/PORTAL/004');
     }
 

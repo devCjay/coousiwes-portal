@@ -49,10 +49,15 @@
                                     </div>
                                     <span class="text-xs font-semibold text-[var(--text-soft)]">{{ $assignment->assigned_at->toDateString() }}</span>
                                 </div>
-                                <div class="mt-3 grid gap-2 text-xs sm:grid-cols-3">
+                                <div class="mt-3 grid gap-2 text-xs sm:grid-cols-2 xl:grid-cols-4">
                                     <p><span class="font-bold text-[var(--text-strong)]">Academic:</span> {{ $student->department?->name ?? 'N/A' }} / {{ $placement?->academicLevel?->name ?? $student->academicLevel?->name ?? 'N/A' }}</p>
+                                    <p><span class="font-bold text-[var(--text-strong)]">Session:</span> {{ $placement?->academicSession?->name ?? $student->academicSession?->name ?? 'N/A' }}</p>
+                                    <p><span class="font-bold text-[var(--text-strong)]">SIWES Year:</span> {{ $placement?->siwes_year ?? 'N/A' }}</p>
+                                    <p><span class="font-bold text-[var(--text-strong)]">Period:</span> {{ $placement?->attachment_period ?: 'N/A' }}</p>
                                     <p><span class="font-bold text-[var(--text-strong)]">Company:</span> {{ $placement?->company_name ?? 'N/A' }}</p>
                                     <p><span class="font-bold text-[var(--text-strong)]">Location:</span> {{ $placement ? (($placement->company_state ?: 'N/A').' / '.($placement->company_lga ?: 'N/A')) : 'N/A' }}</p>
+                                    <p><span class="font-bold text-[var(--text-strong)]">Address:</span> {{ $placement?->company_address ?: 'N/A' }}</p>
+                                    <p><span class="font-bold text-[var(--text-strong)]">Supervisor Phone:</span> {{ $placement?->company_supervisor_phone ?: 'N/A' }}</p>
                                 </div>
                             </div>
                         </div>
