@@ -1,7 +1,7 @@
 <table width="100%" border="0">
     <tr>
         <td height="370" align="center" valign="top">
-            <h2>CHUKWUEMEKA ODIMEGWU OJUKWU UNIVERSITY, IGBARIAM</h2>
+            <h2>CHUKWUEMEKA ODIMEGWU OJUKWU UNIVERSITY</h2>
             <h3>STUDENTS INDUSTRIAL WORK EXPERIENCE SCHEME (SIWES) UNIT</h3>
             <h3>LOG BOOK SCORE SHEET</h3>
             <br />

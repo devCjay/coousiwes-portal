@@ -1,4 +1,4 @@
-<table border='1'><tr><td colspan='10'><b>CHUKWUEMEKA ODIMEGWU OJUKWU UNIVERSITY, IGBARIAM</b></td></tr><tr><td colspan='10'></td></tr><tr><td colspan='10'><b>STUDENTS INDUSTRIAL WORK EXPERIENCE SCHEME (SIWES) UNIT</b></td></tr><tr><td colspan='10'></td></tr><tr><td colspan='10'><b>SUPERVISORY LIST BY STATE FOR {{ $session }} SIWES PROGRAMME (APRIL-NOVEMBER {{ $year }} )</b></td></tr><tr><td colspan='10'></td></tr><tr>
+<table border='1'><tr><td colspan='10'><b>CHUKWUEMEKA ODIMEGWU OJUKWU UNIVERSITY</b></td></tr><tr><td colspan='10'></td></tr><tr><td colspan='10'><b>STUDENTS INDUSTRIAL WORK EXPERIENCE SCHEME (SIWES) UNIT</b></td></tr><tr><td colspan='10'></td></tr><tr><td colspan='10'><b>SUPERVISORY LIST BY STATE FOR {{ $session }} SIWES PROGRAMME (APRIL-NOVEMBER {{ $year }} )</b></td></tr><tr><td colspan='10'></td></tr><tr>
         <td><b>SN.</b></td>
         <td><b>Name of Student</b></td>
         <td><b>Reg No</b></td>
