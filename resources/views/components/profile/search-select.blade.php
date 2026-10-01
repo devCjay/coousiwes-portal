@@ -27,6 +27,7 @@
             placeholder="{{ $placeholder }}"
             autocomplete="off"
             data-profile-combobox-input
+            required
             @class([
                 'block w-full min-w-0 rounded-xl border border-[var(--line)] bg-[var(--surface-raised)] px-3 py-3 text-sm text-[var(--text-strong)] shadow-sm theme-transition placeholder:text-[var(--text-soft)] focus:border-brand-400 focus:ring-4 focus:ring-brand-400/15',
                 'pr-10' => $optionCount > 10,
