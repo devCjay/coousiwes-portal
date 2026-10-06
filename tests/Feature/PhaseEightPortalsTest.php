@@ -11,6 +11,7 @@ use App\Models\Faculty;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\Supervisor;
+use App\Models\Ticket;
 use App\Models\User;
 use App\Services\StudentManager;
 use App\Services\SupervisorManager;
@@ -499,6 +500,29 @@ class PhaseEightPortalsTest extends TestCase
             ])
             ->assertUnprocessable()
             ->assertJsonPath('message', 'Confirm your ticket before adding placement details.');
+    }
+
+    public function test_student_can_reuse_used_ticket_when_no_placement_is_linked_to_it(): void
+    {
+        $student = $this->student('reuse-ticket-owner@example.test', '2026/PORTAL/015');
+        $ticket = app(TicketService::class)->generateFor($student);
+
+        $ticket->update([
+            'status' => Ticket::STATUS_USED,
+            'used_at' => now(),
+        ]);
+
+        $this->assertFalse($ticket->placement()->exists());
+
+        $this->actingAs($student->user)
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('student.placements.ticket.confirm'), [
+                'serial_number' => $ticket->serial_number,
+                'pin' => $ticket->pin,
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Ticket confirmed. Continue your placement setup.')
+            ->assertSessionHas('placement.ticket_id', $ticket->id);
     }
 
     public function test_student_can_view_assigned_tickets_on_my_ticket_page(): void

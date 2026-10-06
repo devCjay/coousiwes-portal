@@ -53,7 +53,7 @@ class PlacementController extends Controller
             return AjaxResponse::error($request, 'This ticket has already been used for a placement.', key: 'ticket');
         }
 
-        if (! $ticket->isPayable()) {
+        if (! $ticket->isPayable() && ! $this->ticketCanBeReusedForPlacement($ticket, $student)) {
             return AjaxResponse::error($request, 'This ticket is no longer available for placement access.', key: 'ticket');
         }
 
@@ -217,6 +217,19 @@ class PlacementController extends Controller
                 ->whereIn('status', Ticket::unusedStatuses())
                 ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
                 ->exists();
+    }
+
+    private function ticketCanBeReusedForPlacement(Ticket $ticket, Student $student): bool
+    {
+        if ($ticket->placement()->exists()) {
+            return false;
+        }
+
+        if ($ticket->expires_at && $ticket->expires_at->isPast()) {
+            return false;
+        }
+
+        return $ticket->student_id === null || (int) $ticket->student_id === (int) $student->id;
     }
 
     private function ticketPinIsValid(Ticket $ticket, string $pin): bool

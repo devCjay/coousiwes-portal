@@ -56,8 +56,8 @@ class TicketService
         return DB::transaction(function () use ($ticket, $student): Ticket {
             $ticket = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
 
-            if (in_array($ticket->status, Ticket::usedStatuses(), true) || $ticket->used_at !== null) {
-                throw new \RuntimeException('Ticket has already been used.');
+            if ($ticket->placement()->exists()) {
+                throw new \RuntimeException('Ticket has already been used for a placement.');
             }
 
             if ($ticket->student_id !== null && (int) $ticket->student_id !== (int) $student->id) {
