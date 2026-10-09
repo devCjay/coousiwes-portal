@@ -211,6 +211,20 @@ class PhaseEightPortalsTest extends TestCase
         $this->assertSame($session->id, $student->fresh()->academic_session_id);
     }
 
+    public function test_student_profile_setup_embeds_departments_for_faculty_selection(): void
+    {
+        $student = $this->student('department-picker@example.test', '2026/PORTAL/018', completeProfile: false);
+        $department = Department::where('code', 'AGE')->firstOrFail();
+
+        $this->actingAs($student->user)
+            ->withSession(['otp.verified' => true])
+            ->get(route('student.profile.edit'))
+            ->assertOk()
+            ->assertSee('data-profile-departments', false)
+            ->assertSee('"faculty_id":"'.$department->faculty_id.'"', false)
+            ->assertSee('"code":"'.$department->code.'"', false);
+    }
+
     public function test_student_can_upload_profile_picture_on_basic_profile_step(): void
     {
         Storage::fake('public');

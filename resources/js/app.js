@@ -901,12 +901,24 @@ if (profileWizard) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 
-    const renderComboboxOptions = (combobox, options) => {
+    const getEmbeddedDepartments = () => {
+        try {
+            return JSON.parse(profileWizard.dataset.profileDepartments || '[]');
+        } catch {
+            return [];
+        }
+    };
+
+    const renderComboboxOptions = (combobox, options, openAfterRender = false) => {
+        if (!combobox) {
+            return;
+        }
+
         const list = combobox.querySelector('[data-profile-combobox-list]');
         const hidden = combobox.querySelector('[data-profile-combobox-value]');
         const input = combobox.querySelector('[data-profile-combobox-input]');
 
-        if (!list) {
+        if (!list || !hidden || !input) {
             return;
         }
 
@@ -924,6 +936,12 @@ if (profileWizard) {
                 </button>
             `).join('')
             : '<p class="px-3 py-2 text-sm text-[var(--text-soft)]">No records available.</p>';
+
+        if (openAfterRender) {
+            list.classList.remove('hidden');
+            closeComboboxes(combobox);
+            input.focus();
+        }
     };
 
     const fetchProfileData = async (url) => {
@@ -999,12 +1017,25 @@ if (profileWizard) {
             if (owningCombobox.hasAttribute('data-profile-faculty')) {
                 const departmentCombobox = owningCombobox.closest('form')?.querySelector('[data-profile-department]')
                     || profileWizard.querySelector('[data-profile-department]');
+                const embeddedDepartments = getEmbeddedDepartments();
+                const matchingDepartments = embeddedDepartments.filter((department) => String(department.faculty_id) === String(hidden.value));
+
+                if (matchingDepartments.length > 0) {
+                    renderComboboxOptions(departmentCombobox, matchingDepartments.map((department) => ({
+                        value: String(department.id),
+                        label: department.name,
+                        meta: department.code,
+                    })), true);
+
+                    return;
+                }
+
                 const payload = await fetchProfileData(`/student/profile-data/departments?faculty_id=${encodeURIComponent(hidden.value)}`);
                 renderComboboxOptions(departmentCombobox, (payload.departments || []).map((department) => ({
                     value: String(department.id),
                     label: department.name,
                     meta: department.code,
-                })));
+                })), true);
             }
         }
     });

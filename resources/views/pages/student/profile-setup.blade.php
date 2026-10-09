@@ -9,6 +9,12 @@
     $selectedDepartment = $student->department_id ? (string) $student->department_id : '';
     $selectedSession = $student->academic_session_id ? (string) $student->academic_session_id : ($activeSession?->id ? (string) $activeSession->id : '');
     $profilePhotoUrl = $student->user->profilePhotoUrl();
+    $departmentOptions = $departments->map(fn ($department) => [
+        'id' => (string) $department->id,
+        'faculty_id' => (string) $department->faculty_id,
+        'name' => $department->name,
+        'code' => $department->code,
+    ])->values();
     $navigation = [
         ['label' => 'Dashboard', 'href' => route('student.dashboard'), 'icon' => 'D'],
         ['label' => 'Profile Setup', 'href' => route('student.profile.edit'), 'active' => true, 'icon' => 'user-check'],
@@ -26,7 +32,7 @@
 @endphp
 
 <x-layouts.app-shell title="Complete Student Profile" role="Student" :navigation="$navigation">
-    <section data-profile-wizard class="w-full max-w-full min-w-0 rounded-2xl border border-brand-600/15 bg-[var(--surface-raised)] shadow-[0_24px_70px_rgb(8_15_12_/_0.10)]">
+    <section data-profile-wizard data-profile-departments='@json($departmentOptions)' class="w-full max-w-full min-w-0 rounded-2xl border border-brand-600/15 bg-[var(--surface-raised)] shadow-[0_24px_70px_rgb(8_15_12_/_0.10)]">
         <div class="relative isolate overflow-hidden rounded-t-2xl bg-brand-600 px-4 py-6 text-white sm:px-6 lg:px-8">
             <div class="absolute inset-0 -z-10 bg-[linear-gradient(128deg,transparent_0%,transparent_54%,rgba(255,255,255,0.09)_54%,rgba(255,255,255,0.09)_61%,transparent_61%,transparent_68%,rgba(255,255,255,0.08)_68%,rgba(255,255,255,0.08)_76%,transparent_76%)]"></div>
             <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
