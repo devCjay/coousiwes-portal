@@ -265,8 +265,20 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         $admin = $this->admin();
         $supervisor = $this->supervisor('SUP-2003');
         $first = $this->student('bulk-one@example.test', '2026/SUP/004');
-        $this->student('bulk-two@example.test', '2026/SUP/005');
-        $this->student('bulk-three@example.test', '2026/SUP/006');
+        $second = $this->student('bulk-two@example.test', '2026/SUP/005');
+        $third = $this->student('bulk-three@example.test', '2026/SUP/006');
+
+        collect([$first, $second, $third])->each(function (Student $student): void {
+            $student->placement()->create([
+                'academic_level_id' => $student->academic_level_id,
+                'academic_session_id' => $student->academic_session_id,
+                'siwes_year' => 2026,
+                'attachment_period' => 'April to October',
+                'company_name' => "Company {$student->matric_no}",
+                'company_state' => 'Anambra',
+                'company_lga' => 'Awka South',
+            ]);
+        });
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
@@ -275,11 +287,80 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
                 'faculty_id' => $first->faculty_id,
             ])
             ->assertOk()
-            ->assertJsonPath('message', '4 assigned, 0 reassigned, 0 skipped.');
+            ->assertJsonPath('message', '3 assigned, 0 reassigned, 0 skipped.');
 
-        $this->assertSame(4, $supervisor->activeAssignments()->count());
+        $this->assertSame(3, $supervisor->activeAssignments()->count());
         Notification::assertSentTo($supervisor->user, SupervisorBulkAssignmentNotification::class);
         Notification::assertNotSentTo($supervisor->user, SupervisorAssignmentNotification::class);
+    }
+
+    public function test_bulk_assignment_filters_students_by_department_session_and_placement_location(): void
+    {
+        Notification::fake();
+        $admin = $this->admin();
+        $supervisor = $this->supervisor('SUP-2004');
+        $matching = $this->student('department-match@example.test', '2026/SUP/070');
+        $wrongDepartment = $this->student('department-miss@example.test', '2026/SUP/071');
+        $wrongLocation = $this->student('location-miss@example.test', '2026/SUP/072');
+        $otherDepartment = Department::where('code', 'ANS')->firstOrFail();
+        $session = AcademicSession::where('name', '2026/2027')->firstOrFail();
+
+        $wrongDepartment->update([
+            'faculty_id' => $otherDepartment->faculty_id,
+            'department_id' => $otherDepartment->id,
+        ]);
+
+        collect([$matching, $wrongDepartment, $wrongLocation])->each(function (Student $student) use ($session): void {
+            $student->placement()->create([
+                'academic_level_id' => $student->academic_level_id,
+                'academic_session_id' => $session->id,
+                'siwes_year' => 2026,
+                'attachment_period' => 'April to October',
+                'company_name' => "Company {$student->matric_no}",
+                'company_state' => $student->matric_no === '2026/SUP/072' ? 'Lagos' : 'Anambra',
+                'company_lga' => $student->matric_no === '2026/SUP/072' ? 'Ikeja' : 'Awka South',
+            ]);
+        });
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.supervisor-assignments.bulk'), [
+                'supervisor_id' => $supervisor->id,
+                'faculty_id' => $matching->faculty_id,
+                'department_id' => $matching->department_id,
+                'academic_session_id' => $session->id,
+                'company_state' => 'Anambra',
+                'company_lga' => 'Awka South',
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', '1 assigned, 0 reassigned, 0 skipped.');
+
+        $this->assertSame($supervisor->id, $matching->activeSupervisorAssignment()->firstOrFail()->supervisor_id);
+        $this->assertNull($wrongDepartment->activeSupervisorAssignment()->first());
+        $this->assertNull($wrongLocation->activeSupervisorAssignment()->first());
+    }
+
+    public function test_bulk_assignment_lga_filter_does_not_duplicate_configured_lgas(): void
+    {
+        $admin = $this->admin();
+        $student = $this->student('anambra-duplicate-lga@example.test', '2026/SUP/073');
+
+        $student->placement()->create([
+            'academic_level_id' => $student->academic_level_id,
+            'academic_session_id' => $student->academic_session_id,
+            'siwes_year' => 2026,
+            'attachment_period' => 'April to October',
+            'company_name' => 'Awka Works',
+            'company_state' => 'Anambra',
+            'company_lga' => 'Awka South',
+        ]);
+
+        $response = $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.supervisors.index'))
+            ->assertOk();
+
+        $this->assertSame(1, substr_count($response->getContent(), 'value="Awka South" data-parent-value="Anambra"'));
     }
 
     public function test_bulk_assignment_can_filter_by_placement_state_and_lga_and_reassign_existing_students(): void

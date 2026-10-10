@@ -716,7 +716,9 @@ const filterDependentSelect = (parent) => {
         target.value = '';
     }
 
-    if (!target.value && parentValue !== '' && firstVisibleValue !== '') {
+    const shouldAutoSelect = parent.dataset.filterAutoSelect !== 'false';
+
+    if (shouldAutoSelect && !target.value && parentValue !== '' && firstVisibleValue !== '') {
         target.value = firstVisibleValue;
     }
 };

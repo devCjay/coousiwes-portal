@@ -116,12 +116,15 @@ class SupervisorAssignmentService
     private function filteredStudents(array $filters): Builder
     {
         return Student::query()
+            ->whereHas('placement', function (Builder $placementQuery) use ($filters): void {
+                $placementQuery
+                    ->when($filters['academic_level_id'] ?? null, fn (Builder $query, mixed $value) => $query->where('academic_level_id', $value))
+                    ->when($filters['academic_session_id'] ?? null, fn (Builder $query, mixed $value) => $query->where('academic_session_id', $value))
+                    ->when($filters['company_state'] ?? null, fn (Builder $query, mixed $value) => $query->where('company_state', $value))
+                    ->when($filters['company_lga'] ?? null, fn (Builder $query, mixed $value) => $query->where('company_lga', $value));
+            })
             ->when($filters['faculty_id'] ?? null, fn (Builder $query, mixed $value) => $query->where('faculty_id', $value))
-            ->when($filters['department_id'] ?? null, fn (Builder $query, mixed $value) => $query->where('department_id', $value))
-            ->when($filters['academic_level_id'] ?? null, fn (Builder $query, mixed $value) => $query->where('academic_level_id', $value))
-            ->when($filters['academic_session_id'] ?? null, fn (Builder $query, mixed $value) => $query->where('academic_session_id', $value))
-            ->when($filters['company_state'] ?? null, fn (Builder $query, mixed $value) => $query->whereHas('placement', fn (Builder $placementQuery) => $placementQuery->where('company_state', $value)))
-            ->when($filters['company_lga'] ?? null, fn (Builder $query, mixed $value) => $query->whereHas('placement', fn (Builder $placementQuery) => $placementQuery->where('company_lga', $value)));
+            ->when($filters['department_id'] ?? null, fn (Builder $query, mixed $value) => $query->where('department_id', $value));
     }
 
     private function sendSingleWhatsApp(SupervisorStudentAssignment $assignment): void

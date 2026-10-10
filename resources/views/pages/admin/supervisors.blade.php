@@ -371,7 +371,7 @@
                 <div class="grid gap-3 md:grid-cols-2">
                     <label class="block">
                         <span class="text-sm font-medium text-[var(--text-strong)]">Faculty</span>
-                        <select name="faculty_id" class="siwes-form-control mt-2" data-filter-parent="#bulk-assignment-department">
+                        <select name="faculty_id" class="siwes-form-control mt-2" data-filter-parent="#bulk-assignment-department" data-filter-auto-select="false">
                             <option value="">Any</option>
                             @foreach ($faculties as $faculty)
                                 <option value="{{ $faculty->id }}">{{ $faculty->name }}</option>
@@ -398,7 +398,7 @@
                     </label>
                     <label class="block">
                         <span class="text-sm font-medium text-[var(--text-strong)]">Placement State</span>
-                        <select name="company_state" class="siwes-form-control mt-2" data-filter-parent="#bulk-assignment-lga">
+                        <select name="company_state" class="siwes-form-control mt-2" data-filter-parent="#bulk-assignment-lga" data-filter-auto-select="false">
                             <option value="">Any</option>
                             @foreach ($states as $state)
                                 <option value="{{ $state['name'] }}">{{ $state['name'] }}</option>
@@ -420,7 +420,9 @@
                                 @endforeach
                             @endforeach
                             @foreach ($placementLgas as $placementLga)
-                                <option value="{{ $placementLga->company_lga }}" data-parent-value="{{ $placementLga->company_state }}">{{ $placementLga->company_lga }}</option>
+                                @unless (collect($states)->firstWhere('name', $placementLga->company_state) && in_array($placementLga->company_lga, collect($states)->firstWhere('name', $placementLga->company_state)['lgas'] ?? [], true))
+                                    <option value="{{ $placementLga->company_lga }}" data-parent-value="{{ $placementLga->company_state }}">{{ $placementLga->company_lga }}</option>
+                                @endunless
                             @endforeach
                         </select>
                     </label>
