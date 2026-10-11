@@ -459,6 +459,64 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             ->assertDontSee('2026/SUP/008');
     }
 
+    public function test_supervisor_can_download_assigned_student_list_excel(): void
+    {
+        $supervisor = $this->supervisor('SUP-2007');
+        $student = $this->student('assigned-export@example.test', '2026/SUP/009');
+        $student->placement()->create([
+            'academic_level_id' => $student->academic_level_id,
+            'academic_session_id' => $student->academic_session_id,
+            'siwes_year' => 2026,
+            'attachment_period' => 'April to October',
+            'company_name' => 'Export Works Ltd',
+            'company_address' => '12 Industrial Avenue',
+            'company_state' => 'Anambra',
+            'company_lga' => 'Awka South',
+            'company_supervisor_phone' => '08035550000',
+        ]);
+        $assignment = $supervisor->assignments()->create([
+            'student_id' => $student->id,
+            'assigned_at' => now(),
+        ]);
+        $assignment->assessment()->create([
+            'supervisor_id' => $supervisor->id,
+            'student_id' => $student->id,
+            'total_score' => 82,
+            'max_score' => 100,
+            'status' => 'submitted',
+            'feedback' => 'Good logbook progress.',
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this->actingAs($supervisor->user)
+            ->withSession(['otp.verified' => true])
+            ->get(route('supervisor.students.export'))
+            ->assertOk()
+            ->assertDownload('assigned-students-list.xlsx');
+
+        $spreadsheet = IOFactory::load($response->baseResponse->getFile()->getPathname());
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $this->assertSame([
+            'Student Name',
+            'Reg No',
+            'Department',
+            'Placement Address',
+            'LGA',
+            'State',
+            'Logbook Score',
+        ], $sheet->rangeToArray('A1:G1')[0]);
+        $this->assertSame([
+            $student->user->name,
+            '2026/SUP/009',
+            $student->department->name,
+            '12 Industrial Avenue',
+            'Awka South',
+            'Anambra',
+            null,
+        ], $sheet->rangeToArray('A2:G2')[0]);
+    }
+
     public function test_supervisor_exports_are_available_to_admins(): void
     {
         $admin = $this->admin();

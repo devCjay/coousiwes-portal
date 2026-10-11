@@ -379,6 +379,9 @@ Route::middleware('auth:web,admin')->group(function () {
     Route::get('/supervisor/students', [AssignedStudentController::class, 'index'])
         ->middleware(['otp.verified', 'role.portal:supervisor', 'supervisor.profile.complete'])
         ->name('supervisor.students.index');
+    Route::get('/supervisor/students/export', [AssignedStudentController::class, 'export'])
+        ->middleware(['otp.verified', 'role.portal:supervisor', 'supervisor.profile.complete', 'throttle:exports'])
+        ->name('supervisor.students.export');
     Route::get('/supervisor/assessments', [AssessmentController::class, 'index'])
         ->middleware(['otp.verified', 'role.portal:supervisor', 'supervisor.profile.complete'])
         ->name('supervisor.assessments.index');

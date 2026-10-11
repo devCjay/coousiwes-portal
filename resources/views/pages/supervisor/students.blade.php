@@ -19,7 +19,10 @@
     </div>
 
     <x-ui.card class="mt-6" title="Student Work Queue" description="Only actively assigned students appear here. Showing 20 records per page.">
-        <x-ui.input class="mb-4" label="Live Search" name="assigned_search" placeholder="Search current page by name, reg no, email, department, company, state..." data-live-search="#assigned-students-list [data-assigned-student]" />
+        <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <x-ui.input class="sm:max-w-xl sm:flex-1" label="Live Search" name="assigned_search" placeholder="Search current page by name, reg no, email, department, company, state..." data-live-search="#assigned-students-list [data-assigned-student]" />
+            <x-ui.button :href="route('supervisor.students.export')" variant="secondary" class="w-full sm:w-auto">Download Assigned Student List</x-ui.button>
+        </div>
 
         <div id="assigned-students-list" class="grid gap-4">
             @forelse ($assignments as $assignment)
