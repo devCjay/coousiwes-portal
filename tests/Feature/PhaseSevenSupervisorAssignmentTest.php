@@ -26,6 +26,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Tests\TestCase;
 
 class PhaseSevenSupervisorAssignmentTest extends TestCase
@@ -505,7 +507,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             'Placement Address',
             'LGA',
             'State',
-            'Logbook Score',
+            'Logbook Score (40)',
         ], $sheet->rangeToArray('A1:G1')[0]);
         $this->assertSame([
             $student->user->name,
@@ -518,50 +520,57 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
         ], $sheet->rangeToArray('A2:G2')[0]);
     }
 
-    public function test_supervisor_can_preview_and_confirm_google_vision_logbook_score_import(): void
+    public function test_supervisor_can_preview_and_confirm_excel_logbook_score_import(): void
     {
-        AppSetting::query()->updateOrCreate(['key' => 'ocr.google_vision_api_key'], ['group' => 'ocr', 'value' => 'vision-test-key', 'type' => 'string']);
-        AppSetting::query()->updateOrCreate(['key' => 'ocr.logbook_max_score'], ['group' => 'ocr', 'value' => 100, 'type' => 'integer']);
-        Http::fake([
-            'vision.googleapis.com/*' => Http::response([
-                'responses' => [[
-                    'fullTextAnnotation' => [
-                        'text' => "Student 2026/SUP/010 Agric Economics Awka South 76\n",
-                    ],
-                ]],
-            ], 200),
-        ]);
-
         $supervisor = $this->supervisor('SUP-2008');
         $student = $this->student('ocr-assigned@example.test', '2026/SUP/010');
         $assignment = $supervisor->assignments()->create([
             'student_id' => $student->id,
             'assigned_at' => now(),
         ]);
+        $path = tempnam(sys_get_temp_dir(), 'logbook-import-').'.xlsx';
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->fromArray([
+            'Student Name',
+            'Reg No',
+            'Department',
+            'Placement Address',
+            'LGA',
+            'State',
+            'Logbook Score (40)',
+        ], null, 'A1');
+        $sheet->fromArray([
+            $student->user->name,
+            $student->matric_no,
+            $student->department->name,
+            '12 Industry Road',
+            'Awka South',
+            'Anambra',
+            36,
+        ], null, 'A2');
+        (new Xlsx($spreadsheet))->save($path);
 
         $response = $this->actingAs($supervisor->user)
             ->withSession(['otp.verified' => true])
             ->post(route('supervisor.students.logbook-import.preview'), [
-                'score_sheet' => UploadedFile::fake()->createWithContent(
-                    'score-sheet.png',
-                    base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=')
-                ),
+                'score_sheet' => new UploadedFile($path, 'score-sheet.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true),
             ])
             ->assertOk()
             ->assertSee('Review Imported Logbook Scores')
             ->assertSee('2026/SUP/010')
-            ->assertSee('value="76"', false);
+            ->assertSee('value="36"', false);
 
-        $response->assertSessionHas('logbook_ocr_preview');
+        $response->assertSessionHas('logbook_excel_preview');
 
         $this->actingAs($supervisor->user)
             ->withSession([
                 'otp.verified' => true,
-                'logbook_ocr_preview' => session('logbook_ocr_preview'),
+                'logbook_excel_preview' => session('logbook_excel_preview'),
             ])
             ->post(route('supervisor.students.logbook-import.confirm'), [
                 'scores' => [
-                    $assignment->id => 76,
+                    $assignment->id => 36,
                 ],
             ])
             ->assertRedirect(route('supervisor.students.index'))
@@ -571,10 +580,12 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             'supervisor_id' => $supervisor->id,
             'student_id' => $student->id,
             'supervisor_student_assignment_id' => $assignment->id,
-            'total_score' => 76,
-            'max_score' => 100,
+            'total_score' => 36,
+            'max_score' => 40,
             'status' => 'submitted',
         ]);
+
+        @unlink($path);
     }
 
     public function test_supervisor_exports_are_available_to_admins(): void

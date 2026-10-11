@@ -73,10 +73,6 @@
             ['group' => 'imports', 'key' => 'imports.cron_batch_size', 'label' => 'Cron Batch Size', 'type' => 'integer', 'input' => 'number', 'value' => $settingValue('imports.cron_batch_size', config('siwes.imports.cron_batch_size', 1000)), 'description' => 'Rows processed per cron hit. Keep between 500 and 2000 on cPanel.'],
             ['group' => 'imports', 'key' => 'imports.cron_token', 'label' => 'Cron URL Token', 'type' => 'string', 'input' => 'password', 'value' => $settingValue('imports.cron_token', config('siwes.imports.cron_token')), 'description' => 'Required token for the cPanel cron URL. Use a long random value.'],
         ];
-        $ocrFields = [
-            ['group' => 'ocr', 'key' => 'ocr.google_vision_api_key', 'label' => 'Google Vision API Key', 'type' => 'string', 'input' => 'password', 'value' => $settingValue('ocr.google_vision_api_key'), 'description' => 'API key used for Google Vision OCR score-sheet reading.'],
-            ['group' => 'ocr', 'key' => 'ocr.logbook_max_score', 'label' => 'Logbook Max Score', 'type' => 'integer', 'input' => 'number', 'value' => $settingValue('ocr.logbook_max_score', 100), 'description' => 'Maximum score supervisors can confirm from OCR imports.'],
-        ];
     @endphp
 
     @if (session('status'))
@@ -94,7 +90,7 @@
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#payment-settings-panel" aria-selected="false">Payment Settings</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#email-settings-panel" aria-selected="false">Email Settings</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#whatsapp-settings-panel" aria-selected="false">WhatsApp Settings</button>
-                <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#ocr-settings-panel" aria-selected="false">OCR Settings</button>
+                <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#logbook-import-settings-panel" aria-selected="false">Logbook Import</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#email-templates-panel" aria-selected="false">Email Templates</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#import-settings-panel" aria-selected="false">Import Settings</button>
                 <button type="button" class="settings-tab rounded-md px-3 py-2 text-sm font-semibold theme-transition" data-settings-tab-target="#system-settings-panel" aria-selected="false">System Settings</button>
@@ -264,24 +260,21 @@
             </div>
         </section>
 
-        <section id="ocr-settings-panel" class="settings-panel mt-5 hidden" data-settings-panel>
+        <section id="logbook-import-settings-panel" class="settings-panel mt-5 hidden" data-settings-panel>
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h2 class="text-base font-semibold text-[var(--text-strong)]">OCR Settings</h2>
-                    <p class="mt-1 text-sm text-[var(--text-soft)]">Google Vision settings for printed logbook score-sheet imports.</p>
+                    <h2 class="text-base font-semibold text-[var(--text-strong)]">Logbook Import</h2>
+                    <p class="mt-1 text-sm text-[var(--text-soft)]">Supervisors export assigned students, enter scores in Excel, preview uploaded scores, then confirm.</p>
                 </div>
-                @if ($canUpdateSettings)
-                    <x-ui.button type="button" data-modal-target="#ocr-settings-modal">Configure OCR</x-ui.button>
-                @endif
             </div>
             <div class="mt-5 grid gap-4 md:grid-cols-2">
                 <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
-                    <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Google Vision API Key</p>
-                    <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">{{ filled($settingValue('ocr.google_vision_api_key')) ? 'Configured' : 'Not configured' }}</p>
+                    <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Accepted Files</p>
+                    <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">XLSX, XLS, CSV</p>
                 </div>
                 <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
                     <p class="text-xs font-semibold uppercase text-[var(--text-soft)]">Logbook Max Score</p>
-                    <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">{{ (int) $settingValue('ocr.logbook_max_score', 100) }}</p>
+                    <p class="mt-2 text-sm font-semibold text-[var(--text-strong)]">40</p>
                 </div>
             </div>
         </section>
@@ -658,29 +651,6 @@
                 <x-ui.button type="submit">Save WhatsApp Settings</x-ui.button>
             </div>
         </form>
-        </x-ui.modal>
-
-        <x-ui.modal id="ocr-settings-modal" title="OCR Settings" class="w-[min(42rem,calc(100vw-2rem))]">
-            <form method="POST" action="{{ route('admin.settings.bulk') }}" class="grid gap-4">
-                @csrf
-                @foreach ($ocrFields as $index => $field)
-                    <div class="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
-                        <input type="hidden" name="settings[{{ $index }}][group]" value="{{ $field['group'] }}">
-                        <input type="hidden" name="settings[{{ $index }}][key]" value="{{ $field['key'] }}">
-                        <input type="hidden" name="settings[{{ $index }}][type]" value="{{ $field['type'] }}">
-                        <input type="hidden" name="settings[{{ $index }}][description]" value="{{ $field['description'] }}">
-                        <label class="block">
-                            <span class="text-sm font-medium text-[var(--text-strong)]">{{ $field['label'] }}</span>
-                            <input name="settings[{{ $index }}][value]" type="{{ $field['input'] }}" value="{{ $field['value'] }}" class="siwes-form-control mt-2" @if (($field['input'] ?? null) === 'number') min="1" @endif>
-                        </label>
-                        <p class="mt-2 text-xs text-[var(--text-soft)]">{{ $field['description'] }}</p>
-                    </div>
-                @endforeach
-                <div class="flex justify-end gap-2 border-t border-[var(--line)] pt-4">
-                    <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
-                    <x-ui.button type="submit">Save OCR Settings</x-ui.button>
-                </div>
-            </form>
         </x-ui.modal>
 
         <x-ui.modal id="import-settings-modal" title="Import Settings" class="w-[min(58rem,calc(100vw-2rem))]">

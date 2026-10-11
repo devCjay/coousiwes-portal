@@ -6,14 +6,14 @@
     ];
 @endphp
 
-<x-layouts.app-shell title="Review Logbook OCR Import" role="Supervisor" :navigation="$navigation">
+<x-layouts.app-shell title="Review Logbook Import" role="Supervisor" :navigation="$navigation">
     @if ($error)
-        <x-ui.alert title="OCR failed" tone="danger">{{ $error }}</x-ui.alert>
+        <x-ui.alert title="Import failed" tone="danger">{{ $error }}</x-ui.alert>
         <div class="mt-5">
             <x-ui.button :href="route('supervisor.students.index')" variant="secondary">Back to Assigned Students</x-ui.button>
         </div>
     @else
-        <x-ui.card title="Review Imported Logbook Scores" description="Confirm or correct each detected score before saving. Blank scores are skipped.">
+        <x-ui.card title="Review Imported Logbook Scores" description="Confirm or correct each uploaded score before saving. Blank scores are skipped.">
             <form method="POST" action="{{ route('supervisor.students.logbook-import.confirm') }}" class="grid gap-5" data-ajax="false">
                 @csrf
                 <div class="overflow-x-auto rounded-xl border border-[var(--line)]">
@@ -23,8 +23,8 @@
                                 <th class="px-4 py-3">Student</th>
                                 <th class="px-4 py-3">Reg No</th>
                                 <th class="px-4 py-3">Department</th>
-                                <th class="px-4 py-3">Detected Line</th>
-                                <th class="px-4 py-3">Score</th>
+                                <th class="px-4 py-3">Matched Row</th>
+                                <th class="px-4 py-3">Score ({{ $maxScore }})</th>
                                 <th class="px-4 py-3">Status</th>
                             </tr>
                         </thead>
@@ -34,7 +34,7 @@
                                     <td class="px-4 py-3 font-semibold text-[var(--text-strong)]">{{ $row['student_name'] }}</td>
                                     <td class="px-4 py-3 text-[var(--text-strong)]">{{ $row['matric_no'] }}</td>
                                     <td class="px-4 py-3 text-[var(--text-strong)]">{{ $row['department'] }}</td>
-                                    <td class="max-w-xs px-4 py-3 text-xs leading-5 text-[var(--text-soft)]">{{ $row['matched_line'] ?: 'No matching OCR line found.' }}</td>
+                                    <td class="max-w-xs px-4 py-3 text-xs leading-5 text-[var(--text-soft)]">{{ $row['matched_line'] ?: 'No matching spreadsheet row found.' }}</td>
                                     <td class="px-4 py-3">
                                         <input
                                             name="scores[{{ $row['assignment_id'] }}]"
@@ -62,8 +62,31 @@
                 </div>
 
                 <details class="rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-4">
-                    <summary class="cursor-pointer text-sm font-bold text-[var(--text-strong)]">View raw OCR text</summary>
-                    <pre class="mt-3 max-h-72 overflow-auto whitespace-pre-wrap text-xs leading-5 text-[var(--text-soft)]">{{ $ocrText }}</pre>
+                    <summary class="cursor-pointer text-sm font-bold text-[var(--text-strong)]">View uploaded spreadsheet rows</summary>
+                    <div class="mt-3 max-h-72 overflow-auto">
+                        <table class="min-w-full divide-y divide-[var(--line)] text-xs">
+                            <thead class="text-left font-bold uppercase text-[var(--text-soft)]">
+                                <tr>
+                                    <th class="px-3 py-2">Row</th>
+                                    <th class="px-3 py-2">Reg No</th>
+                                    <th class="px-3 py-2">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[var(--line)]">
+                                @forelse ($importedRows as $importedRow)
+                                    <tr>
+                                        <td class="px-3 py-2 text-[var(--text-strong)]">{{ $importedRow['row_number'] }}</td>
+                                        <td class="px-3 py-2 text-[var(--text-strong)]">{{ $importedRow['matric_no'] }}</td>
+                                        <td class="px-3 py-2 text-[var(--text-strong)]">{{ $importedRow['raw_score'] ?: 'N/A' }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="px-3 py-4 text-center text-[var(--text-soft)]">No import rows were found.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </details>
 
                 <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

@@ -181,16 +181,16 @@
         <form method="POST" action="{{ route('supervisor.students.logbook-import.preview') }}" enctype="multipart/form-data" data-ajax="false" class="grid gap-4">
             @csrf
             <div class="rounded-xl border border-brand-600/20 bg-brand-600/5 p-4">
-                <p class="text-sm font-semibold text-[var(--text-strong)]">Upload the photographed printed score sheet.</p>
-                <p class="mt-2 text-sm leading-6 text-[var(--text-soft)]">Google Vision will read the sheet and show an editable preview. Scores are not saved until you review and confirm them.</p>
+                <p class="text-sm font-semibold text-[var(--text-strong)]">Upload the completed assigned-student Excel sheet.</p>
+                <p class="mt-2 text-sm leading-6 text-[var(--text-soft)]">Enter scores under the Logbook Score (40) column, then upload the file. Scores are not saved until you review and confirm them.</p>
             </div>
             <label class="block">
-                <span class="text-sm font-medium text-[var(--text-strong)]">Score Sheet Photo</span>
-                <input name="score_sheet" type="file" accept="image/png,image/jpeg,image/webp" capture="environment" class="siwes-form-control mt-2" required>
+                <span class="text-sm font-medium text-[var(--text-strong)]">Score Sheet File</span>
+                <input name="score_sheet" type="file" accept=".xlsx,.xls,.csv" class="siwes-form-control mt-2" required>
             </label>
             <div class="flex justify-end gap-2">
                 <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
-                <x-ui.button type="submit" data-loading-text="Reading...">Preview Scores</x-ui.button>
+                <x-ui.button type="submit" data-loading-text="Reading...">Preview Upload</x-ui.button>
             </div>
         </form>
     </x-ui.modal>

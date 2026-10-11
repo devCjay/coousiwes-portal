@@ -3,21 +3,22 @@
 namespace App\Http\Controllers\Supervisor;
 
 use App\Http\Controllers\Controller;
-use App\Models\AppSetting;
 use App\Models\Assessment;
 use App\Models\AssessmentRubricItem;
 use App\Models\Supervisor;
 use App\Services\AuditLogger;
-use App\Services\GoogleVisionOcrService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AssignedStudentController extends Controller
 {
+    private const LOGBOOK_MAX_SCORE = 40;
+
     public function index(Request $request): View
     {
         $supervisor = $request->user()?->supervisor;
@@ -68,7 +69,7 @@ class AssignedStudentController extends Controller
             'Placement Address',
             'LGA',
             'State',
-            'Logbook Score',
+            'Logbook Score (40)',
         ], null, 'A1');
 
         $assignments->values()->each(function ($assignment, int $index) use ($sheet): void {
@@ -98,22 +99,22 @@ class AssignedStudentController extends Controller
         ])->deleteFileAfterSend();
     }
 
-    public function previewLogbookImport(Request $request, GoogleVisionOcrService $ocrService): View
+    public function previewLogbookImport(Request $request): View
     {
         $supervisor = $request->user()?->supervisor;
         abort_unless($supervisor instanceof Supervisor, 403);
 
         $validated = $request->validate([
-            'score_sheet' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
+            'score_sheet' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:8192'],
         ]);
 
         try {
-            $ocrText = $ocrService->extractText($validated['score_sheet']);
-        } catch (\RuntimeException $exception) {
+            $importedRows = $this->readLogbookScoresFromSpreadsheet($validated['score_sheet']->getRealPath());
+        } catch (\Throwable $exception) {
             return view('pages.supervisor.logbook-import-preview', [
                 'supervisor' => $supervisor,
                 'rows' => collect(),
-                'ocrText' => '',
+                'importedRows' => collect(),
                 'maxScore' => $this->logbookMaxScore(),
                 'error' => $exception->getMessage(),
             ]);
@@ -123,9 +124,9 @@ class AssignedStudentController extends Controller
             ->with(['student.user', 'student.department', 'assessment'])
             ->latest('assigned_at')
             ->get();
-        $rows = $this->buildLogbookPreviewRows($ocrText, $assignments);
+        $rows = $this->buildLogbookPreviewRows($importedRows, $assignments);
 
-        $request->session()->put('logbook_ocr_preview', [
+        $request->session()->put('logbook_excel_preview', [
             'rows' => $rows->map(fn (array $row): array => [
                 'assignment_id' => $row['assignment_id'],
                 'student_id' => $row['student_id'],
@@ -136,7 +137,7 @@ class AssignedStudentController extends Controller
         return view('pages.supervisor.logbook-import-preview', [
             'supervisor' => $supervisor,
             'rows' => $rows,
-            'ocrText' => $ocrText,
+            'importedRows' => $importedRows,
             'maxScore' => $this->logbookMaxScore(),
             'error' => null,
         ]);
@@ -152,8 +153,8 @@ class AssignedStudentController extends Controller
             'scores.*' => ['nullable', 'integer', 'min:0', 'max:'.$this->logbookMaxScore()],
         ]);
 
-        $preview = collect($request->session()->get('logbook_ocr_preview.rows', []))->keyBy('assignment_id');
-        abort_if($preview->isEmpty(), 422, 'No OCR preview is available for confirmation.');
+        $preview = collect($request->session()->get('logbook_excel_preview.rows', []))->keyBy('assignment_id');
+        abort_if($preview->isEmpty(), 422, 'No spreadsheet preview is available for confirmation.');
 
         $saved = 0;
         $skipped = 0;
@@ -191,12 +192,12 @@ class AssignedStudentController extends Controller
                     'feedback' => 'Imported from reviewed printed logbook score sheet.',
                     'submitted_at' => now(),
                     'metadata' => [
-                        'source' => 'google_vision_logbook_import',
+                        'source' => 'excel_logbook_import',
                         'reviewed_by_supervisor' => true,
                     ],
                 ]);
 
-                $auditLogger->record('assessments.logbook_ocr_imported', $request->user(), $request, $assessment, [
+                $auditLogger->record('assessments.logbook_excel_imported', $request->user(), $request, $assessment, [
                     'student_id' => $assignment->student_id,
                     'score' => (int) $score,
                     'max_score' => $maxScore,
@@ -205,7 +206,7 @@ class AssignedStudentController extends Controller
             }
         });
 
-        $request->session()->forget('logbook_ocr_preview');
+        $request->session()->forget('logbook_excel_preview');
 
         return redirect()
             ->route('supervisor.students.index')
@@ -213,17 +214,49 @@ class AssignedStudentController extends Controller
             ->with('status', "{$saved} score(s) saved, {$skipped} skipped after review.");
     }
 
-    private function buildLogbookPreviewRows(string $ocrText, $assignments)
+    private function readLogbookScoresFromSpreadsheet(string $path)
     {
-        $lines = collect(preg_split('/\R+/', $ocrText) ?: [])
-            ->map(fn (string $line): string => trim($line))
-            ->filter()
+        $spreadsheet = IOFactory::load($path);
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = collect($sheet->toArray(null, true, true, true))
+            ->filter(fn (array $row): bool => collect($row)->filter(fn ($value): bool => trim((string) $value) !== '')->isNotEmpty())
             ->values();
 
-        return $assignments->map(function ($assignment) use ($lines): array {
+        if ($rows->isEmpty()) {
+            throw new \RuntimeException('The uploaded score sheet is empty.');
+        }
+
+        $headers = collect($rows->first())
+            ->mapWithKeys(fn ($value, string $column): array => [$this->normalizeHeader((string) $value) => $column]);
+
+        $regColumn = $headers->get('regno') ?? $headers->get('matricnumber') ?? $headers->get('matricno') ?? 'B';
+        $scoreColumn = $headers->get('logbookscore40') ?? $headers->get('logbookscore') ?? $headers->get('score') ?? 'G';
+
+        return $rows->skip(1)
+            ->map(function (array $row, int $index) use ($regColumn, $scoreColumn): array {
+                $regNo = trim((string) ($row[$regColumn] ?? ''));
+                $score = trim((string) ($row[$scoreColumn] ?? ''));
+
+                return [
+                    'row_number' => $index + 2,
+                    'matric_no' => $regNo,
+                    'score' => $this->normalizeScore($score),
+                    'raw_score' => $score,
+                ];
+            })
+            ->filter(fn (array $row): bool => $row['matric_no'] !== '')
+            ->values();
+    }
+
+    private function buildLogbookPreviewRows($importedRows, $assignments)
+    {
+        $scoresByRegNo = collect($importedRows)
+            ->keyBy(fn (array $row): string => $this->normalizeToken($row['matric_no']));
+
+        return $assignments->map(function ($assignment) use ($scoresByRegNo): array {
             $student = $assignment->student;
-            $matchedLine = $lines->first(fn (string $line): bool => str_contains($this->normalizeToken($line), $this->normalizeToken($student->matric_no)));
-            $detectedScore = $matchedLine ? $this->extractScoreFromLine($matchedLine) : null;
+            $matchedRow = $scoresByRegNo->get($this->normalizeToken($student->matric_no));
+            $detectedScore = $matchedRow['score'] ?? null;
 
             return [
                 'assignment_id' => $assignment->id,
@@ -232,22 +265,27 @@ class AssignedStudentController extends Controller
                 'matric_no' => $student->matric_no,
                 'department' => $student->department?->name ?? 'N/A',
                 'detected_score' => $detectedScore,
-                'matched_line' => $matchedLine,
+                'matched_line' => $matchedRow ? "Row {$matchedRow['row_number']} / {$matchedRow['matric_no']} / {$matchedRow['raw_score']}" : null,
                 'status' => $assignment->assessment ? 'Already graded' : ($detectedScore === null ? 'Needs review' : 'Detected'),
                 'locked' => $assignment->assessment !== null,
             ];
         });
     }
 
-    private function extractScoreFromLine(string $line): ?int
+    private function normalizeScore(string $value): ?int
     {
-        preg_match_all('/\b\d{1,3}\b/', $line, $matches);
-        $scores = collect($matches[0] ?? [])
-            ->map(fn (string $value): int => (int) ltrim($value, '0'))
-            ->filter(fn (int $value): bool => $value >= 0 && $value <= $this->logbookMaxScore())
-            ->values();
+        if ($value === '' || ! is_numeric($value)) {
+            return null;
+        }
 
-        return $scores->last();
+        $score = (int) $value;
+
+        return $score >= 0 && $score <= $this->logbookMaxScore() ? $score : null;
+    }
+
+    private function normalizeHeader(string $value): string
+    {
+        return preg_replace('/[^a-z0-9]/', '', strtolower($value)) ?: '';
     }
 
     private function normalizeToken(string $value): string
@@ -257,6 +295,6 @@ class AssignedStudentController extends Controller
 
     private function logbookMaxScore(): int
     {
-        return max(1, (int) AppSetting::value('ocr.logbook_max_score', 100));
+        return self::LOGBOOK_MAX_SCORE;
     }
 }
