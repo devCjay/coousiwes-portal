@@ -22,6 +22,7 @@ use App\Services\SupervisorManager;
 use Database\Seeders\AcademicStructureSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -515,6 +516,65 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             'Anambra',
             null,
         ], $sheet->rangeToArray('A2:G2')[0]);
+    }
+
+    public function test_supervisor_can_preview_and_confirm_google_vision_logbook_score_import(): void
+    {
+        AppSetting::query()->updateOrCreate(['key' => 'ocr.google_vision_api_key'], ['group' => 'ocr', 'value' => 'vision-test-key', 'type' => 'string']);
+        AppSetting::query()->updateOrCreate(['key' => 'ocr.logbook_max_score'], ['group' => 'ocr', 'value' => 100, 'type' => 'integer']);
+        Http::fake([
+            'vision.googleapis.com/*' => Http::response([
+                'responses' => [[
+                    'fullTextAnnotation' => [
+                        'text' => "Student 2026/SUP/010 Agric Economics Awka South 76\n",
+                    ],
+                ]],
+            ], 200),
+        ]);
+
+        $supervisor = $this->supervisor('SUP-2008');
+        $student = $this->student('ocr-assigned@example.test', '2026/SUP/010');
+        $assignment = $supervisor->assignments()->create([
+            'student_id' => $student->id,
+            'assigned_at' => now(),
+        ]);
+
+        $response = $this->actingAs($supervisor->user)
+            ->withSession(['otp.verified' => true])
+            ->post(route('supervisor.students.logbook-import.preview'), [
+                'score_sheet' => UploadedFile::fake()->createWithContent(
+                    'score-sheet.png',
+                    base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=')
+                ),
+            ])
+            ->assertOk()
+            ->assertSee('Review Imported Logbook Scores')
+            ->assertSee('2026/SUP/010')
+            ->assertSee('value="76"', false);
+
+        $response->assertSessionHas('logbook_ocr_preview');
+
+        $this->actingAs($supervisor->user)
+            ->withSession([
+                'otp.verified' => true,
+                'logbook_ocr_preview' => session('logbook_ocr_preview'),
+            ])
+            ->post(route('supervisor.students.logbook-import.confirm'), [
+                'scores' => [
+                    $assignment->id => 76,
+                ],
+            ])
+            ->assertRedirect(route('supervisor.students.index'))
+            ->assertSessionHas('toast_title', 'Logbook scores imported');
+
+        $this->assertDatabaseHas('assessments', [
+            'supervisor_id' => $supervisor->id,
+            'student_id' => $student->id,
+            'supervisor_student_assignment_id' => $assignment->id,
+            'total_score' => 76,
+            'max_score' => 100,
+            'status' => 'submitted',
+        ]);
     }
 
     public function test_supervisor_exports_are_available_to_admins(): void

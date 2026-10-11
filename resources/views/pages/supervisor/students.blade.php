@@ -21,7 +21,10 @@
     <x-ui.card class="mt-6" title="Student Work Queue" description="Only actively assigned students appear here. Showing 20 records per page.">
         <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <x-ui.input class="sm:max-w-xl sm:flex-1" label="Live Search" name="assigned_search" placeholder="Search current page by name, reg no, email, department, company, state..." data-live-search="#assigned-students-list [data-assigned-student]" />
-            <x-ui.button :href="route('supervisor.students.export')" variant="secondary" class="w-full sm:w-auto">Download Assigned Student List</x-ui.button>
+            <div class="flex flex-col gap-2 sm:flex-row">
+                <x-ui.button :href="route('supervisor.students.export')" variant="secondary" class="w-full sm:w-auto">Download Assigned Student List</x-ui.button>
+                <x-ui.button type="button" class="w-full sm:w-auto" data-modal-target="#logbook-import-modal">Import Logbook Scores</x-ui.button>
+            </div>
         </div>
 
         <div id="assigned-students-list" class="grid gap-4">
@@ -173,4 +176,22 @@
             {{ $assignments->links() }}
         </div>
     </x-ui.card>
+
+    <x-ui.modal id="logbook-import-modal" title="Import Logbook Scores" class="w-[min(42rem,calc(100vw-2rem))]">
+        <form method="POST" action="{{ route('supervisor.students.logbook-import.preview') }}" enctype="multipart/form-data" data-ajax="false" class="grid gap-4">
+            @csrf
+            <div class="rounded-xl border border-brand-600/20 bg-brand-600/5 p-4">
+                <p class="text-sm font-semibold text-[var(--text-strong)]">Upload the photographed printed score sheet.</p>
+                <p class="mt-2 text-sm leading-6 text-[var(--text-soft)]">Google Vision will read the sheet and show an editable preview. Scores are not saved until you review and confirm them.</p>
+            </div>
+            <label class="block">
+                <span class="text-sm font-medium text-[var(--text-strong)]">Score Sheet Photo</span>
+                <input name="score_sheet" type="file" accept="image/png,image/jpeg,image/webp" capture="environment" class="siwes-form-control mt-2" required>
+            </label>
+            <div class="flex justify-end gap-2">
+                <x-ui.button type="button" variant="ghost" data-modal-close>Cancel</x-ui.button>
+                <x-ui.button type="submit" data-loading-text="Reading...">Preview Scores</x-ui.button>
+            </div>
+        </form>
+    </x-ui.modal>
 </x-layouts.app-shell>

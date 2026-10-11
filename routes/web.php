@@ -382,6 +382,12 @@ Route::middleware('auth:web,admin')->group(function () {
     Route::get('/supervisor/students/export', [AssignedStudentController::class, 'export'])
         ->middleware(['otp.verified', 'role.portal:supervisor', 'supervisor.profile.complete', 'throttle:exports'])
         ->name('supervisor.students.export');
+    Route::post('/supervisor/students/logbook-import/preview', [AssignedStudentController::class, 'previewLogbookImport'])
+        ->middleware(['otp.verified', 'role.portal:supervisor', 'supervisor.profile.complete', 'throttle:10,1'])
+        ->name('supervisor.students.logbook-import.preview');
+    Route::post('/supervisor/students/logbook-import/confirm', [AssignedStudentController::class, 'confirmLogbookImport'])
+        ->middleware(['otp.verified', 'role.portal:supervisor', 'supervisor.profile.complete'])
+        ->name('supervisor.students.logbook-import.confirm');
     Route::get('/supervisor/assessments', [AssessmentController::class, 'index'])
         ->middleware(['otp.verified', 'role.portal:supervisor', 'supervisor.profile.complete'])
         ->name('supervisor.assessments.index');
