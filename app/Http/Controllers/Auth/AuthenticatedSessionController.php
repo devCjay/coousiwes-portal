@@ -22,14 +22,14 @@ class AuthenticatedSessionController extends Controller
 {
     public function create(string $role): View
     {
-        abort_unless(in_array($role, ['admin', 'supervisor', 'student'], true), 404);
+        abort_unless(in_array($role, ['admin', 'supervisor', 'coordinator', 'student'], true), 404);
 
-        return view('pages.auth.login', ['role' => ucfirst($role)]);
+        return view('pages.auth.login', ['role' => $role === 'coordinator' ? 'Coordinator' : ucfirst($role)]);
     }
 
     public function store(Request $request, string $role, AuditLogger $auditLogger, OtpService $otpService): JsonResponse|RedirectResponse
     {
-        abort_unless(in_array($role, ['admin', 'supervisor', 'student'], true), 404);
+        abort_unless(in_array($role, ['admin', 'supervisor', 'coordinator', 'student'], true), 404);
 
         $credentials = $this->credentials($request, $role);
 
@@ -119,6 +119,7 @@ class AuthenticatedSessionController extends Controller
         return match ($role) {
             'admin' => $user instanceof Admin,
             'supervisor' => $user instanceof User && $user->supervisor()->exists(),
+            'coordinator' => $user instanceof User && $user->siwesCoordinator()->exists(),
             'student' => $user instanceof User && $user->student()->exists(),
             default => false,
         };

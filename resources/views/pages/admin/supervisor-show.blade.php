@@ -3,6 +3,7 @@
         ['label' => 'Dashboard', 'href' => route('admin.dashboard'), 'icon' => 'D'],
         ['label' => 'Generate List', 'href' => route('admin.generate-list.index'), 'icon' => 'file-text'],
         ['label' => 'Supervisors', 'href' => route('admin.supervisors.index'), 'active' => true, 'icon' => 'V'],
+        ['label' => 'Coordinators', 'href' => route('admin.coordinators.index'), 'icon' => 'users'],
         ['label' => 'Students', 'href' => route('admin.students.index'), 'icon' => 'S'],
     ];
 @endphp

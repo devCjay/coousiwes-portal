@@ -8,6 +8,7 @@ use App\Models\Admin;
 use App\Models\Course;
 use App\Models\Department;
 use App\Models\Faculty;
+use App\Models\SiwesCoordinator;
 use App\Models\Student;
 use App\Models\Supervisor;
 use App\Models\User;
@@ -46,6 +47,9 @@ class RoleAndPermissionSeeder extends Seeder
             'supervisors.update',
             'supervisors.suspend',
             'supervisors.assign',
+            'coordinators.view',
+            'coordinators.create',
+            'coordinators.update',
             'assessments.view',
             'assessments.export',
             'feedback.view',
@@ -73,11 +77,13 @@ class RoleAndPermissionSeeder extends Seeder
         $superAdmin = Role::findOrCreate('super-admin', self::GUARD);
         $admin = Role::findOrCreate('admin', self::GUARD);
         $supervisor = Role::findOrCreate('supervisor', self::GUARD);
+        $coordinator = Role::findOrCreate('coordinator', self::GUARD);
         $student = Role::findOrCreate('student', self::GUARD);
         $studentManager = Role::findOrCreate('student-manager', self::GUARD);
         $generateListManager = Role::findOrCreate('generate-list-manager', self::GUARD);
         $ticketManager = Role::findOrCreate('ticket-manager', self::GUARD);
         $supervisorManager = Role::findOrCreate('supervisor-manager', self::GUARD);
+        $coordinatorManager = Role::findOrCreate('coordinator-manager', self::GUARD);
         $paymentManager = Role::findOrCreate('payment-manager', self::GUARD);
         $academicManager = Role::findOrCreate('academic-manager', self::GUARD);
         $reportManager = Role::findOrCreate('report-manager', self::GUARD);
@@ -109,6 +115,11 @@ class RoleAndPermissionSeeder extends Seeder
             'supervisors.view',
         ]));
 
+        $coordinatorManager->syncPermissions($permissionModels([
+            'dashboard.view',
+            'coordinators.view',
+        ]));
+
         $paymentManager->syncPermissions($permissionModels([
             'dashboard.view',
             'payments.view',
@@ -138,6 +149,13 @@ class RoleAndPermissionSeeder extends Seeder
             'feedback.manage',
         ]));
 
+        $coordinator->syncPermissions($permissionModels([
+            'dashboard.view',
+            'students.view',
+            'assessments.view',
+            'assessments.export',
+        ]));
+
         $student->syncPermissions($permissionModels([
             'dashboard.view',
             'payments.view',
@@ -154,6 +172,7 @@ class RoleAndPermissionSeeder extends Seeder
             ['name' => 'Super Admin', 'email' => 'superadmin@coousiwes.test', 'role' => 'super-admin'],
             ['name' => 'SIWES Admin', 'email' => 'admin@coousiwes.test', 'role' => 'admin'],
             ['name' => 'Demo Supervisor', 'email' => 'supervisor@coousiwes.test', 'role' => 'supervisor'],
+            ['name' => 'Demo SIWES Coordinator', 'email' => 'coordinator@coousiwes.test', 'role' => 'coordinator'],
             ['name' => 'Demo Student', 'email' => 'student@coousiwes.test', 'role' => 'student', 'password' => '2026/DEMO/001'],
         ];
 
@@ -196,6 +215,28 @@ class RoleAndPermissionSeeder extends Seeder
                         'staff_no' => 'SUP-0001',
                         'organization' => 'COOU SIWES Unit',
                         'department' => 'Industrial Training',
+                        'status' => 'active',
+                    ],
+                );
+            }
+
+            if ($userData['role'] === 'coordinator') {
+                $faculty = Faculty::query()->updateOrCreate(
+                    ['code' => 'AGRIC'],
+                    ['name' => 'Faculty of Agricultural Science', 'is_active' => true],
+                );
+                $department = Department::query()->updateOrCreate(
+                    ['faculty_id' => $faculty->id, 'code' => 'AGE'],
+                    ['name' => 'Agric Economics & Extension', 'is_active' => true],
+                );
+
+                SiwesCoordinator::query()->updateOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'staff_no' => 'COR-0001',
+                        'faculty_id' => $faculty->id,
+                        'department_id' => $department->id,
+                        'rank' => 'Lecturer 1',
                         'status' => 'active',
                     ],
                 );

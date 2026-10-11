@@ -4,6 +4,7 @@
         ['label' => 'Generate List', 'href' => route('admin.generate-list.index'), 'icon' => 'file-text'],
         ['label' => 'Students', 'href' => route('admin.students.index'), 'icon' => 'S'],
         ['label' => 'Supervisors', 'href' => route('admin.supervisors.index'), 'active' => true, 'icon' => 'V'],
+        ['label' => 'Coordinators', 'href' => route('admin.coordinators.index'), 'icon' => 'users'],
         ['label' => 'Tickets', 'href' => route('admin.tickets.index'), 'icon' => 'T'],
     ];
 

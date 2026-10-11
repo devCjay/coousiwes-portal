@@ -7,6 +7,7 @@
         ['label' => 'Bulk Upload', 'href' => route('admin.students.index').'#bulk-upload', 'icon' => 'U'],
         ['label' => 'Tickets', 'href' => route('admin.tickets.index'), 'icon' => 'T'],
         ['label' => 'Supervisors', 'href' => route('admin.supervisors.index'), 'icon' => 'V'],
+        ['label' => 'Coordinators', 'href' => route('admin.coordinators.index'), 'icon' => 'users'],
         ['label' => 'Payments', 'href' => route('admin.payments.index'), 'icon' => 'P'],
         ['label' => 'Assessment', 'href' => route('admin.assessments.index'), 'icon' => 'clipboard-check'],
         ['label' => 'Reports', 'href' => route('admin.reports.index'), 'icon' => 'R'],

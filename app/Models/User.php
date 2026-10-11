@@ -18,6 +18,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $phone
  * @property Student|null $student
  * @property Supervisor|null $supervisor
+ * @property SiwesCoordinator|null $siwesCoordinator
  */
 #[Fillable(['name', 'email', 'phone', 'password', 'status', 'otp_enabled', 'metadata', 'email_verified_at'])]
 #[Hidden(['password', 'remember_token'])]
@@ -51,6 +52,11 @@ class User extends Authenticatable
     public function supervisor(): HasOne
     {
         return $this->hasOne(Supervisor::class);
+    }
+
+    public function siwesCoordinator(): HasOne
+    {
+        return $this->hasOne(SiwesCoordinator::class);
     }
 
     public function profilePhotoUrl(): ?string

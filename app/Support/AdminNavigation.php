@@ -37,6 +37,7 @@ class AdminNavigation
             'Bulk Upload' => 'students.import',
             'Tickets' => 'tickets.view',
             'Supervisors' => 'supervisors.view',
+            'Coordinators' => 'coordinators.view',
             'Payments' => 'payments.view',
             'Assessment' => 'assessments.view',
             'Reports' => 'feedback.view',

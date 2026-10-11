@@ -12,6 +12,7 @@ class RoleRedirector
         return match (true) {
             $user instanceof Admin => route('admin.dashboard', absolute: false),
             $user->hasAnyRole(['super-admin', 'admin']) => route('admin.dashboard', absolute: false),
+            method_exists($user, 'siwesCoordinator') && $user->siwesCoordinator()->exists() => route('coordinator.dashboard', absolute: false),
             method_exists($user, 'supervisor') && $user->supervisor()->exists() => route('supervisor.dashboard', absolute: false),
             default => route('student.dashboard', absolute: false),
         };
@@ -22,6 +23,7 @@ class RoleRedirector
         return match (true) {
             $user instanceof Admin => 'admin',
             $user->hasAnyRole(['super-admin', 'admin']) => 'admin',
+            method_exists($user, 'siwesCoordinator') && $user->siwesCoordinator()->exists() => 'coordinator',
             method_exists($user, 'supervisor') && $user->supervisor()->exists() => 'supervisor',
             default => 'student',
         };

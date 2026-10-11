@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\RoleManagementController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Admin\StudentImportController;
+use App\Http\Controllers\Admin\CoordinatorController;
 use App\Http\Controllers\Admin\SupervisorAssignmentController;
 use App\Http\Controllers\Admin\SupervisorController;
 use App\Http\Controllers\Admin\TicketController;
@@ -22,6 +23,9 @@ use App\Http\Controllers\AccountPasswordController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\OtpChallengeController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Coordinator\DashboardController as CoordinatorDashboardController;
+use App\Http\Controllers\Coordinator\LogbookGradeSheetController as CoordinatorLogbookGradeSheetController;
+use App\Http\Controllers\Coordinator\StudentController as CoordinatorStudentController;
 use App\Http\Controllers\Cron\StudentImportCronController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationCenterController;
@@ -56,12 +60,16 @@ Route::middleware('guest:web,admin')->group(function () {
     Route::get('/login/supervisor', [AuthenticatedSessionController::class, 'create'])
         ->defaults('role', 'supervisor')
         ->name('login.supervisor');
+    Route::get('/login/coordinator', [AuthenticatedSessionController::class, 'create'])
+        ->defaults('role', 'coordinator')
+        ->name('login.coordinator');
+    Route::redirect('/login/cordinator', '/login/coordinator');
     Route::get('/login/student', [AuthenticatedSessionController::class, 'create'])
         ->defaults('role', 'student')
         ->name('login.student');
 
     Route::post('/login/{role}', [AuthenticatedSessionController::class, 'store'])
-        ->whereIn('role', ['admin', 'supervisor', 'student'])
+        ->whereIn('role', ['admin', 'supervisor', 'coordinator', 'student'])
         ->middleware('throttle:login')
         ->name('login.store');
 
@@ -326,6 +334,16 @@ Route::middleware('auth:web,admin')->group(function () {
             ->middleware('permission:payments.view')
             ->name('payments.index');
 
+        Route::get('/coordinators', [CoordinatorController::class, 'index'])
+            ->middleware('permission:coordinators.view')
+            ->name('coordinators.index');
+        Route::post('/coordinators', [CoordinatorController::class, 'store'])
+            ->middleware('permission:coordinators.create')
+            ->name('coordinators.store');
+        Route::delete('/coordinators/{coordinator}', [CoordinatorController::class, 'destroy'])
+            ->middleware('permission:coordinators.update')
+            ->name('coordinators.destroy');
+
         Route::get('/supervisors', [SupervisorController::class, 'index'])
             ->middleware('permission:supervisors.view')
             ->name('supervisors.index');
@@ -394,6 +412,23 @@ Route::middleware('auth:web,admin')->group(function () {
     Route::post('/supervisor/assessments', [AssessmentController::class, 'store'])
         ->middleware(['otp.verified', 'role.portal:supervisor', 'supervisor.profile.complete'])
         ->name('supervisor.assessments.store');
+
+    Route::get('/coordinator/dashboard', CoordinatorDashboardController::class)
+        ->middleware(['otp.verified', 'role.portal:coordinator'])
+        ->name('coordinator.dashboard');
+    Route::get('/coordinator/students', [CoordinatorStudentController::class, 'index'])
+        ->middleware(['otp.verified', 'role.portal:coordinator'])
+        ->name('coordinator.students.index');
+    Route::get('/coordinator/students/export', [CoordinatorStudentController::class, 'export'])
+        ->middleware(['otp.verified', 'role.portal:coordinator', 'throttle:exports'])
+        ->name('coordinator.students.export');
+    Route::get('/coordinator/logbook-grade-sheet', [CoordinatorLogbookGradeSheetController::class, 'index'])
+        ->middleware(['otp.verified', 'role.portal:coordinator'])
+        ->name('coordinator.logbook-grade-sheet.index');
+    Route::get('/coordinator/logbook-grade-sheet/export', [CoordinatorLogbookGradeSheetController::class, 'export'])
+        ->middleware(['otp.verified', 'role.portal:coordinator', 'throttle:exports'])
+        ->name('coordinator.logbook-grade-sheet.export');
+
     Route::get('/student/dashboard', StudentDashboardController::class)
         ->middleware(['otp.verified', 'role.portal:student', 'student.profile.complete'])
         ->name('student.dashboard');

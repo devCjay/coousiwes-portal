@@ -22,6 +22,10 @@ class OtpRequirement
             return true;
         }
 
+        if ($user instanceof User && $user->siwesCoordinator()->exists()) {
+            return true;
+        }
+
         return (bool) ($user->otp_enabled ?? false);
     }
 }

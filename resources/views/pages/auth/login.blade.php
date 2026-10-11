@@ -3,6 +3,7 @@
     $routeMap = [
         'Admin' => route('login.store', 'admin', false),
         'Supervisor' => route('login.store', 'supervisor', false),
+        'Coordinator' => route('login.store', 'coordinator', false),
         'Student' => route('login.store', 'student', false),
     ];
 @endphp
@@ -11,6 +12,7 @@
     @if ($role !== 'Admin')
     <div class="mb-6 flex rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-1">
         <a href="{{ route('login.supervisor') }}" @class(['flex-1 rounded-md px-3 py-2 text-center text-sm font-semibold theme-transition', 'bg-[var(--surface-raised)] text-brand-700 shadow-sm dark:text-brand-200' => $role === 'Supervisor', 'text-[var(--text-soft)]' => $role !== 'Supervisor'])>Supervisor</a>
+        <a href="{{ route('login.coordinator') }}" @class(['flex-1 rounded-md px-3 py-2 text-center text-sm font-semibold theme-transition', 'bg-[var(--surface-raised)] text-brand-700 shadow-sm dark:text-brand-200' => $role === 'Coordinator', 'text-[var(--text-soft)]' => $role !== 'Coordinator'])>Coordinator</a>
         <a href="{{ route('login.student') }}" @class(['flex-1 rounded-md px-3 py-2 text-center text-sm font-semibold theme-transition', 'bg-[var(--surface-raised)] text-brand-700 shadow-sm dark:text-brand-200' => $role === 'Student', 'text-[var(--text-soft)]' => $role !== 'Student'])>Student</a>
     </div>
     @endif

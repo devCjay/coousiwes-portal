@@ -37,6 +37,14 @@ class EnsureUserHasRole
 
         if (
             $user instanceof \App\Models\User
+            && in_array('coordinator', $roles, true)
+            && $user->siwesCoordinator()->where('status', \App\Models\SiwesCoordinator::STATUS_ACTIVE)->exists()
+        ) {
+            return $next($request);
+        }
+
+        if (
+            $user instanceof \App\Models\User
             && in_array('student', $roles, true)
             && $user->student()->exists()
         ) {
