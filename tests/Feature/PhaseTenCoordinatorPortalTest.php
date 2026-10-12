@@ -85,6 +85,16 @@ class PhaseTenCoordinatorPortalTest extends TestCase
         ])->assertRedirect(route('otp.show'));
     }
 
+    public function test_role_and_permission_seeder_can_run_repeatedly_without_duplicate_demo_codes(): void
+    {
+        $this->seed(RoleAndPermissionSeeder::class);
+
+        $this->assertSame(1, Admin::query()->where('admin_code', 'ADM-00001')->count());
+        $this->assertSame(1, Admin::query()->where('admin_code', 'ADM-00002')->count());
+        $this->assertSame(1, Supervisor::query()->where('staff_no', 'SUP-0001')->count());
+        $this->assertSame(1, SiwesCoordinator::query()->where('staff_no', 'COR-0001')->count());
+    }
+
     public function test_coordinator_students_page_and_export_are_limited_to_assigned_department(): void
     {
         $department = Department::query()->where('code', 'AGE')->firstOrFail();

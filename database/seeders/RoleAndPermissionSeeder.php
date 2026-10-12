@@ -178,17 +178,27 @@ class RoleAndPermissionSeeder extends Seeder
 
         foreach ($users as $userData) {
             if (in_array($userData['role'], ['super-admin', 'admin'], true)) {
-                $admin = Admin::updateOrCreate(
-                    ['email' => $userData['email']],
-                    [
-                        'admin_code' => $userData['role'] === 'super-admin' ? 'ADM-00001' : 'ADM-00002',
-                        'name' => $userData['name'],
-                        'password' => Hash::make($userData['password'] ?? 'password'),
-                        'status' => 'active',
-                        'otp_enabled' => false,
-                        'email_verified_at' => now(),
-                    ],
-                );
+                $adminCode = $userData['role'] === 'super-admin' ? 'ADM-00001' : 'ADM-00002';
+                $admin = Admin::query()
+                    ->where('admin_code', $adminCode)
+                    ->orWhere('email', $userData['email'])
+                    ->first();
+
+                $adminPayload = [
+                    'admin_code' => $adminCode,
+                    'name' => $userData['name'],
+                    'email' => $userData['email'],
+                    'password' => Hash::make($userData['password'] ?? 'password'),
+                    'status' => 'active',
+                    'otp_enabled' => false,
+                    'email_verified_at' => now(),
+                ];
+
+                if ($admin) {
+                    $admin->update($adminPayload);
+                } else {
+                    $admin = Admin::query()->create($adminPayload);
+                }
 
                 $admin->assignRole($userData['role']);
 
@@ -209,15 +219,23 @@ class RoleAndPermissionSeeder extends Seeder
             $user->assignRole($userData['role']);
 
             if ($userData['role'] === 'supervisor') {
-                Supervisor::query()->updateOrCreate(
-                    ['user_id' => $user->id],
-                    [
-                        'staff_no' => 'SUP-0001',
-                        'organization' => 'COOU SIWES Unit',
-                        'department' => 'Industrial Training',
-                        'status' => 'active',
-                    ],
-                );
+                $supervisor = Supervisor::query()
+                    ->where('staff_no', 'SUP-0001')
+                    ->orWhere('user_id', $user->id)
+                    ->first();
+                $supervisorPayload = [
+                    'user_id' => $user->id,
+                    'staff_no' => 'SUP-0001',
+                    'organization' => 'COOU SIWES Unit',
+                    'department' => 'Industrial Training',
+                    'status' => 'active',
+                ];
+
+                if ($supervisor) {
+                    $supervisor->update($supervisorPayload);
+                } else {
+                    Supervisor::query()->create($supervisorPayload);
+                }
             }
 
             if ($userData['role'] === 'coordinator') {
@@ -230,16 +248,24 @@ class RoleAndPermissionSeeder extends Seeder
                     ['name' => 'Agric Economics & Extension', 'is_active' => true],
                 );
 
-                SiwesCoordinator::query()->updateOrCreate(
-                    ['user_id' => $user->id],
-                    [
-                        'staff_no' => 'COR-0001',
-                        'faculty_id' => $faculty->id,
-                        'department_id' => $department->id,
-                        'rank' => 'Lecturer 1',
-                        'status' => 'active',
-                    ],
-                );
+                $coordinator = SiwesCoordinator::query()
+                    ->where('staff_no', 'COR-0001')
+                    ->orWhere('user_id', $user->id)
+                    ->first();
+                $coordinatorPayload = [
+                    'user_id' => $user->id,
+                    'staff_no' => 'COR-0001',
+                    'faculty_id' => $faculty->id,
+                    'department_id' => $department->id,
+                    'rank' => 'Lecturer 1',
+                    'status' => 'active',
+                ];
+
+                if ($coordinator) {
+                    $coordinator->update($coordinatorPayload);
+                } else {
+                    SiwesCoordinator::query()->create($coordinatorPayload);
+                }
             }
 
             if ($userData['role'] === 'student') {
