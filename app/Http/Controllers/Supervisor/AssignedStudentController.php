@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Assessment;
 use App\Models\AssessmentRubricItem;
 use App\Models\Supervisor;
+use App\Services\AssessmentService;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -58,36 +59,45 @@ class AssignedStudentController extends Controller
             ])
             ->latest('assigned_at')
             ->get();
+        $rubricItems = $this->activeRubricItems();
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Assigned Students');
-        $sheet->fromArray([
-            'Student Name',
+        $headers = collect([
+            "Student's Name",
             'Reg No',
+            "Student's Phone Number",
+            "Company's Name",
+            "Company Supervisor's Phone Number",
+            "Company's Address, LGA, State",
             'Department',
-            'Placement Address',
-            'LGA',
-            'State',
-            'Logbook Score (40)',
-        ], null, 'A1');
+        ])
+            ->merge($rubricItems->map(fn (AssessmentRubricItem $item): string => "{$item->name} ({$item->max_score} Marks)"))
+            ->push('Total ('.$this->logbookMaxScore().' Marks)')
+            ->all();
 
-        $assignments->values()->each(function ($assignment, int $index) use ($sheet): void {
+        $sheet->fromArray($headers, null, 'A1');
+
+        $assignments->values()->each(function ($assignment, int $index) use ($sheet, $rubricItems): void {
             $student = $assignment->student;
             $placement = $student?->placement;
 
-            $sheet->fromArray([
+            $row = [
                 $student?->user?->name ?? 'N/A',
                 $student?->matric_no ?? 'N/A',
+                $student?->user?->phone ?: 'N/A',
+                $placement?->company_name ?: 'N/A',
+                $placement?->company_supervisor_phone ?: 'N/A',
+                $placement ? collect([$placement->company_address, $placement->company_lga, $placement->company_state])->filter()->join(', ') : 'N/A',
                 $student?->department?->name ?? 'N/A',
-                $placement?->company_address ?: 'N/A',
-                $placement?->company_lga ?: 'N/A',
-                $placement?->company_state ?: 'N/A',
-                '',
-            ], null, 'A'.($index + 2));
+            ];
+
+            $row = array_merge($row, array_fill(0, $rubricItems->count(), ''), ['']);
+            $sheet->fromArray($row, null, 'A'.($index + 2));
         });
 
-        foreach (range('A', 'G') as $column) {
+        foreach (range('A', $sheet->getHighestColumn()) as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
@@ -109,12 +119,14 @@ class AssignedStudentController extends Controller
         ]);
 
         try {
-            $importedRows = $this->readLogbookScoresFromSpreadsheet($validated['score_sheet']->getRealPath());
+            $rubricItems = $this->activeRubricItems();
+            $importedRows = $this->readLogbookScoresFromSpreadsheet($validated['score_sheet']->getRealPath(), $rubricItems);
         } catch (\Throwable $exception) {
             return view('pages.supervisor.logbook-import-preview', [
                 'supervisor' => $supervisor,
                 'rows' => collect(),
                 'importedRows' => collect(),
+                'rubricItems' => collect(),
                 'maxScore' => $this->logbookMaxScore(),
                 'error' => $exception->getMessage(),
             ]);
@@ -130,7 +142,7 @@ class AssignedStudentController extends Controller
             'rows' => $rows->map(fn (array $row): array => [
                 'assignment_id' => $row['assignment_id'],
                 'student_id' => $row['student_id'],
-                'detected_score' => $row['detected_score'],
+                'rubric_scores' => $row['rubric_scores'],
             ])->all(),
         ]);
 
@@ -138,19 +150,21 @@ class AssignedStudentController extends Controller
             'supervisor' => $supervisor,
             'rows' => $rows,
             'importedRows' => $importedRows,
+            'rubricItems' => $rubricItems,
             'maxScore' => $this->logbookMaxScore(),
             'error' => null,
         ]);
     }
 
-    public function confirmLogbookImport(Request $request, AuditLogger $auditLogger)
+    public function confirmLogbookImport(Request $request, AuditLogger $auditLogger, AssessmentService $assessmentService)
     {
         $supervisor = $request->user()?->supervisor;
         abort_unless($supervisor instanceof Supervisor, 403);
 
         $validated = $request->validate([
             'scores' => ['required', 'array'],
-            'scores.*' => ['nullable', 'integer', 'min:0', 'max:'.$this->logbookMaxScore()],
+            'scores.*' => ['required', 'array'],
+            'scores.*.*' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $preview = collect($request->session()->get('logbook_excel_preview.rows', []))->keyBy('assignment_id');
@@ -158,16 +172,20 @@ class AssignedStudentController extends Controller
 
         $saved = 0;
         $skipped = 0;
-        $maxScore = $this->logbookMaxScore();
+        $rubricItems = $this->activeRubricItems()->keyBy('id');
 
-        DB::transaction(function () use ($validated, $preview, $supervisor, $request, $auditLogger, $maxScore, &$saved, &$skipped): void {
-            foreach ($validated['scores'] as $assignmentId => $score) {
-                if ($score === null || $score === '') {
+        DB::transaction(function () use ($validated, $preview, $supervisor, $request, $auditLogger, $assessmentService, $rubricItems, &$saved, &$skipped): void {
+            foreach ($validated['scores'] as $assignmentId => $scores) {
+                if (! $preview->has((int) $assignmentId)) {
                     $skipped++;
                     continue;
                 }
 
-                if (! $preview->has((int) $assignmentId)) {
+                $scores = collect($scores)
+                    ->mapWithKeys(fn ($score, string|int $rubricId): array => [(int) $rubricId => $score === null || $score === '' ? null : (int) $score])
+                    ->all();
+
+                if (collect($scores)->filter(fn ($score): bool => $score !== null)->isEmpty()) {
                     $skipped++;
                     continue;
                 }
@@ -177,20 +195,31 @@ class AssignedStudentController extends Controller
                     ->whereKey((int) $assignmentId)
                     ->first();
 
-                if (! $assignment || $assignment->assessment()->exists()) {
+                $hasMissingScore = $rubricItems->keys()->contains(fn (int $id): bool => ! array_key_exists($id, $scores) || $scores[$id] === null);
+                $hasInvalidScore = collect($scores)->contains(function (?int $score, int $rubricId) use ($rubricItems): bool {
+                    $rubric = $rubricItems->get($rubricId);
+
+                    return ! $rubric || $score === null || $score < 0 || $score > $rubric->max_score;
+                });
+
+                if (! $assignment || $assignment->assessment()->exists() || $hasMissingScore || $hasInvalidScore) {
                     $skipped++;
                     continue;
                 }
 
-                $assessment = Assessment::query()->create([
-                    'supervisor_id' => $supervisor->id,
-                    'student_id' => $assignment->student_id,
-                    'supervisor_student_assignment_id' => $assignment->id,
-                    'total_score' => (int) $score,
-                    'max_score' => $maxScore,
-                    'status' => Assessment::STATUS_SUBMITTED,
-                    'feedback' => 'Imported from reviewed printed logbook score sheet.',
-                    'submitted_at' => now(),
+                try {
+                    $assessment = $assessmentService->submit(
+                        $supervisor,
+                        $assignment->student,
+                        $scores,
+                        'Imported from reviewed printed logbook score sheet.',
+                    );
+                } catch (\RuntimeException) {
+                    $skipped++;
+                    continue;
+                }
+
+                $assessment->update([
                     'metadata' => [
                         'source' => 'excel_logbook_import',
                         'reviewed_by_supervisor' => true,
@@ -199,8 +228,8 @@ class AssignedStudentController extends Controller
 
                 $auditLogger->record('assessments.logbook_excel_imported', $request->user(), $request, $assessment, [
                     'student_id' => $assignment->student_id,
-                    'score' => (int) $score,
-                    'max_score' => $maxScore,
+                    'score' => $assessment->total_score,
+                    'max_score' => $assessment->max_score,
                 ]);
                 $saved++;
             }
@@ -214,7 +243,7 @@ class AssignedStudentController extends Controller
             ->with('status', "{$saved} score(s) saved, {$skipped} skipped after review.");
     }
 
-    private function readLogbookScoresFromSpreadsheet(string $path)
+    private function readLogbookScoresFromSpreadsheet(string $path, $rubricItems)
     {
         $spreadsheet = IOFactory::load($path);
         $sheet = $spreadsheet->getActiveSheet();
@@ -230,18 +259,34 @@ class AssignedStudentController extends Controller
             ->mapWithKeys(fn ($value, string $column): array => [$this->normalizeHeader((string) $value) => $column]);
 
         $regColumn = $headers->get('regno') ?? $headers->get('matricnumber') ?? $headers->get('matricno') ?? 'B';
-        $scoreColumn = $headers->get('logbookscore40') ?? $headers->get('logbookscore') ?? $headers->get('score') ?? 'G';
+        $rubricColumns = $rubricItems->mapWithKeys(function (AssessmentRubricItem $item) use ($headers): array {
+            $normalized = $this->normalizeHeader("{$item->name} {$item->max_score} Marks");
+            $fallback = $this->normalizeHeader($item->name);
+
+            return [$item->id => [
+                'column' => $headers->get($normalized) ?? $headers->get($fallback),
+                'max_score' => $item->max_score,
+            ]];
+        });
 
         return $rows->skip(1)
-            ->map(function (array $row, int $index) use ($regColumn, $scoreColumn): array {
+            ->map(function (array $row, int $index) use ($regColumn, $rubricColumns): array {
                 $regNo = trim((string) ($row[$regColumn] ?? ''));
-                $score = trim((string) ($row[$scoreColumn] ?? ''));
+                $rubricScores = $rubricColumns->mapWithKeys(function (array $config, int $rubricId) use ($row): array {
+                    $column = $config['column'];
+                    $rawScore = $column ? trim((string) ($row[$column] ?? '')) : '';
+
+                    return [$rubricId => [
+                        'score' => $this->normalizeScore($rawScore, (int) $config['max_score']),
+                        'raw_score' => $rawScore,
+                    ]];
+                })->all();
 
                 return [
                     'row_number' => $index + 2,
                     'matric_no' => $regNo,
-                    'score' => $this->normalizeScore($score),
-                    'raw_score' => $score,
+                    'rubric_scores' => $rubricScores,
+                    'total_score' => collect($rubricScores)->sum('score'),
                 ];
             })
             ->filter(fn (array $row): bool => $row['matric_no'] !== '')
@@ -256,7 +301,11 @@ class AssignedStudentController extends Controller
         return $assignments->map(function ($assignment) use ($scoresByRegNo): array {
             $student = $assignment->student;
             $matchedRow = $scoresByRegNo->get($this->normalizeToken($student->matric_no));
-            $detectedScore = $matchedRow['score'] ?? null;
+            $rubricScores = collect($matchedRow['rubric_scores'] ?? [])
+                ->mapWithKeys(fn (array $score, int $rubricId): array => [$rubricId => $score['score']])
+                ->all();
+            $detectedScore = collect($rubricScores)->sum();
+            $hasMissingScore = collect($rubricScores)->contains(fn ($score): bool => $score === null);
 
             return [
                 'assignment_id' => $assignment->id,
@@ -265,22 +314,24 @@ class AssignedStudentController extends Controller
                 'matric_no' => $student->matric_no,
                 'department' => $student->department?->name ?? 'N/A',
                 'detected_score' => $detectedScore,
-                'matched_line' => $matchedRow ? "Row {$matchedRow['row_number']} / {$matchedRow['matric_no']} / {$matchedRow['raw_score']}" : null,
-                'status' => $assignment->assessment ? 'Already graded' : ($detectedScore === null ? 'Needs review' : 'Detected'),
+                'rubric_scores' => $rubricScores,
+                'matched_line' => $matchedRow ? "Row {$matchedRow['row_number']} / {$matchedRow['matric_no']} / total {$matchedRow['total_score']}" : null,
+                'status' => $assignment->assessment ? 'Already graded' : (! $matchedRow || $hasMissingScore ? 'Needs review' : 'Detected'),
                 'locked' => $assignment->assessment !== null,
             ];
         });
     }
 
-    private function normalizeScore(string $value): ?int
+    private function normalizeScore(string $value, ?int $maxScore = null): ?int
     {
         if ($value === '' || ! is_numeric($value)) {
             return null;
         }
 
         $score = (int) $value;
+        $maxScore ??= $this->logbookMaxScore();
 
-        return $score >= 0 && $score <= $this->logbookMaxScore() ? $score : null;
+        return $score >= 0 && $score <= $maxScore ? $score : null;
     }
 
     private function normalizeHeader(string $value): string
@@ -295,6 +346,14 @@ class AssignedStudentController extends Controller
 
     private function logbookMaxScore(): int
     {
-        return self::LOGBOOK_MAX_SCORE;
+        return (int) $this->activeRubricItems()->sum('max_score') ?: self::LOGBOOK_MAX_SCORE;
+    }
+
+    private function activeRubricItems()
+    {
+        return AssessmentRubricItem::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
     }
 }

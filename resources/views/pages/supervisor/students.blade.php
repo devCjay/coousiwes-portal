@@ -137,14 +137,20 @@
                                         <div class="flex items-start justify-between gap-3">
                                             <div>
                                                 <p class="text-sm font-semibold">{{ $item->name }}</p>
-                                                <p class="mt-1 text-xs text-[var(--text-soft)]">Max {{ $item->max_score }}, weight {{ $item->weight }}</p>
+                                                <p class="mt-1 text-xs text-[var(--text-soft)]">Max {{ $item->max_score }} marks</p>
                                             </div>
-                                            <input name="scores[{{ $item->id }}]" type="number" min="0" max="{{ $item->max_score }}" class="w-24 rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] px-3 py-2 text-sm" required>
+                                            <input name="scores[{{ $item->id }}]" type="number" min="0" max="{{ $item->max_score }}" data-assessment-score data-assessment-group="grade-{{ $assignment->id }}" class="w-24 rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] px-3 py-2 text-sm" required>
                                         </div>
                                     </div>
                                 @empty
                                     <p class="text-sm text-[var(--text-soft)]">No active rubric items have been configured.</p>
                                 @endforelse
+                            </div>
+
+                            <div class="rounded-xl border border-brand-600/20 bg-brand-600/5 p-4 text-sm font-bold text-[var(--text-strong)]">
+                                Total Grade:
+                                <span data-assessment-total data-assessment-group="grade-{{ $assignment->id }}">0</span>
+                                / {{ $rubricItems->sum('max_score') }}
                             </div>
 
                             <label class="block">
@@ -182,7 +188,7 @@
             @csrf
             <div class="rounded-xl border border-brand-600/20 bg-brand-600/5 p-4">
                 <p class="text-sm font-semibold text-[var(--text-strong)]">Upload the completed assigned-student Excel sheet.</p>
-                <p class="mt-2 text-sm leading-6 text-[var(--text-soft)]">Enter scores under the Logbook Score (40) column, then upload the file. Scores are not saved until you review and confirm them.</p>
+                <p class="mt-2 text-sm leading-6 text-[var(--text-soft)]">Enter scores under each rubric column, then upload the file. Scores are not saved until you review and confirm them.</p>
             </div>
             <label class="block">
                 <span class="text-sm font-medium text-[var(--text-strong)]">Score Sheet File</span>
@@ -194,4 +200,20 @@
             </div>
         </form>
     </x-ui.modal>
+
+    <script>
+        document.addEventListener('input', (event) => {
+            const input = event.target.closest('[data-assessment-score]');
+            if (! input) return;
+
+            const group = input.dataset.assessmentGroup;
+            const total = document.querySelector(`[data-assessment-total][data-assessment-group="${group}"]`);
+            if (! total) return;
+
+            const sum = Array.from(document.querySelectorAll(`[data-assessment-score][data-assessment-group="${group}"]`))
+                .reduce((carry, field) => carry + (Number.parseInt(field.value || '0', 10) || 0), 0);
+
+            total.textContent = sum;
+        });
+    </script>
 </x-layouts.app-shell>

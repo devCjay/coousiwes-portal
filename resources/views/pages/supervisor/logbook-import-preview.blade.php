@@ -24,7 +24,10 @@
                                 <th class="px-4 py-3">Reg No</th>
                                 <th class="px-4 py-3">Department</th>
                                 <th class="px-4 py-3">Matched Row</th>
-                                <th class="px-4 py-3">Score ({{ $maxScore }})</th>
+                                @foreach ($rubricItems as $item)
+                                    <th class="px-4 py-3">{{ $item->name }} ({{ $item->max_score }})</th>
+                                @endforeach
+                                <th class="px-4 py-3">Total ({{ $maxScore }})</th>
                                 <th class="px-4 py-3">Status</th>
                             </tr>
                         </thead>
@@ -35,26 +38,33 @@
                                     <td class="px-4 py-3 text-[var(--text-strong)]">{{ $row['matric_no'] }}</td>
                                     <td class="px-4 py-3 text-[var(--text-strong)]">{{ $row['department'] }}</td>
                                     <td class="max-w-xs px-4 py-3 text-xs leading-5 text-[var(--text-soft)]">{{ $row['matched_line'] ?: 'No matching spreadsheet row found.' }}</td>
-                                    <td class="px-4 py-3">
-                                        <input
-                                            name="scores[{{ $row['assignment_id'] }}]"
-                                            type="number"
-                                            min="0"
-                                            max="{{ $maxScore }}"
-                                            value="{{ $row['locked'] ? '' : $row['detected_score'] }}"
-                                            @disabled($row['locked'])
-                                            class="w-28 rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                                        >
+                                    @foreach ($rubricItems as $item)
+                                        <td class="px-4 py-3">
+                                            <input
+                                                name="scores[{{ $row['assignment_id'] }}][{{ $item->id }}]"
+                                                type="number"
+                                                min="0"
+                                                max="{{ $item->max_score }}"
+                                                value="{{ $row['locked'] ? '' : ($row['rubric_scores'][$item->id] ?? '') }}"
+                                                @disabled($row['locked'])
+                                                data-assessment-score
+                                                data-assessment-group="import-{{ $row['assignment_id'] }}"
+                                                class="w-24 rounded-lg border border-[var(--line)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                                            >
+                                        </td>
+                                    @endforeach
+                                    <td class="px-4 py-3 font-bold text-[var(--text-strong)]">
+                                        <span data-assessment-total data-assessment-group="import-{{ $row['assignment_id'] }}">{{ $row['detected_score'] }}</span> / {{ $maxScore }}
                                     </td>
                                     <td class="px-4 py-3">
-                                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $row['locked'] ? 'bg-amber-300 text-graphite-950' : ($row['detected_score'] === null ? 'bg-rose-100 text-rose-700' : 'bg-brand-400 text-white') }}">
+                                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $row['locked'] ? 'bg-amber-300 text-graphite-950' : ($row['status'] === 'Needs review' ? 'bg-rose-100 text-rose-700' : 'bg-brand-400 text-white') }}">
                                             {{ $row['status'] }}
                                         </span>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-4 py-6 text-center text-sm text-[var(--text-soft)]">No active assignments were found for this supervisor.</td>
+                                    <td colspan="{{ 6 + $rubricItems->count() }}" class="px-4 py-6 text-center text-sm text-[var(--text-soft)]">No active assignments were found for this supervisor.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -69,7 +79,10 @@
                                 <tr>
                                     <th class="px-3 py-2">Row</th>
                                     <th class="px-3 py-2">Reg No</th>
-                                    <th class="px-3 py-2">Score</th>
+                                    @foreach ($rubricItems as $item)
+                                        <th class="px-3 py-2">{{ $item->name }}</th>
+                                    @endforeach
+                                    <th class="px-3 py-2">Total</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-[var(--line)]">
@@ -77,11 +90,14 @@
                                     <tr>
                                         <td class="px-3 py-2 text-[var(--text-strong)]">{{ $importedRow['row_number'] }}</td>
                                         <td class="px-3 py-2 text-[var(--text-strong)]">{{ $importedRow['matric_no'] }}</td>
-                                        <td class="px-3 py-2 text-[var(--text-strong)]">{{ $importedRow['raw_score'] ?: 'N/A' }}</td>
+                                        @foreach ($rubricItems as $item)
+                                            <td class="px-3 py-2 text-[var(--text-strong)]">{{ $importedRow['rubric_scores'][$item->id]['raw_score'] ?? 'N/A' }}</td>
+                                        @endforeach
+                                        <td class="px-3 py-2 font-bold text-[var(--text-strong)]">{{ $importedRow['total_score'] }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="3" class="px-3 py-4 text-center text-[var(--text-soft)]">No import rows were found.</td>
+                                        <td colspan="{{ 3 + $rubricItems->count() }}" class="px-3 py-4 text-center text-[var(--text-soft)]">No import rows were found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -96,4 +112,20 @@
             </form>
         </x-ui.card>
     @endif
+
+    <script>
+        document.addEventListener('input', (event) => {
+            const input = event.target.closest('[data-assessment-score]');
+            if (! input) return;
+
+            const group = input.dataset.assessmentGroup;
+            const total = document.querySelector(`[data-assessment-total][data-assessment-group="${group}"]`);
+            if (! total) return;
+
+            const sum = Array.from(document.querySelectorAll(`[data-assessment-score][data-assessment-group="${group}"]`))
+                .reduce((carry, field) => carry + (Number.parseInt(field.value || '0', 10) || 0), 0);
+
+            total.textContent = sum;
+        });
+    </script>
 </x-layouts.app-shell>

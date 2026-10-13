@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\AcademicLevel;
 use App\Models\AcademicSession;
 use App\Models\AppSetting;
+use App\Models\AssessmentRubricItem;
 use App\Models\AuditLog;
 use App\Models\Admin;
 use App\Models\Course;
@@ -499,25 +500,31 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
 
         $spreadsheet = IOFactory::load($response->baseResponse->getFile()->getPathname());
         $sheet = $spreadsheet->getActiveSheet();
-
-        $this->assertSame([
-            'Student Name',
+        $rubricItems = AssessmentRubricItem::query()->where('is_active', true)->orderBy('sort_order')->get();
+        $expectedHeaders = collect([
+            "Student's Name",
             'Reg No',
+            "Student's Phone Number",
+            "Company's Name",
+            "Company Supervisor's Phone Number",
+            "Company's Address, LGA, State",
             'Department',
-            'Placement Address',
-            'LGA',
-            'State',
-            'Logbook Score (40)',
-        ], $sheet->rangeToArray('A1:G1')[0]);
-        $this->assertSame([
+        ])
+            ->merge($rubricItems->map(fn (AssessmentRubricItem $item): string => "{$item->name} ({$item->max_score} Marks)"))
+            ->push('Total (40 Marks)')
+            ->all();
+        $expectedRow = array_merge([
             $student->user->name,
             '2026/SUP/009',
+            '08030000000',
+            'Export Works Ltd',
+            '08035550000',
+            '12 Industrial Avenue, Awka South, Anambra',
             $student->department->name,
-            '12 Industrial Avenue',
-            'Awka South',
-            'Anambra',
-            null,
-        ], $sheet->rangeToArray('A2:G2')[0]);
+        ], array_fill(0, $rubricItems->count(), null), [null]);
+
+        $this->assertSame($expectedHeaders, $sheet->rangeToArray('A1:'.$sheet->getHighestColumn().'1')[0]);
+        $this->assertSame($expectedRow, $sheet->rangeToArray('A2:'.$sheet->getHighestColumn().'2')[0]);
     }
 
     public function test_supervisor_can_preview_and_confirm_excel_logbook_score_import(): void
@@ -528,27 +535,33 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             'student_id' => $student->id,
             'assigned_at' => now(),
         ]);
+        $rubricItems = AssessmentRubricItem::query()->where('is_active', true)->orderBy('sort_order')->get();
+        $rubricScores = $rubricItems->mapWithKeys(fn (AssessmentRubricItem $item): array => [$item->id => max(0, $item->max_score - 1)])->all();
+        $headers = collect([
+            "Student's Name",
+            'Reg No',
+            "Student's Phone Number",
+            "Company's Name",
+            "Company Supervisor's Phone Number",
+            "Company's Address, LGA, State",
+            'Department',
+        ])
+            ->merge($rubricItems->map(fn (AssessmentRubricItem $item): string => "{$item->name} ({$item->max_score} Marks)"))
+            ->push('Total (40 Marks)')
+            ->all();
         $path = tempnam(sys_get_temp_dir(), 'logbook-import-').'.xlsx';
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->fromArray([
-            'Student Name',
-            'Reg No',
-            'Department',
-            'Placement Address',
-            'LGA',
-            'State',
-            'Logbook Score (40)',
-        ], null, 'A1');
-        $sheet->fromArray([
+        $sheet->fromArray($headers, null, 'A1');
+        $sheet->fromArray(array_merge([
             $student->user->name,
             $student->matric_no,
+            '08030000000',
+            'Export Works Ltd',
+            '08035550000',
+            '12 Industry Road, Awka South, Anambra',
             $student->department->name,
-            '12 Industry Road',
-            'Awka South',
-            'Anambra',
-            36,
-        ], null, 'A2');
+        ], array_values($rubricScores), [array_sum($rubricScores)]), null, 'A2');
         (new Xlsx($spreadsheet))->save($path);
 
         $response = $this->actingAs($supervisor->user)
@@ -559,7 +572,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             ->assertOk()
             ->assertSee('Review Imported Logbook Scores')
             ->assertSee('2026/SUP/010')
-            ->assertSee('value="36"', false);
+            ->assertSee('value="'.reset($rubricScores).'"', false);
 
         $response->assertSessionHas('logbook_excel_preview');
 
@@ -570,7 +583,7 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             ])
             ->post(route('supervisor.students.logbook-import.confirm'), [
                 'scores' => [
-                    $assignment->id => 36,
+                    $assignment->id => $rubricScores,
                 ],
             ])
             ->assertRedirect(route('supervisor.students.index'))
@@ -580,10 +593,11 @@ class PhaseSevenSupervisorAssignmentTest extends TestCase
             'supervisor_id' => $supervisor->id,
             'student_id' => $student->id,
             'supervisor_student_assignment_id' => $assignment->id,
-            'total_score' => 36,
+            'total_score' => array_sum($rubricScores),
             'max_score' => 40,
             'status' => 'submitted',
         ]);
+        $this->assertSame($rubricItems->count(), $assignment->assessment()->firstOrFail()->scores()->count());
 
         @unlink($path);
     }

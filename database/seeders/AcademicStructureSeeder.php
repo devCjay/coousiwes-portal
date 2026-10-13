@@ -62,6 +62,11 @@ class AcademicStructureSeeder extends Seeder
             );
         }
 
+        $rubricNames = collect($this->rubricItems())->pluck('name')->all();
+        AssessmentRubricItem::query()
+            ->whereNotIn('name', $rubricNames)
+            ->update(['is_active' => false]);
+
         foreach ($this->rubricItems() as $rubricItem) {
             AssessmentRubricItem::query()->updateOrCreate(
                 ['name' => $rubricItem['name']],
@@ -215,35 +220,67 @@ class AcademicStructureSeeder extends Seeder
     {
         return [
             [
-                'name' => 'Punctuality',
-                'description' => 'Attendance, timeliness, and reliability during industrial attachment.',
-                'max_score' => 10,
+                'name' => 'Student Present',
+                'description' => 'Student availability for assessment during SIWES supervision.',
+                'max_score' => 5,
                 'weight' => 1,
                 'sort_order' => 1,
                 'is_active' => true,
             ],
             [
-                'name' => 'Technical Skill',
-                'description' => 'Ability to apply relevant professional and technical skills.',
-                'max_score' => 10,
-                'weight' => 2,
+                'name' => 'Relevance of IT Placement',
+                'description' => 'Relevance of the student placement to the student course of study.',
+                'max_score' => 4,
+                'weight' => 1,
                 'sort_order' => 2,
                 'is_active' => true,
             ],
             [
-                'name' => 'Communication',
-                'description' => 'Clarity, documentation quality, and workplace communication.',
-                'max_score' => 10,
+                'name' => 'Theory',
+                'description' => 'Understanding of theoretical concepts related to the attachment.',
+                'max_score' => 3,
                 'weight' => 1,
                 'sort_order' => 3,
                 'is_active' => true,
             ],
             [
-                'name' => 'Professional Conduct',
-                'description' => 'Ethics, teamwork, initiative, and adherence to workplace standards.',
+                'name' => 'Practical',
+                'description' => 'Practical skill application and workplace task execution.',
                 'max_score' => 10,
-                'weight' => 2,
+                'weight' => 1,
                 'sort_order' => 4,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Logbook Completion',
+                'description' => 'Completeness and quality of logbook entries.',
+                'max_score' => 5,
+                'weight' => 1,
+                'sort_order' => 5,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Form 8 Completion and Signature',
+                'description' => 'Completion and signature status of SIWES Form 8.',
+                'max_score' => 5,
+                'weight' => 1,
+                'sort_order' => 6,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Conduct',
+                'description' => 'Student conduct, discipline, and workplace attitude.',
+                'max_score' => 3,
+                'weight' => 1,
+                'sort_order' => 7,
+                'is_active' => true,
+            ],
+            [
+                'name' => "Company Supervisor's Remark",
+                'description' => "Company supervisor's assessment remark score.",
+                'max_score' => 5,
+                'weight' => 1,
+                'sort_order' => 8,
                 'is_active' => true,
             ],
         ];
