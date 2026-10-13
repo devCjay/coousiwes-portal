@@ -2,7 +2,7 @@
     $navigation = [
         ['label' => 'Dashboard', 'href' => route('supervisor.dashboard'), 'active' => true, 'icon' => 'D'],
         ['label' => 'Assigned Students', 'href' => route('supervisor.students.index'), 'icon' => 'S'],
-        ['label' => 'Grade Log Book', 'href' => route('supervisor.assessments.index'), 'icon' => 'A'],
+        ['label' => 'Assessment Score Sheet', 'href' => route('supervisor.assessments.index'), 'icon' => 'A'],
     ];
 @endphp
 
