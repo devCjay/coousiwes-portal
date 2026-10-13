@@ -17,6 +17,7 @@
     $autoIcon = match (true) {
         str_contains($label, 'Student') => 'graduation-cap',
         str_contains($label, 'Supervisor') => 'user-check',
+        str_contains($label, 'Coordinator') => 'user-check',
         str_contains($label, 'Admin') => 'shield',
         str_contains($label, 'Dashboard') => 'layout-dashboard',
         str_contains($label, 'Started') => 'log-in',
