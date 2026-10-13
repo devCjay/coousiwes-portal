@@ -2,7 +2,7 @@
     $navigation = [
         ['label' => 'Dashboard', 'href' => route('coordinator.dashboard'), 'active' => true, 'icon' => 'D'],
         ['label' => 'Students', 'href' => route('coordinator.students.index'), 'icon' => 'S'],
-        ['label' => 'Download Logbook Gradesheet', 'href' => route('coordinator.logbook-grade-sheet.index'), 'icon' => 'clipboard-check'],
+        ['label' => 'Download Assessment Score Sheet', 'href' => route('coordinator.logbook-grade-sheet.index'), 'icon' => 'clipboard-check'],
         ['label' => 'Change Password', 'href' => route('account.password.edit'), 'icon' => 'key'],
     ];
 @endphp

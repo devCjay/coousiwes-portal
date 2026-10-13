@@ -3,7 +3,7 @@
         <td height="370" align="center" valign="top">
             <h2>CHUKWUEMEKA ODIMEGWU OJUKWU UNIVERSITY</h2>
             <h3>STUDENTS INDUSTRIAL WORK EXPERIENCE SCHEME (SIWES) UNIT</h3>
-            <h3>LOG BOOK SCORE SHEET</h3>
+            <h3>ASSESSMENT SCORE SHEET</h3>
             <br />
             <table width="100%" border="0" cellpadding="1" cellspacing="0" style="border-collapse:collapse">
                 <tr align="left" style="border:solid 1px;">
@@ -32,3 +32,6 @@
         </td>
     </tr>
 </table>
+
+
+
