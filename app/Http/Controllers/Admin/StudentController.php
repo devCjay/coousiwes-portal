@@ -313,7 +313,7 @@ class StudentController extends Controller
             return;
         }
 
-        $this->ticketService->generateFor($student, $generatedBy);
+        $this->ticketService->generateFreshFor($student, $generatedBy);
     }
 
     private function markWorkshopFeePaid(Student $student, bool $markPaid): void

@@ -28,6 +28,16 @@ class TicketService
 
     public function generateFor(Student $student, ?Authenticatable $generatedBy = null): Ticket
     {
+        return $this->generateFreshFor($student, $generatedBy);
+    }
+
+    /**
+     * Create and assign a brand-new ticket for a student.
+     *
+     * This intentionally never claims an existing unassigned stock ticket.
+     */
+    public function generateFreshFor(Student $student, ?Authenticatable $generatedBy = null): Ticket
+    {
         return DB::transaction(function () use ($student, $generatedBy): Ticket {
             $student->tickets()
                 ->whereIn('status', Ticket::payableStatuses())

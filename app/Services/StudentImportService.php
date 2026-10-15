@@ -407,7 +407,7 @@ class StudentImportService
             return;
         }
 
-        $this->ticketService->generateFor($student);
+        $this->ticketService->generateFreshFor($student);
     }
 
     private function markWorkshopFeePaid(Student $student, bool $markPaid): void

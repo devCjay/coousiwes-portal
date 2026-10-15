@@ -210,6 +210,7 @@ class AcademicStructureSeeder extends Seeder
             ['group' => 'upload', 'key' => 'upload.max_mb', 'value' => 5, 'type' => 'integer', 'is_public' => false],
             ['group' => 'theme', 'key' => 'theme.default_mode', 'value' => 'system', 'type' => 'string', 'is_public' => true],
             ['group' => 'notifications', 'key' => 'notifications.push_enabled', 'value' => true, 'type' => 'boolean', 'is_public' => false],
+            ['group' => 'system', 'key' => 'system.maintenance_mode', 'value' => false, 'type' => 'boolean', 'is_public' => false],
         ];
     }
 

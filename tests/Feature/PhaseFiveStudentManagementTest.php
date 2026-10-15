@@ -195,6 +195,54 @@ class PhaseFiveStudentManagementTest extends TestCase
         $this->assertSame(Ticket::STATUS_UNUSED, $student->tickets()->firstOrFail()->status);
     }
 
+    public function test_single_active_student_creation_never_claims_existing_ticket_stock(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $stockTicket = app(\App\Services\TicketService::class)->generate($admin);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->postJson(route('admin.students.store'), [
+                'first_name' => 'Fresh',
+                'last_name' => 'Ticket Student',
+                'matric_no' => '2026/CSC/013',
+                'activation_status' => Student::STATUS_ACTIVE,
+            ])
+            ->assertOk();
+
+        $student = Student::where('matric_no', '2026/CSC/013')->firstOrFail();
+        $assignedTicket = $student->tickets()->firstOrFail();
+
+        $this->assertNotSame($stockTicket->id, $assignedTicket->id);
+        $this->assertDatabaseHas('tickets', [
+            'id' => $stockTicket->id,
+            'student_id' => null,
+            'status' => Ticket::STATUS_UNUSED,
+        ]);
+    }
+
+    public function test_bulk_active_student_import_generates_fresh_tickets_without_claiming_stock(): void
+    {
+        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $stockTicket = app(\App\Services\TicketService::class)->generate($admin);
+        $file = UploadedFile::fake()->createWithContent('students.csv', $this->csv([
+            ['Fresh', 'Bulk', '', '2026/CSC/014'],
+        ]));
+
+        $import = app(StudentImportService::class)->createImport($file, $admin->id, true);
+        app(StudentImportService::class)->process($import);
+
+        $student = Student::where('matric_no', '2026/CSC/014')->firstOrFail();
+        $assignedTicket = $student->tickets()->firstOrFail();
+
+        $this->assertNotSame($stockTicket->id, $assignedTicket->id);
+        $this->assertDatabaseHas('tickets', [
+            'id' => $stockTicket->id,
+            'student_id' => null,
+            'status' => Ticket::STATUS_UNUSED,
+        ]);
+    }
+
     public function test_admin_can_mark_workshop_fee_paid_without_activating_student_or_assigning_ticket(): void
     {
         $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();

@@ -19,6 +19,7 @@
         $canUpdateSettings = \App\Support\PortalPermission::userHas(auth('admin')->user(), 'settings.update');
         $canProcessImports = \App\Support\PortalPermission::userHas(auth('admin')->user(), 'students.import');
         $settingValue = fn (string $key, mixed $default = null) => $allSettings->get($key)?->value ?? $default;
+        $maintenanceEnabled = filter_var($settingValue('system.maintenance_mode', false), FILTER_VALIDATE_BOOLEAN);
         $mailSchemeValue = strtolower((string) $settingValue('mail.scheme', config('mail.mailers.smtp.scheme')));
         $mailSchemeValue = in_array($mailSchemeValue, ['ssl', 'smtps'], true) ? 'smtps' : '';
         $paymentFields = [
@@ -320,6 +321,41 @@
         <section id="system-settings-panel" class="settings-panel mt-5 hidden" data-settings-panel>
             <div class="grid gap-4 xl:grid-cols-[1fr_22rem]">
                 <div class="rounded-xl border border-[var(--line)] bg-[var(--surface-raised)] p-5 shadow-[0_18px_44px_rgb(8_15_12_/_0.06)]">
+                    @if ($canUpdateSettings)
+                        <form method="POST" action="{{ route('admin.settings.bulk') }}" class="mb-5 rounded-xl border border-amber-400/40 bg-amber-400/10 p-5">
+                            @csrf
+                            <div class="flex flex-wrap items-start justify-between gap-4">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="flex size-10 items-center justify-center rounded-xl {{ $maintenanceEnabled ? 'bg-rose-500 text-white' : 'bg-brand-600 text-white' }}">
+                                            <x-ui.icon name="power" class="size-5" />
+                                        </span>
+                                        <div>
+                                            <p class="text-sm font-bold text-[var(--text-strong)]">Maintenance Mode</p>
+                                            <p class="mt-1 text-xs text-[var(--text-soft)]">{{ $maintenanceEnabled ? 'Currently ON' : 'Currently OFF' }}</p>
+                                        </div>
+                                    </div>
+                                    <p class="mt-3 text-sm leading-6 text-[var(--text-soft)]">When enabled, the public homepage is blank and student access is blocked. Admins, supervisors, and coordinators remain available.</p>
+                                </div>
+                                <label class="block min-w-44">
+                                    <span class="text-xs font-bold uppercase tracking-wide text-[var(--text-soft)]">Portal Access</span>
+                                    <select name="settings[0][value]" class="siwes-form-control mt-2">
+                                        <option value="false" @selected(! $maintenanceEnabled)>OFF - Portal open</option>
+                                        <option value="true" @selected($maintenanceEnabled)>ON - Maintenance</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <input type="hidden" name="settings[0][group]" value="system">
+                            <input type="hidden" name="settings[0][key]" value="system.maintenance_mode">
+                            <input type="hidden" name="settings[0][type]" value="boolean">
+                            <input type="hidden" name="settings[0][is_public]" value="0">
+                            <input type="hidden" name="settings[0][description]" value="Block public and student portal access while maintenance mode is enabled.">
+                            <div class="mt-4 flex justify-end">
+                                <x-ui.button type="submit" icon="save">Save Maintenance Setting</x-ui.button>
+                            </div>
+                        </form>
+                    @endif
+
                     <div class="flex items-start gap-3">
                         <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-[0_12px_28px_rgb(0_81_54_/_0.2)]">
                             <x-ui.icon name="refresh-cw" class="size-5" />

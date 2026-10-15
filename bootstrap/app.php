@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureOtpIsVerified;
+use App\Http\Middleware\EnsureMaintenanceMode;
 use App\Http\Middleware\EnsureSupervisorProfileIsComplete;
 use App\Http\Middleware\EnsureWorkshopFeeIsPaid;
 use App\Http\Middleware\EnsureUserHasPermission;
@@ -27,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Console/Commands',
     ])
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(EnsureMaintenanceMode::class);
         $middleware->append(SecurityHeaders::class);
 
         $middleware->validateCsrfTokens(except: [
