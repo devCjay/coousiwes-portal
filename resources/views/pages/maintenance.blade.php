@@ -105,8 +105,8 @@
             max-width: 34rem;
             margin: 1.5rem 0 1rem;
             color: var(--brand-700);
-            font-size: clamp(2.45rem, 6vw, 5.5rem);
-            font-weight: 850;
+            font-size: clamp(1.45rem, 6vw, 5.5rem);
+            font-weight: 400;
             letter-spacing: 0;
             line-height: .98;
         }
