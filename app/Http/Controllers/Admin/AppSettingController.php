@@ -46,6 +46,7 @@ class AppSettingController extends Controller
         $before = $appSetting->only(['group', 'key', 'value', 'type', 'is_public']);
         $appSetting->update($this->payload($request));
         $this->syncTicketPricingIfNeeded($appSetting->key);
+        $this->notifyMaintenanceTransition($appSetting->key, $before['value'] ?? null, $appSetting->value);
 
         $this->auditLogger->record('settings.updated', $request->user(), $request, $appSetting, [
             'before' => $before,
@@ -68,10 +69,16 @@ class AppSettingController extends Controller
         ]);
 
         $saved = 0;
+        $maintenanceBefore = AppSetting::value('system.maintenance_mode', false);
+        $maintenanceAfter = null;
 
         foreach ($validated['settings'] as $settingPayload) {
             $settingPayload['is_public'] = filter_var($settingPayload['is_public'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $settingPayload['value'] = $this->castValue($settingPayload['value'] ?? null, $settingPayload['type']);
+
+            if ($settingPayload['key'] === 'system.maintenance_mode') {
+                $maintenanceAfter = $settingPayload['value'];
+            }
 
             $setting = AppSetting::query()->where('key', $settingPayload['key'])->first();
             $before = $setting?->only(['group', 'key', 'value', 'type', 'is_public']);
@@ -93,6 +100,10 @@ class AppSettingController extends Controller
 
             $this->auditLogger->record($event, $request->user(), $request, $setting, $metadata);
             $saved++;
+        }
+
+        if ($maintenanceAfter !== null) {
+            $this->notifyMaintenanceTransition('system.maintenance_mode', $maintenanceBefore, $maintenanceAfter);
         }
 
         return AjaxResponse::success($request, "{$saved} setting(s) saved.", reload: true);
@@ -282,5 +293,21 @@ class AppSettingController extends Controller
         }
 
         PaymentSettings::syncUnusedTicketPricing();
+    }
+
+    private function notifyMaintenanceTransition(string $key, mixed $before, mixed $after): void
+    {
+        if ($key !== 'system.maintenance_mode') {
+            return;
+        }
+
+        $wasEnabled = filter_var($before, FILTER_VALIDATE_BOOLEAN);
+        $isEnabled = filter_var($after, FILTER_VALIDATE_BOOLEAN);
+
+        if ($wasEnabled === $isEnabled) {
+            return;
+        }
+
+        app(\App\Services\MaintenanceNotificationService::class)->notifyStaff($isEnabled);
     }
 }
