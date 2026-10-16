@@ -13,7 +13,7 @@ class HomeController extends Controller
     public function __invoke(): View|Response
     {
         if (MaintenanceMode::enabled()) {
-            return response()->make('');
+            return view('pages.maintenance');
         }
 
         return view('pages.home', [

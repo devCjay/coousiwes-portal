@@ -22,14 +22,16 @@ class MaintenanceModeTest extends TestCase
         $this->seed(AcademicStructureSeeder::class);
     }
 
-    public function test_maintenance_mode_renders_a_blank_homepage(): void
+    public function test_maintenance_mode_renders_the_branded_closure_page(): void
     {
         $this->enableMaintenanceMode();
 
-        $response = $this->get(route('home'));
-
-        $response->assertOk();
-        $this->assertSame('', trim($response->getContent()));
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('The portal is')
+            ->assertSee('Closed')
+            ->assertSee('Till further Notice')
+            ->assertSee('Temporarily closed');
     }
 
     public function test_maintenance_mode_blocks_student_login(): void
