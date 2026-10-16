@@ -19,9 +19,10 @@
 @endphp
 
 <x-layouts.app-shell title="Admin Dashboard" role="Admin" :navigation="$navigation">
-    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         @if ($can('students.view'))
             <x-ui.stat-card label="Total Students" :value="number_format($stats['totalStudents'])" meta="Database records" />
+            <x-ui.stat-card label="Students Online" :value="number_format($stats['onlineStudents'])" meta="Active in the last 5 minutes" tone="brand" />
         @endif
         @if ($can('students.view'))
             <x-ui.stat-card label="Activated Students" :value="number_format($stats['activatedStudents'])" :meta="$can('payments.view') ? number_format($stats['verifiedPayments']).' Korapay verified' : 'Students with placement'" tone="cyan" />

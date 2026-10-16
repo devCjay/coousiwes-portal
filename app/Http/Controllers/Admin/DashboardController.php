@@ -11,12 +11,14 @@ use App\Models\Supervisor;
 use App\Models\Ticket;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
     public function __invoke(): View
     {
         $totalStudents = Student::query()->count();
+        $onlineStudents = $this->onlineStudentCount();
         $activatedStudents = Student::query()
             ->whereHas('placement')
             ->where('activation_status', '!=', Student::STATUS_SUSPENDED)
@@ -122,6 +124,7 @@ class DashboardController extends Controller
         return view('pages.admin.dashboard', [
             'stats' => [
                 'totalStudents' => $totalStudents,
+                'onlineStudents' => $onlineStudents,
                 'activatedStudents' => $activatedStudents,
                 'totalSupervisors' => $totalSupervisors,
                 'activeSupervisors' => $activeSupervisors,
@@ -141,5 +144,19 @@ class DashboardController extends Controller
             'genderChartTotal' => $genderChartTotal,
             'recentStudents' => $recentStudents,
         ]);
+    }
+
+    private function onlineStudentCount(): int
+    {
+        if (! Schema::hasTable(config('session.table', 'sessions'))) {
+            return 0;
+        }
+
+        return (int) DB::table(config('session.table', 'sessions').' as sessions')
+            ->join('students', 'students.user_id', '=', 'sessions.user_id')
+            ->whereNotNull('sessions.user_id')
+            ->where('sessions.last_activity', '>=', now()->subMinutes(5)->getTimestamp())
+            ->distinct()
+            ->count('sessions.user_id');
     }
 }

@@ -9,6 +9,7 @@ use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\Admin;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -33,6 +34,39 @@ class AdminDashboardTest extends TestCase
             ->assertOk()
             ->assertSee(number_format(Student::query()->count()))
             ->assertDontSee('4,500');
+    }
+
+    public function test_admin_dashboard_counts_only_students_with_recent_active_sessions(): void
+    {
+        $admin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
+        $student = Student::query()->firstOrFail();
+
+        DB::table('sessions')->insert([
+            [
+                'id' => 'active-student-session',
+                'user_id' => $student->user_id,
+                'ip_address' => '127.0.0.1',
+                'user_agent' => 'Active Student Browser',
+                'payload' => base64_encode(serialize(['_token' => 'active'])),
+                'last_activity' => now()->subMinutes(2)->getTimestamp(),
+            ],
+            [
+                'id' => 'dormant-student-session',
+                'user_id' => $student->user_id,
+                'ip_address' => '127.0.0.1',
+                'user_agent' => 'Dormant Student Browser',
+                'payload' => base64_encode(serialize(['_token' => 'dormant'])),
+                'last_activity' => now()->subMinutes(6)->getTimestamp(),
+            ],
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertViewHas('stats', fn (array $stats): bool => $stats['onlineStudents'] === 1)
+            ->assertSee('Students Online')
+            ->assertSee('Active in the last 5 minutes');
     }
 
     public function test_admin_dashboard_quick_reports_use_placement_records(): void
