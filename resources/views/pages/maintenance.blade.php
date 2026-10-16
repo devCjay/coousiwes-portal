@@ -261,7 +261,7 @@
             .maintenance-shell { min-height: calc(100vh - 2rem); border-radius: 1.35rem; }
             .maintenance-copy { padding: 2.4rem 1.65rem 1.5rem; }
             .door-stage { min-height: 19rem; }
-            h1 { margin-top: 1.15rem; font-size: clamp(2.5rem, 14vw, 4.5rem); }
+            h1 { margin-top: 1.15rem; font-size: clamp(1.5rem, 14vw, 4.5rem); }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -278,16 +278,7 @@
                 <!-- <p>We are carrying out important updates to improve your portal experience. Please check back later.</p> -->
                 <div class="brand-line" aria-hidden="true"></div>
             </div>
-            <div class="door-stage" aria-label="Animated closed door illustration" role="img">
-                <div class="door-glow" aria-hidden="true"></div>
-                <div class="door-frame" aria-hidden="true">
-                    <div class="door">
-                        <span class="door-knob"></span>
-                        <span class="door-lock"></span>
-                    </div>
-                </div>
-                <span class="door-caption">Temporarily closed</span>
-            </div>
+            
         </section>
     </main>
 </body>
