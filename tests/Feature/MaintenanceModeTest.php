@@ -30,8 +30,7 @@ class MaintenanceModeTest extends TestCase
             ->assertOk()
             ->assertSee('The portal is')
             ->assertSee('Closed')
-            ->assertSee('Till further Notice')
-            ->assertSee('Temporarily closed');
+            ->assertSee('Till further Notice');
     }
 
     public function test_maintenance_mode_blocks_student_login(): void

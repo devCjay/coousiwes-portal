@@ -59,7 +59,7 @@
         .maintenance-page::after { right: 12%; bottom: 12%; animation-delay: -3s; }
 
         .maintenance-shell {
-            display: grid;
+            display: block;
             width: min(100%, 72rem);
             min-height: min(39rem, calc(100vh - 4rem));
             overflow: hidden;
@@ -73,7 +73,11 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
+            width: 100%;
+            min-height: min(39rem, calc(100vh - 4rem));
             padding: clamp(2rem, 6vw, 5.5rem);
+            text-align: center;
         }
 
         .eyebrow {
@@ -102,19 +106,35 @@
         }
 
         h1 {
-            max-width: 34rem;
+            width: 100%;
+            max-width: 100%;
+            min-height: 1.05em;
             margin: 1.5rem 0 1rem;
             color: var(--brand-700);
             font-size: clamp(1.45rem, 6vw, 5.5rem);
             font-weight: 400;
             letter-spacing: 0;
-            line-height: .98;
+            line-height: 1.08;
         }
 
-        h1 span { color: var(--gold); }
+        .typing-text {
+            display: inline;
+            color: var(--brand-700);
+        }
+
+        .typing-text::after {
+            display: inline-block;
+            width: .08em;
+            height: 1em;
+            margin-left: .12em;
+            vertical-align: -.08em;
+            content: '';
+            background: var(--gold);
+            animation: cursor-blink .8s steps(1, end) infinite;
+        }
 
         .maintenance-copy p {
-            max-width: 31rem;
+            max-width: 42rem;
             margin: 0;
             color: rgba(16, 35, 28, .68);
             font-size: clamp(1rem, 1.8vw, 1.2rem);
@@ -244,6 +264,7 @@
             text-transform: uppercase;
         }
 
+        @keyframes cursor-blink { 50% { opacity: 0; } }
         @keyframes door-breathe { 0%, 100% { transform: perspective(900px) rotateY(0deg); } 50% { transform: perspective(900px) rotateY(-2deg); } }
         @keyframes knob-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.22); } }
         @keyframes pulse { 0%, 100% { opacity: .55; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
@@ -252,16 +273,15 @@
         @keyframes float-particles { to { transform: translateY(-1rem) translateX(.8rem); } }
 
         @media (min-width: 800px) {
-            .maintenance-shell { grid-template-columns: 1.08fr .92fr; }
             .door-stage { min-height: auto; }
         }
 
         @media (max-width: 799px) {
             .maintenance-page { padding: 1rem; }
             .maintenance-shell { min-height: calc(100vh - 2rem); border-radius: 1.35rem; }
-            .maintenance-copy { padding: 2.4rem 1.65rem 1.5rem; }
+            .maintenance-copy { min-height: calc(100vh - 2rem); padding: 2.4rem 1.25rem 1.5rem; }
             .door-stage { min-height: 19rem; }
-            h1 { margin-top: 1.15rem; font-size: clamp(1.5rem, 14vw, 4.5rem); }
+            h1 { margin-top: 1.15rem; font-size: clamp(1.35rem, 7vw, 3rem); }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -274,12 +294,51 @@
         <section class="maintenance-shell">
             <div class="maintenance-copy">
                 <div class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> COOU SIWES Portal</div>
-                <h1 id="maintenance-title">The portal is <span>Closed</span> Till further Notice</h1>
+                <h1 id="maintenance-title" aria-label="The portal is Closed Till further Notice"><span class="typing-text" aria-hidden="true"></span></h1>
                 <!-- <p>We are carrying out important updates to improve your portal experience. Please check back later.</p> -->
                 <div class="brand-line" aria-hidden="true"></div>
             </div>
             
         </section>
     </main>
+    <script>
+        (() => {
+            const target = document.querySelector('.typing-text');
+            const message = 'The portal is Closed Till further Notice';
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            if (!target) return;
+            if (reducedMotion) {
+                target.textContent = message;
+                return;
+            }
+
+            let position = 0;
+            let deleting = false;
+
+            const tick = () => {
+                target.textContent = message.slice(0, position);
+                if (!deleting && position < message.length) {
+                    position += 1;
+                    window.setTimeout(tick, 85);
+                    return;
+                }
+                if (!deleting) {
+                    deleting = true;
+                    window.setTimeout(tick, 1800);
+                    return;
+                }
+                if (position > 0) {
+                    position -= 1;
+                    window.setTimeout(tick, 45);
+                    return;
+                }
+                deleting = false;
+                window.setTimeout(tick, 500);
+            };
+
+            tick();
+        })();
+    </script>
 </body>
 </html>
