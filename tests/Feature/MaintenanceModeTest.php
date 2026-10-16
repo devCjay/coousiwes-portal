@@ -61,12 +61,20 @@ class MaintenanceModeTest extends TestCase
     public function test_staff_portals_remain_available_during_maintenance(): void
     {
         $this->enableMaintenanceMode();
-        $admin = Admin::where('email', 'admin@coousiwes.test')->firstOrFail();
+        $admin = Admin::where('email', 'superadmin@coousiwes.test')->firstOrFail();
 
         $this->actingAs($admin, 'admin')
             ->withSession(['otp.verified' => true])
             ->get(route('admin.dashboard'))
             ->assertOk();
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['otp.verified' => true])
+            ->get(route('admin.settings.index'))
+            ->assertOk()
+            ->assertSee('System Settings')
+            ->assertSee('Maintenance Mode')
+            ->assertSee('Save Maintenance Setting');
     }
 
     private function enableMaintenanceMode(): void

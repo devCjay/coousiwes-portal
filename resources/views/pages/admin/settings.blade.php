@@ -16,7 +16,8 @@
         $welcomeTitle = $allSettings->get('site.welcome.title');
         $welcomeEnabled = $allSettings->get('site.welcome.enabled');
         $welcomeDuration = $allSettings->get('site.welcome.duration_seconds');
-        $canUpdateSettings = \App\Support\PortalPermission::userHas(auth('admin')->user(), 'settings.update');
+        $isRootAdmin = \App\Support\PortalPermission::isRootAdmin(auth('admin')->user());
+        $canUpdateSettings = $isRootAdmin || \App\Support\PortalPermission::userHas(auth('admin')->user(), 'settings.update');
         $canProcessImports = \App\Support\PortalPermission::userHas(auth('admin')->user(), 'students.import');
         $settingValue = fn (string $key, mixed $default = null) => $allSettings->get($key)?->value ?? $default;
         $maintenanceEnabled = filter_var($settingValue('system.maintenance_mode', false), FILTER_VALIDATE_BOOLEAN);
